@@ -48,7 +48,7 @@ def calibrateCamera():
                 # Draw and display the corners
                 focused_img = cv2.drawChessboardCorners(focused_img, (7, 5), corners2, ret)
         cv2.imshow('img', original_img)
-        cv2.waitKey(500)
+        cv2.waitKey(10)
 
     mtxs = []
     dists = []

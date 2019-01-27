@@ -33,7 +33,7 @@ def constant_record(path="record_output/", fps=2):
 
 
 def main():
-    record_on_zero(start_i=32)
+    record_on_zero(start_i=84)
 
 
 if __name__ == '__main__':
