@@ -15,7 +15,10 @@ def getImgRegionByCameraNo(img, camera_no):
     return img[x_lower_bound:x_upper_bound, y_lower_bound:y_upper_bound, :]
 
 
-def calibrateCamera():
+# All in one signifies to calibrate the cameras using the different angles of chessboards from all of them to produce
+# the transformation matrix
+
+def calibrateCamera(all_in_one=True):
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -24,8 +27,12 @@ def calibrateCamera():
     objp[:, :2] = np.mgrid[0:7, 0:5].T.reshape(-1, 2)
 
     # Arrays to store object points and image points from all the images.
-    objpoints = [[], [], [], []]  # 3d point in real world space
-    imgpoints = [[], [], [], []]  # 2d points in image plane.
+    if all_in_one:
+        objpoint = []
+        imgpoint = []
+    else:
+        objpoints = [[], [], [], []]  # 3d point in real world space
+        imgpoints = [[], [], [], []]  # 2d points in image plane.
 
     images = glob.glob("Calibration Pictures/*.jpg")
 
@@ -40,24 +47,33 @@ def calibrateCamera():
 
             # If found, add object points, image points (after refining them)
             if ret == True:
-                objpoints[camera_no].append(objp)
+                if all_in_one:
+                    objpoint.append(objp)
+                else:
+                    objpoints[camera_no].append(objp)
 
                 corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-                imgpoints[camera_no].append(corners2)
+                if all_in_one:
+                    imgpoint.append(corners2)
+                else:
+                    imgpoints[camera_no].append(corners2)
 
                 # Draw and display the corners
                 focused_img = cv2.drawChessboardCorners(focused_img, (7, 5), corners2, ret)
         cv2.imshow('img', original_img)
         cv2.waitKey(10)
 
-    mtxs = []
-    dists = []
-
-    for camera_no in range(0, 4):
-        _, mtx, dist, _, _ = cv2.calibrateCamera(objpoints[camera_no], imgpoints[camera_no], gray.shape[::-1],
+    if all_in_one:
+        _, mtx, dist, _, _ = cv2.calibrateCamera(objpoint, imgpoint, gray.shape[::-1],
                                                  None, None)
-        mtxs.append(mtx)
-        dists.append(dist)
+    else:
+        mtxs = []
+        dists = []
+        for camera_no in range(0, 4):
+            _, mtx, dist, _, _ = cv2.calibrateCamera(objpoints[camera_no], imgpoints[camera_no], gray.shape[::-1],
+                                                     None, None)
+            mtxs.append(mtx)
+            dists.append(dist)
 
     for fname in images:
         original_img = cv2.imread(fname)
@@ -66,9 +82,12 @@ def calibrateCamera():
         for camera_no in range(0, 4):
             img = getImgRegionByCameraNo(original_img, camera_no + 1)
             h, w = img.shape[:2]
-            newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtxs[camera_no], dists[camera_no], (w, h), 1, (w, h))
-
-            dst = cv2.undistort(img, mtxs[camera_no], dists[camera_no], None, newcameramtx)
+            if all_in_one:
+                newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+                dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
+            else:
+                newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtxs[camera_no], dists[camera_no], (w, h), 1, (w, h))
+                dst = cv2.undistort(img, mtxs[camera_no], dists[camera_no], None, newcameramtx)
             if camera_no == 0:
                 dsts = dst
             elif camera_no == 1:
@@ -84,4 +103,4 @@ def calibrateCamera():
     cv2.destroyAllWindows()
 
 
-calibrateCamera()
+calibrateCamera(all_in_one=True)
