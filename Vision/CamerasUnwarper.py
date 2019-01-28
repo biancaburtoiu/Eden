@@ -22,9 +22,8 @@ def calibrateCamera(all_in_one=True):
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-    # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-    objp = np.zeros((5 * 7, 3), np.float32)
-    objp[:, :2] = np.mgrid[0:7, 0:5].T.reshape(-1, 2)
+    grid_range = [(i, j) for i in range(3, 8) for j in range(3, 6)]
+    grid_range.sort(key=sum, reverse=True)
 
     # Arrays to store object points and image points from all the images.
     if all_in_one:
@@ -39,27 +38,33 @@ def calibrateCamera(all_in_one=True):
     for fname in images:
         original_img = cv2.imread(fname)
         for camera_no in range(0, 4):
-            focused_img = getImgRegionByCameraNo(original_img, camera_no + 1)
-            gray = cv2.cvtColor(focused_img, cv2.COLOR_BGR2GRAY)
+            for grid_val in grid_range:
+                focused_img = getImgRegionByCameraNo(original_img, camera_no + 1)
+                gray = cv2.cvtColor(focused_img, cv2.COLOR_BGR2GRAY)
 
-            # Find the chess board corners
-            ret, corners = cv2.findChessboardCorners(gray, (7, 5), None)
+                # Find the chess board corners
+                ret, corners = cv2.findChessboardCorners(gray, grid_val, None)
 
-            # If found, add object points, image points (after refining them)
-            if ret == True:
-                if all_in_one:
-                    objpoint.append(objp)
-                else:
-                    objpoints[camera_no].append(objp)
+                # If found, add object points, image points (after refining them)
+                if ret == True:
+                    # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
+                    objp = np.zeros((grid_val[1] * grid_val[0], 3), np.float32)
+                    objp[:, :2] = np.mgrid[0:grid_val[0], 0:grid_val[1]].T.reshape(-1, 2)
 
-                corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-                if all_in_one:
-                    imgpoint.append(corners2)
-                else:
-                    imgpoints[camera_no].append(corners2)
+                    if all_in_one:
+                        objpoint.append(objp)
+                    else:
+                        objpoints[camera_no].append(objp)
 
-                # Draw and display the corners
-                focused_img = cv2.drawChessboardCorners(focused_img, (7, 5), corners2, ret)
+                    corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+                    if all_in_one:
+                        imgpoint.append(corners2)
+                    else:
+                        imgpoints[camera_no].append(corners2)
+
+                    # Draw and display the corners
+                    focused_img = cv2.drawChessboardCorners(focused_img, grid_val, corners2, ret)
+                    break
         cv2.imshow('img', original_img)
         cv2.waitKey(10)
 
@@ -103,4 +108,4 @@ def calibrateCamera(all_in_one=True):
     cv2.destroyAllWindows()
 
 
-calibrateCamera(all_in_one=True)
+calibrateCamera(all_in_one=False)
