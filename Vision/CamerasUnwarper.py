@@ -18,7 +18,7 @@ def getImgRegionByCameraNo(img, camera_no):
 # All in one signifies to calibrate the cameras using the different angles of chessboards from all of them to produce
 # the transformation matrix
 
-def calibrateCamera(all_in_one=True):
+def calibrateCamera(all_in_one=False):
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -33,7 +33,7 @@ def calibrateCamera(all_in_one=True):
         objpoints = [[], [], [], []]  # 3d point in real world space
         imgpoints = [[], [], [], []]  # 2d points in image plane.
 
-    images = glob.glob("Calibration Pictures/*.jpg")
+    images = glob.glob("Vision/Calibration Pictures/*.jpg")
 
     for fname in images:
         original_img = cv2.imread(fname)
@@ -107,5 +107,4 @@ def calibrateCamera(all_in_one=True):
 
     cv2.destroyAllWindows()
 
-
-calibrateCamera(all_in_one=False)
+    return mtxs, dists
