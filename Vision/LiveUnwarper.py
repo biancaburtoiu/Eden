@@ -92,6 +92,8 @@ class Unwarper:
         return segment
 
 
+# The stitcher class is a varitation of the one found in the tutorial here https://www.pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
+
 class Stitcher:
     def __init__(self):
         # determine if we are using OpenCV v3.X
