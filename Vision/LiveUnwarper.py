@@ -47,9 +47,14 @@ class Unwarper:
         set_res(cam, 1920, 1080)
         while True:
             ret_val, img = cam.read()
-            img = self.unwarp_image(img, only_camera)
-            #img = self.camera_two_segment(img)
-            cv2.imshow('my webcam', img)
+            # img = self.unwarp_image(img, only_camera)
+            camera_one = self.camera_one_segment(img)
+            camera_two = self.camera_two_segment(img)
+            camera_one = np.concatenate(
+                (camera_one,
+                 np.zeros((camera_two.shape[0] - camera_one.shape[0], camera_one.shape[1], 3), dtype=np.uint8)), axis=0)
+            new_img = np.concatenate((camera_one, camera_two), axis=1)
+            cv2.imshow('my webcam', new_img)
             cv2.waitKey(100)
 
     def camera_one_segment(self, original_img):
