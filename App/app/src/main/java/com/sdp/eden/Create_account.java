@@ -108,10 +108,7 @@ public class Create_account extends AppCompatActivity {
     }
 
     //When cancel button clicked, back to the first page.
-    public void backToStarting(View view) {
-        Intent intent3 = new Intent(this, Starting_page.class);
-        startActivity(intent3);
-    }
+
 
     //Update the UI, if with valid user, then enter the gameMainActivity.
     private void updateUI(FirebaseUser user) {
