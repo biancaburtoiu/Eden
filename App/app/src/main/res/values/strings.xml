@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Eden</string>
+    <string name="plants_tab_title">Plants</string>
+    <string name="robot_tab_title">Robot</string>
 </resources>
