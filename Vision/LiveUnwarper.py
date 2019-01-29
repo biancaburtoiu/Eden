@@ -45,17 +45,21 @@ class Unwarper:
                     dsts = np.concatenate((dsts, dsts2), axis=0)
             return dsts
 
-    def live_unwarp(self, only_camera=None):
+    def live_unwarp(self):
         cam = cv2.VideoCapture(0)
         set_res(cam, 1920, 1080)
         i = 1
         while True:
             _, img = cam.read()
             if i > 20:
-                new_img = self.stitch_one_and_two(img)
+                # new_img, h = self.stich_three_and_four(img)
+                new_img = self.camera_three_segment(img)
                 if new_img is not None:
                     cv2.imshow('my webcam', new_img)
-                    cv2.waitKey(100)
+                    k = cv2.waitKey()
+                    if k == 48:
+                        np.save("H_c3_and_c4.npy", h)
+                        break
             i += 1
 
     def camera_one_segment(self, original_img):
@@ -63,7 +67,7 @@ class Unwarper:
         x_lower_bound = 360
         x_upper_bound = 490 + 50
         y_lower_bound = 120
-        y_upper_bound = 250
+        y_upper_bound = 250 + 5
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
@@ -72,7 +76,7 @@ class Unwarper:
         x_lower_bound = 125 - 100
         x_upper_bound = 400
         y_lower_bound = 200
-        y_upper_bound = 360
+        y_upper_bound = 360 + 30
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
@@ -85,11 +89,27 @@ class Unwarper:
     def camera_three_segment(self, original_img):
         unwarped_camera = self.unwarp_image(original_img, 3)
         x_lower_bound = 340
-        x_upper_bound = 470
-        y_lower_bound = 80
+        x_upper_bound = 470 + 100
+        y_lower_bound = 80 - 40
         y_upper_bound = 240
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
+
+    def camera_four_segment(self, original_img):
+        unwarped_camera = self.unwarp_image(original_img, 4)
+        x_lower_bound = 160
+        x_upper_bound = 490
+        y_lower_bound = 60
+        y_upper_bound = 240
+        segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
+        segment = np.concatenate((np.zeros((20, x_upper_bound - x_lower_bound, 3),dtype=np.uint8), segment), axis = 0)
+        return segment
+
+    def stich_three_and_four(self, img):
+        img_1 = self.camera_three_segment(img)
+        img_2 = self.camera_four_segment(img)
+        new_img, h = self.sticher.find_h((img_1, img_2))
+        return (new_img, h)
 
 
 # The stitcher class is a varitation of the one found in the tutorial here https://www.pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
