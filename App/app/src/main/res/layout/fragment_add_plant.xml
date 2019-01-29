@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".AddPlantFragment"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:id="@+id/container">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="New plant"
+        android:layout_gravity="top|center_horizontal"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <EditText
+            android:id="@+id/plantName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:hint="plant name or number"
+            android:inputType="text"
+            />
+
+<Spinner
+    android:id="@+id/plantSpecies"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:spinnerMode="dropdown"
+    >
+
+</Spinner>
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/addPlantButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add plant"
+        android:layout_gravity="center"/>
+</LinearLayout>
