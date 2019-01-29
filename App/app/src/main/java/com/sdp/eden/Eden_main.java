@@ -11,4 +11,8 @@ public class Eden_main extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.eden_main);
     }
+
+    @Override
+    public void onBackPressed() {
+    }
 }
