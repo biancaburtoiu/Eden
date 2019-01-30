@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/f_robot_battery_status_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Battery status"
+        android:textSize="14sp"
+        tools:layout_editor_absoluteX="51dp"
+        tools:layout_editor_absoluteY="32dp" />
+
+    <TextView
+        android:id="@+id/f_robot_battery_status_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="100%"
+        android:textSize="24sp"
+        tools:layout_editor_absoluteX="62dp"
+        tools:layout_editor_absoluteY="60dp" />
+
+    <TextView
+        android:id="@+id/f_robot_water_status_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="100%"
+        android:textSize="24sp"
+        tools:layout_editor_absoluteX="226dp"
+        tools:layout_editor_absoluteY="60dp" />
+
+    <TextView
+        android:id="@+id/f_robot_water_status_label2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Water status"
+        android:textSize="14sp"
+        tools:layout_editor_absoluteX="215dp"
+        tools:layout_editor_absoluteY="32dp" />
+</android.support.constraint.ConstraintLayout>
