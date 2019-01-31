@@ -27,8 +27,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public RecyclerViewAdapter(Context mContext, List<Plant> mData){
         this.mContext=mContext;
         this.mData=mData;
-
-
     }
 
     @NonNull

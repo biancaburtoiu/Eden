@@ -10,6 +10,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 
 public class AddPlantFragment extends DialogFragment {
@@ -46,10 +47,15 @@ public class AddPlantFragment extends DialogFragment {
                 Log.d(TAG, "Plant name: " + plantName.getText());
                 Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem());
 
-                // TODO: Check for plant name/number not empty
-                // TODO: Add plant to database with info: name and species
-                // TODO: Add plant to RecyclerView as well
-
+                // Checks for empty plant name
+                if (plantName.getText().toString().trim().length() == 0) {
+                    Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
+                    Toast.makeText(getContext(), "Plant name cannot be empty.", Toast.LENGTH_LONG).show();
+                }
+                else {
+                    Log.d(TAG, "Plant name format correct.");
+                    // TODO: Add plant to database with info: name and species
+                }
 
                 // At the end: close AddPlant and return to the Plants tab.
                 // Not sure if it's the best way to transition though!

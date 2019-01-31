@@ -24,12 +24,14 @@ public class PlantListFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.fragment_placeholder1,container,false);
+
         //setting up Layout Manager and adapter for recyclerview
         myrecyclerview = v.findViewById(R.id.plant_recyclerview);
         RecyclerViewAdapter recyclerAdapter = new RecyclerViewAdapter(getContext(),plants);
         myrecyclerview.setLayoutManager(new LinearLayoutManager(getActivity()));
         myrecyclerview.setAdapter(recyclerAdapter);
 
+        // TODO: Set recyclerview to grab plants list by querying the database
         Button addPlantButton = v.findViewById(R.id.addPlantButton);
         addPlantButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -46,10 +48,11 @@ public class PlantListFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+
         plants = new ArrayList<>();
-        plants.add(new Plant("plant1",R.drawable.plant1));
-        plants.add(new Plant("plant2",R.drawable.plant2));
-        plants.add(new Plant("plant3",R.drawable.plant3));
+        plants.add(new Plant("plant1","species1", R.drawable.plant1));
+        plants.add(new Plant("plant2","species2", R.drawable.plant2));
+        plants.add(new Plant("plant3","species3", R.drawable.plant3));
 
     }
 
