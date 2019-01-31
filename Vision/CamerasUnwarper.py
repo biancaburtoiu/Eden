@@ -6,11 +6,11 @@ import math
 
 # Assume that camera 1 is labelled camera_no=1
 def getImgRegionByCameraNo(img, camera_no):
-    x_lower_bound = int((len(img) / 3) * math.floor((camera_no - 1) / 3))
-    x_upper_bound = int((len(img) / 3) * (math.floor(camera_no / 4) + 1))
+    x_lower_bound = int((len(img) / 3) * math.floor((camera_no - 1) / 3)) + 2
+    x_upper_bound = int((len(img) / 3) * (math.floor(camera_no / 4) + 1)) - 2
 
-    y_lower_bound = int((len(img[0]) / 3) * ((camera_no - 1) % 3))
-    y_upper_bound = int((len(img[0]) / 3) * (((camera_no - 1) % 3) + 1))
+    y_lower_bound = int((len(img[0]) / 3) * ((camera_no - 1) % 3)) + 2
+    y_upper_bound = int((len(img[0]) / 3) * (((camera_no - 1) % 3) + 1)) - 2
 
     return img[x_lower_bound:x_upper_bound, y_lower_bound:y_upper_bound, :]
 
@@ -22,13 +22,13 @@ def calibrateCamera(all_in_one=False):
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
-    grid_range = [(i, j) for i in range(3, 8) for j in range(3, 6)]
+    grid_range = [(i, j) for i in range(3, 9) for j in range(3, 7)]
     grid_range.sort(key=sum, reverse=True)
 
     # Arrays to store object points and image points from all the images.
     if all_in_one:
-        objpoint = []
-        imgpoint = []
+        objpoints = []
+        imgpoints = []
     else:
         objpoints = [[], [], [], []]  # 3d point in real world space
         imgpoints = [[], [], [], []]  # 2d points in image plane.
@@ -52,13 +52,13 @@ def calibrateCamera(all_in_one=False):
                     objp[:, :2] = np.mgrid[0:grid_val[0], 0:grid_val[1]].T.reshape(-1, 2)
 
                     if all_in_one:
-                        objpoint.append(objp)
+                        objpoints.append(objp)
                     else:
                         objpoints[camera_no].append(objp)
 
                     corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
                     if all_in_one:
-                        imgpoint.append(corners2)
+                        imgpoints.append(corners2)
                     else:
                         imgpoints[camera_no].append(corners2)
 
@@ -69,16 +69,16 @@ def calibrateCamera(all_in_one=False):
         cv2.waitKey(10)
 
     if all_in_one:
-        _, mtx, dist, _, _ = cv2.calibrateCamera(objpoint, imgpoint, gray.shape[::-1],
+        _, mtxs, dists, _, _ = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],
                                                  None, None)
     else:
         mtxs = []
         dists = []
         for camera_no in range(0, 4):
-            _, mtx, dist, _, _ = cv2.calibrateCamera(objpoints[camera_no], imgpoints[camera_no], gray.shape[::-1],
+            _, mtxs, dists, _, _ = cv2.calibrateCamera(objpoints[camera_no], imgpoints[camera_no], gray.shape[::-1],
                                                      None, None)
-            mtxs.append(mtx)
-            dists.append(dist)
+            mtxs.append(mtxs)
+            dists.append(dists)
 
     for fname in images:
         original_img = cv2.imread(fname)
@@ -88,8 +88,8 @@ def calibrateCamera(all_in_one=False):
             img = getImgRegionByCameraNo(original_img, camera_no + 1)
             h, w = img.shape[:2]
             if all_in_one:
-                newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
-                dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
+                newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtxs, dists, (w, h), 1, (w, h))
+                dst = cv2.undistort(img, mtxs, dists, None, newcameramtx)
             else:
                 newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtxs[camera_no], dists[camera_no], (w, h), 1, (w, h))
                 dst = cv2.undistort(img, mtxs[camera_no], dists[camera_no], None, newcameramtx)
@@ -107,4 +107,4 @@ def calibrateCamera(all_in_one=False):
 
     cv2.destroyAllWindows()
 
-    return mtxs, dists
+    return mtxs, dists, objpoints, imgpoints
