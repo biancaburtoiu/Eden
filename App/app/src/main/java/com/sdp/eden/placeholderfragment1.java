@@ -28,6 +28,16 @@ public class placeholderfragment1 extends Fragment {
         RecyclerViewAdapter recyclerAdapter = new RecyclerViewAdapter(getContext(),plants);
         myrecyclerview.setLayoutManager(new LinearLayoutManager(getActivity()));
         myrecyclerview.setAdapter(recyclerAdapter);
+
+        Button addPlantButton = v.findViewById(R.id.addPlantButton);
+        addPlantButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getFragmentManager().beginTransaction().replace(R.id.fragment_placeholder1,
+                        new AddPlantFragment()).commit();
+            }
+        });
+
         return v;
     }
 
@@ -46,13 +56,5 @@ public class placeholderfragment1 extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        Button addPlantButton = view.findViewById(R.id.addPlantButton);
-        addPlantButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                getFragmentManager().beginTransaction().replace(R.id.fragment_placeholder1,
-                        new AddPlantFragment()).commit();
-            }
-        });
     }
 }

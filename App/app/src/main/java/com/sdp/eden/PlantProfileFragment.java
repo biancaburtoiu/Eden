@@ -35,24 +35,6 @@ public class PlantProfileFragment extends DialogFragment {
         Log.d(TAG, "Entered PlantProfileFragment");
         super.onViewCreated(view, savedInstanceState);
 
-//        final EditText plantName = (EditText) view.findViewById(R.id.plantName);
-//
-//        final Spinner plantSpecies = view.findViewById(R.id.plantSpecies);
-//        String[] species = new String[]{"cacti","daisy","lily"};
-//        ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(getContext(), R.layout.fragment_plant_profile, species);
-//        plantSpecies.setAdapter(speciesAdapter);
-
-
-//        Button addPlantButton = (Button) view.findViewById(R.id.addPlantButton);
-//        addPlantButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Log.d(TAG, "New plant to add to database:");
-//                Log.d(TAG, "Plant name: " + plantName.toString());
-//                Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem());
-//
-//                // Adds plant to database with info: name and species
-//            }
-//        });
+        // TODO: Add plant details here and possible buttons
     }
 }

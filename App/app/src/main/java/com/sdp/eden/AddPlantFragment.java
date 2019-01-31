@@ -51,7 +51,15 @@ public class AddPlantFragment extends DialogFragment {
                 Log.d(TAG, "Plant name: " + plantName.getText());
                 Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem());
 
-                // Adds plant to database with info: name and species
+                // TODO: Check for plant name/number not empty
+                // TODO: Add plant to database with info: name and species
+                // TODO: Add plant to RecyclerView as well
+
+
+                // At the end: close AddPlant and return to the Plants tab.
+                // Not sure if it's the best way to transition though!
+                getFragmentManager().beginTransaction().replace(R.id.fragment_placeholder1,
+                        new placeholderfragment1()).commit();
             }
         });
     }

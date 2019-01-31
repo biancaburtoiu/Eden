@@ -7,8 +7,9 @@
     tools:context=".AddPlantFragment"
     android:orientation="vertical"
     android:layout_gravity="center"
+    android:gravity="center"
     android:id="@+id/container"
-    >
+    android:background="@color/colorPrimary">
 
     <TextView
         android:id="@+id/textView"
