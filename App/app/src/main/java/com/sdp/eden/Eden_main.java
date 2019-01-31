@@ -6,6 +6,8 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TableLayout;
 import android.widget.Toolbar;
@@ -27,6 +29,7 @@ public class Eden_main extends AppCompatActivity {
         //the frame layout in eden_main will show the MainFragment layout inside it
         getSupportFragmentManager().beginTransaction().replace(R.id.MainFrameLayout,
                 new MainFragment()).commit();
+
     }
 
     @Override

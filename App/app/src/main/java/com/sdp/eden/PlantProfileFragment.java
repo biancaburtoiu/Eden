@@ -3,69 +3,56 @@ package com.sdp.eden;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+
+import java.util.function.ToDoubleBiFunction;
 
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link PlantProfileFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link PlantProfileFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
-public class PlantProfileFragment extends Fragment {
+public class PlantProfileFragment extends DialogFragment {
+    private static final String TAG = "PlantProfileFragment";
 
     public PlantProfileFragment() {
         // Required empty public constructor
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-    }
-
-    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_plant_profile, container, false);
     }
-    
 
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        if (context instanceof OnFragmentInteractionListener) {
-            mListener = (OnFragmentInteractionListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");
-        }
-    }
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        Log.d(TAG, "Entered PlantProfileFragment");
+        super.onViewCreated(view, savedInstanceState);
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        mListener = null;
-    }
+//        final EditText plantName = (EditText) view.findViewById(R.id.plantName);
+//
+//        final Spinner plantSpecies = view.findViewById(R.id.plantSpecies);
+//        String[] species = new String[]{"cacti","daisy","lily"};
+//        ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(getContext(), R.layout.fragment_plant_profile, species);
+//        plantSpecies.setAdapter(speciesAdapter);
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        void onFragmentInteraction(Uri uri);
+
+//        Button addPlantButton = (Button) view.findViewById(R.id.addPlantButton);
+//        addPlantButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Log.d(TAG, "New plant to add to database:");
+//                Log.d(TAG, "Plant name: " + plantName.toString());
+//                Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem());
+//
+//                // Adds plant to database with info: name and species
+//            }
+//        });
     }
 }

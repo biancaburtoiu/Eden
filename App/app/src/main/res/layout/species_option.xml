@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView
+    android:id="@+id/speciesText"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:text="less"
+    android:padding="12dp"
+    android:textSize="18sp"
+    xmlns:android="http://schemas.android.com/apk/res/android" />

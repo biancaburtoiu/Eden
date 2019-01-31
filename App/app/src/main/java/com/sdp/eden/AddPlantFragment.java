@@ -39,7 +39,7 @@ public class AddPlantFragment extends DialogFragment {
 
         final Spinner plantSpecies = view.findViewById(R.id.plantSpecies);
         String[] species = new String[]{"cacti","daisy","lily"};
-        ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(getContext(), R.layout.fragment_add_plant, species);
+        ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(getContext(), R.layout.species_option, species);
         plantSpecies.setAdapter(speciesAdapter);
 
 
@@ -48,7 +48,7 @@ public class AddPlantFragment extends DialogFragment {
             @Override
             public void onClick(View v) {
                 Log.d(TAG, "New plant to add to database:");
-                Log.d(TAG, "Plant name: " + plantName.toString());
+                Log.d(TAG, "Plant name: " + plantName.getText());
                 Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem());
 
                 // Adds plant to database with info: name and species
