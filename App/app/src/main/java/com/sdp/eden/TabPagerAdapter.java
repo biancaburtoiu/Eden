@@ -11,7 +11,7 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
     @Override
     public Fragment getItem(int i) {
         switch(i){
-            case 1: return new placeholderfragment2();
+            case 1: return new RobotFragment();
             default: return new placeholderfragment1();
         }
     }

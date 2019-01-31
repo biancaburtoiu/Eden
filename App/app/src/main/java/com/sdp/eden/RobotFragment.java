@@ -8,14 +8,20 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
-public class placeholderfragment2 extends Fragment {
+public class RobotFragment extends Fragment{
+    private TextView batteryStatus;
+    private TextView waterStatus;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-       View v =  inflater.inflate(R.layout.fragment_placeholder1,container,false);
-       v.setBackgroundColor(Color.parseColor("#938432"));
+       View v =  inflater.inflate(R.layout.fragment_robot,container,false);
+
+        batteryStatus = v.findViewById(R.id.f_robot_battery_status_text);
+        waterStatus = v.findViewById(R.id.f_robot_water_status_text);
+
        return v;
     }
 }
