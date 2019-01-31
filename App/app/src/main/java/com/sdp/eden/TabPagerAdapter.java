@@ -12,7 +12,7 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
     public Fragment getItem(int i) {
         switch(i){
             case 1: return new RobotFragment();
-            default: return new placeholderfragment1();
+            default: return new PlantListFragment();
         }
     }
 

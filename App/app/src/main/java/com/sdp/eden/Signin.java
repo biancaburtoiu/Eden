@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -22,6 +23,7 @@ public class Signin extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //Initializing variables
         super.onCreate(savedInstanceState);
         setContentView(R.layout.login_page);
         mAuth = FirebaseAuth.getInstance();
@@ -34,7 +36,7 @@ public class Signin extends AppCompatActivity {
             }
         });
     }
-
+       //On button register clicked, start Create_account
     public void register(View view){
         Intent intent=new Intent(this, Create_account.class);
         startActivity(intent);
@@ -43,6 +45,7 @@ public class Signin extends AppCompatActivity {
 
 
     private void signIn(String email, String password){
+        //validate the input format
         if(!validateForm()){
             return;
         }
@@ -68,12 +71,15 @@ public class Signin extends AppCompatActivity {
 
     private boolean validateForm() {
         boolean valid = true;
-
+        //give error notice when format is incorrect
         String email = mEmailField.getText().toString();
         if (TextUtils.isEmpty(email)) {
             mEmailField.setError("Required.");
             valid = false;
-        } else {
+        } else if(!Patterns.EMAIL_ADDRESS.matcher(email).matches()){
+            mEmailField.setError("Email form is required");
+        }
+        else {
             mEmailField.setError(null);
         }
 
@@ -81,7 +87,10 @@ public class Signin extends AppCompatActivity {
         if (TextUtils.isEmpty(password)) {
             mPasswordField.setError("Required.");
             valid = false;
-        } else {
+        } else if(password.length()<6){
+            mEmailField.setError("password requires at least 6 characters");
+        }
+        else {
             mPasswordField.setError(null);
         }
 
@@ -89,6 +98,7 @@ public class Signin extends AppCompatActivity {
     }
 
     private void updateUI(FirebaseUser user) {
+        //When user is not null proceed to main activity
         if (user != null) {
             Toast.makeText(Signin.this, "Login succeeded.",
                     Toast.LENGTH_SHORT).show();
@@ -96,11 +106,15 @@ public class Signin extends AppCompatActivity {
             Intent intent = new Intent(this, Eden_main.class);
             startActivity(intent);
 
-        } else {
-            Toast.makeText(Signin.this, "Login failed.",
-                    Toast.LENGTH_SHORT).show();
-
         }
+    }
+
+    @Override
+    protected void onStart (){
+        super.onStart();
+        //Automatically takes user to main activity when they are already logged in, until they chose to log out
+        FirebaseUser user = mAuth.getCurrentUser();
+        updateUI(user);
     }
 
 

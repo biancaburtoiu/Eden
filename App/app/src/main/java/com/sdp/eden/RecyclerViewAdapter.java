@@ -16,14 +16,19 @@ import org.w3c.dom.Text;
 
 import java.util.List;
 
+//Generic RecyclerView adapter format
+
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.MyViewHolder> {
 
     Context mContext;
     List<Plant> mData;
 
+
     public RecyclerViewAdapter(Context mContext, List<Plant> mData){
         this.mContext=mContext;
         this.mData=mData;
+
+
     }
 
     @NonNull
@@ -36,9 +41,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return vHolder;
     }
 
+    
+    
+
+
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder myViewHolder, int position) {
-
+        //display image and text
         myViewHolder.tv_name.setText(mData.get(position).getName());
         myViewHolder.img.setImageResource(mData.get(position).getPhoto());
 
@@ -61,4 +70,6 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
             img = (ImageView) v.findViewById(R.id.img_plant);
         }
     }
+    
+    
 }

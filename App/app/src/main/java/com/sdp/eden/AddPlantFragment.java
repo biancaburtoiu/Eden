@@ -1,10 +1,7 @@
 package com.sdp.eden;
 
-import android.content.Context;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,8 +10,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
-
-import java.util.function.ToDoubleBiFunction;
 
 
 public class AddPlantFragment extends DialogFragment {
@@ -59,7 +54,7 @@ public class AddPlantFragment extends DialogFragment {
                 // At the end: close AddPlant and return to the Plants tab.
                 // Not sure if it's the best way to transition though!
                 getFragmentManager().beginTransaction().replace(R.id.fragment_placeholder1,
-                        new placeholderfragment1()).commit();
+                        new PlantListFragment()).commit();
             }
         });
     }

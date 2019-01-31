@@ -14,7 +14,7 @@ import android.widget.Button;
 import java.util.ArrayList;
 import java.util.List;
 
-public class placeholderfragment1 extends Fragment {
+public class PlantListFragment extends Fragment {
     View v;
 
     private RecyclerView myrecyclerview;
@@ -24,6 +24,7 @@ public class placeholderfragment1 extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.fragment_placeholder1,container,false);
+        //setting up Layout Manager and adapter for recyclerview
         myrecyclerview = v.findViewById(R.id.plant_recyclerview);
         RecyclerViewAdapter recyclerAdapter = new RecyclerViewAdapter(getContext(),plants);
         myrecyclerview.setLayoutManager(new LinearLayoutManager(getActivity()));
