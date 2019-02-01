@@ -23,6 +23,12 @@
             android:text="Plant name"
             android:textStyle="bold" />
 
+        <TextView
+            android:id="@+id/species_plant"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Plant species"
+            android:textStyle="bold" />
     </LinearLayout>
 
 

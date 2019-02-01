@@ -39,14 +39,12 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         return vHolder;
     }
 
-    
-    
-
 
     @Override
     public void onBindViewHolder(@NonNull MyViewHolder myViewHolder, int position) {
-        //display image and text
+        //display image and species and text
         myViewHolder.tv_name.setText(mData.get(position).getName());
+        myViewHolder.tv_species.setText(mData.get(position).getSpecies());
         myViewHolder.img.setImageResource(mData.get(position).getPhoto());
 
     }
@@ -59,15 +57,15 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
     public static class MyViewHolder extends RecyclerView.ViewHolder{
 
         private TextView tv_name;
+        private TextView tv_species;
         private ImageView img;
 
         public MyViewHolder(View v) {
             super(v);
 
-            tv_name =  (TextView)  v.findViewById(R.id.name_plant);
+            tv_name = (TextView) v.findViewById(R.id.name_plant);
+            tv_species = (TextView) v.findViewById(R.id.species_plant);
             img = (ImageView) v.findViewById(R.id.img_plant);
         }
     }
-    
-    
 }
