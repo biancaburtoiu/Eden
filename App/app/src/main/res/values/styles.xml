@@ -6,6 +6,14 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:statusBarColor">#45B649</item>
+        <item name="android:fontFamily">@font/opensanzlight</item>
+        <item name="android:windowBackground">@drawable/gradient</item>
+    </style>
+
+    <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@drawable/splashscreen_layout</item>
+        <item name="android:statusBarColor">#45B649</item>
     </style>
 
 </resources>

@@ -1,8 +1,10 @@
 package com.sdp.eden;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Patterns;
@@ -35,6 +37,13 @@ public class Signin extends AppCompatActivity {
                 signIn(mEmailField.getText().toString(), mPasswordField.getText().toString());
             }
         });
+
+        findViewById(R.id.register).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                register(v);
+            }
+        });
     }
        //On button register clicked, start Create_account
     public void register(View view){
@@ -49,7 +58,6 @@ public class Signin extends AppCompatActivity {
         if(!validateForm()){
             return;
         }
-
         mAuth.signInWithEmailAndPassword(email,password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -58,8 +66,12 @@ public class Signin extends AppCompatActivity {
                             FirebaseUser user = mAuth.getCurrentUser();
                             updateUI(user);
                         } else{
-                            Toast.makeText(Signin.this , "Authentication failed.",
-                                    Toast.LENGTH_SHORT).show();
+                            Snackbar.make(findViewById(R.id.viewSnack), "Incorrect login, try again or register.", Snackbar.LENGTH_LONG).setAction("Register", new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    startActivity(new Intent(Signin.this, Create_account.class));
+                                }
+                            }).setActionTextColor(Color.parseColor("#BB4444")).show(); // Kieran - changed toast to snackbar, displays error message and a button to take the user to register.
                             updateUI(null);
                         }
 
@@ -74,10 +86,10 @@ public class Signin extends AppCompatActivity {
         //give error notice when format is incorrect
         String email = mEmailField.getText().toString();
         if (TextUtils.isEmpty(email)) {
-            mEmailField.setError("Required.");
+            mEmailField.setError("Please enter your email!"); // Kieran - changing error messages to be more helpful
             valid = false;
         } else if(!Patterns.EMAIL_ADDRESS.matcher(email).matches()){
-            mEmailField.setError("Email form is required");
+            mEmailField.setError("Try again");
         }
         else {
             mEmailField.setError(null);
