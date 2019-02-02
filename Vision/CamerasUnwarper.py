@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 import glob
 import math
+import time
 
 
 # Assume that camera 1 is labelled camera_no=1
@@ -18,7 +19,9 @@ def getImgRegionByCameraNo(img, camera_no):
 # All in one signifies to calibrate the cameras using the different angles of chessboards from all of them to produce
 # the transformation matrix
 
-def calibrateCamera(all_in_one=False):
+def calibrateCamera(all_in_one=False, objpoints=None, imgpoints=None, visualize=True, photo_path="Vision/Calibration Pictures/*.jpg"):
+    start_time = time.time()
+
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
@@ -26,15 +29,17 @@ def calibrateCamera(all_in_one=False):
     grid_range.sort(key=sum, reverse=True)
 
     # Arrays to store object points and image points from all the images.
-    if all_in_one:
-        objpoints = []
-        imgpoints = []
-    else:
-        objpoints = [[], [], [], []]  # 3d point in real world space
-        imgpoints = [[], [], [], []]  # 2d points in image plane.
+    if objpoints is None and imgpoints is None:
+        if all_in_one:
+            objpoints = []
+            imgpoints = []
+        else:
+            objpoints = [[], [], [], []]  # 3d point in real world space
+            imgpoints = [[], [], [], []]  # 2d points in image plane.
 
-    images = glob.glob("Vision/Calibration Pictures/*.jpg")
+    images = glob.glob(photo_path)
 
+    i = 1
     for fname in images:
         original_img = cv2.imread(fname)
         for camera_no in range(0, 4):
@@ -65,46 +70,52 @@ def calibrateCamera(all_in_one=False):
                     # Draw and display the corners
                     focused_img = cv2.drawChessboardCorners(focused_img, grid_val, corners2, ret)
                     break
-        cv2.imshow('img', original_img)
-        cv2.waitKey(10)
+        if visualize:
+            cv2.imshow('img', original_img)
+            cv2.waitKey(10)
+        print("%.2f mins: Found chessboards on image %s of %s" % ((time.time() - start_time) / 60, i, len(images)))
+        i += 1
 
     if all_in_one:
         _, mtxs, dists, _, _ = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1],
-                                                 None, None)
+                                                   None, None)
     else:
         mtxs = []
         dists = []
         for camera_no in range(0, 4):
-            _, mtxs, dists, _, _ = cv2.calibrateCamera(objpoints[camera_no], imgpoints[camera_no], gray.shape[::-1],
+            _, mtx, dist, _, _ = cv2.calibrateCamera(objpoints[camera_no], imgpoints[camera_no], gray.shape[::-1],
                                                      None, None)
-            mtxs.append(mtxs)
-            dists.append(dists)
+            print("%.2f mins: Determined mtx and dst for camera %s" % ((time.time() - start_time) / 60, camera_no))
+            mtxs.append(mtx)
+            dists.append(dist)
 
-    for fname in images:
-        original_img = cv2.imread(fname)
-        dsts = []
-        dsts2 = []
-        for camera_no in range(0, 4):
-            img = getImgRegionByCameraNo(original_img, camera_no + 1)
-            h, w = img.shape[:2]
-            if all_in_one:
-                newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtxs, dists, (w, h), 1, (w, h))
-                dst = cv2.undistort(img, mtxs, dists, None, newcameramtx)
-            else:
-                newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtxs[camera_no], dists[camera_no], (w, h), 1, (w, h))
-                dst = cv2.undistort(img, mtxs[camera_no], dists[camera_no], None, newcameramtx)
-            if camera_no == 0:
-                dsts = dst
-            elif camera_no == 1:
-                dsts = np.concatenate((dsts, dst), axis=1)
-            elif camera_no == 2:
-                dsts2 = dst
-            elif camera_no == 3:
-                dsts2 = np.concatenate((dsts2, dst), axis=1)
-                dsts = np.concatenate((dsts, dsts2), axis=0)
-        cv2.imshow("Undistorted image", dsts)
-        cv2.waitKey()
+    if visualize:
+        for fname in images:
+            original_img = cv2.imread(fname)
+            dsts = []
+            dsts2 = []
+            for camera_no in range(0, 4):
+                img = getImgRegionByCameraNo(original_img, camera_no + 1)
+                h, w = img.shape[:2]
+                if all_in_one:
+                    newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtxs, dists, (w, h), 1, (w, h))
+                    dst = cv2.undistort(img, mtxs, dists, None, newcameramtx)
+                else:
+                    newcameramtx, _ = cv2.getOptimalNewCameraMatrix(mtxs[camera_no], dists[camera_no], (w, h), 1,
+                                                                    (w, h))
+                    dst = cv2.undistort(img, mtxs[camera_no], dists[camera_no], None, newcameramtx)
+                if camera_no == 0:
+                    dsts = dst
+                elif camera_no == 1:
+                    dsts = np.concatenate((dsts, dst), axis=1)
+                elif camera_no == 2:
+                    dsts2 = dst
+                elif camera_no == 3:
+                    dsts2 = np.concatenate((dsts2, dst), axis=1)
+                    dsts = np.concatenate((dsts, dsts2), axis=0)
+            cv2.imshow("Undistorted image", dsts)
+            cv2.waitKey()
 
-    cv2.destroyAllWindows()
+        cv2.destroyAllWindows()
 
     return mtxs, dists, objpoints, imgpoints

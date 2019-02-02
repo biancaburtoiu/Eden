@@ -52,8 +52,8 @@ class Unwarper:
         while True:
             _, img = cam.read()
             if i > 20:
-                # new_img, h = self.stich_three_and_four(img)
-                new_img = self.camera_three_segment(img)
+                new_img, h = self.stich_three_and_four(img)
+                # new_img = self.camera_three_segment(img)
                 if new_img is not None:
                     cv2.imshow('my webcam', new_img)
                     k = cv2.waitKey()
@@ -88,27 +88,31 @@ class Unwarper:
 
     def camera_three_segment(self, original_img):
         unwarped_camera = self.unwarp_image(original_img, 3)
-        x_lower_bound = 340
-        x_upper_bound = 470 + 100
-        y_lower_bound = 80 - 40
-        y_upper_bound = 240
+        x_lower_bound = 377
+        x_upper_bound = 558 - 38
+        y_lower_bound = 72
+        y_upper_bound = 248
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
     def camera_four_segment(self, original_img):
         unwarped_camera = self.unwarp_image(original_img, 4)
-        x_lower_bound = 160
-        x_upper_bound = 490
-        y_lower_bound = 60
-        y_upper_bound = 240
+        x_lower_bound = 144
+        x_upper_bound = 440
+        y_lower_bound = 30
+        y_upper_bound = 234
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
-        segment = np.concatenate((np.zeros((20, x_upper_bound - x_lower_bound, 3),dtype=np.uint8), segment), axis = 0)
         return segment
 
     def stich_three_and_four(self, img):
         img_1 = self.camera_three_segment(img)
+        img_1 = cv2.resize(img_1, (0, 0), fx=0.9315, fy=0.9315)
         img_2 = self.camera_four_segment(img)
-        new_img, h = self.sticher.find_h((img_1, img_2))
+        img_1 = np.concatenate(
+            (np.zeros((img_2.shape[0] - img_1.shape[0] - 1, img_1.shape[1], 3), dtype=np.uint8), img_1), axis=0)
+        img_1 = np.concatenate((img_1, np.zeros((1, img_1.shape[1], 3), dtype=np.uint8)), axis=0)
+        new_img = np.concatenate((img_1, img_2), axis=1)
+        h = 0
         return (new_img, h)
 
 
