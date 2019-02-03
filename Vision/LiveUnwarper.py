@@ -16,7 +16,7 @@ class Unwarper:
         self.mtxs = np.load("Vision/mtxs.npy")
         self.dists = np.load("Vision/dists.npy")
         self.H_c1_and_c2 = np.load("Vision/H_c1_and_c2.npy")
-        self.sticher = Stitcher()
+        self.stitcher = Stitcher()
 
     def unwarp_image(self, original_img, only_camera=None):
         if only_camera is not None:
@@ -52,13 +52,12 @@ class Unwarper:
         while True:
             _, img = cam.read()
             if i > 20:
-                new_img, h = self.stich_three_and_four(img)
-                # new_img = self.camera_three_segment(img)
+                new_img = self.stitch_one_two_three_and_four(img)
                 if new_img is not None:
                     cv2.imshow('my webcam', new_img)
-                    k = cv2.waitKey()
+                    k = cv2.waitKey(1)
                     if k == 48:
-                        np.save("H_c3_and_c4.npy", h)
+                        np.save("H_c1_c2_c3_and_c4.npy", h)
                         break
             i += 1
 
@@ -83,7 +82,7 @@ class Unwarper:
     def stitch_one_and_two(self, img):
         img_1 = self.camera_one_segment(img)
         img_2 = self.camera_two_segment(img)
-        new_img = self.sticher.stitch((img_1, img_2), self.H_c1_and_c2)
+        new_img = self.stitcher.stitch((img_1, img_2), self.H_c1_and_c2)
         return new_img
 
     def camera_three_segment(self, original_img):
@@ -112,8 +111,24 @@ class Unwarper:
             (np.zeros((img_2.shape[0] - img_1.shape[0] - 1, img_1.shape[1], 3), dtype=np.uint8), img_1), axis=0)
         img_1 = np.concatenate((img_1, np.zeros((1, img_1.shape[1], 3), dtype=np.uint8)), axis=0)
         new_img = np.concatenate((img_1, img_2), axis=1)
-        h = 0
-        return (new_img, h)
+        return new_img
+
+    def stitch_one_two_three_and_four(self, img):
+        img_1 = self.stitch_one_and_two(img)
+        img_1 = img_1[:133, 12:337, :]
+        img_2 = self.stich_three_and_four(img)
+        img_2 = cv2.resize(img_2, (0, 0), fx=0.854591546, fy=0.854591546)
+        img_1 = np.concatenate(
+            (img_1, np.zeros((img_1.shape[0], img_2.shape[1] - img_1.shape[1], 3), dtype=np.uint8)), axis=1)
+        amount_to_move_bottom_img_up = 56
+        img_2_merge_canvas = np.zeros((img_1.shape[0] + img_2.shape[0], img_2.shape[1], 3), dtype=np.uint8)
+        img_2_merge_canvas[img_1.shape[0] - amount_to_move_bottom_img_up:
+                           img_1.shape[0] + img_2.shape[0] - amount_to_move_bottom_img_up, :, :] = img_2
+        img_1 = np.concatenate((img_1, np.zeros((img_2.shape[0], img_1.shape[1], 3), dtype=np.uint8)), axis=0)
+        mask = np.where(img_2_merge_canvas != [0, 0, 0])
+        img_1[mask] = np.zeros(img_1.shape, dtype=np.uint8)[mask]
+        img_1 += img_2_merge_canvas
+        return img_1
 
 
 # The stitcher class is a varitation of the one found in the tutorial here https://www.pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
@@ -137,10 +152,13 @@ class Stitcher:
         # if the match is None, then there aren't enough matched
         # keypoints to create a panorama
         if M is None:
-            return None
+            return None, None
         # otherwise, apply a perspective warp to stitch the images
         # together
         (matches, H, status) = M
+
+        if H is None:
+            return None, None
 
         return (self.stitch(images, H), H)
 
