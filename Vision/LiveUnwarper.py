@@ -13,11 +13,19 @@ def set_res(cap, x, y):
 class Unwarper:
 
     def __init__(self):
+        # Note for cameras 3 and 4 we use the calibration matrices of camera 1, this is because the calibration matrix
+        # produced for it actually performed better than those trained for cameras 3 and 4
         self.mtxs = np.load("Vision/mtxs.npy")
+        self.mtxs[2] = self.mtxs[0]
+        self.mtxs[3] = self.mtxs[0]
         self.dists = np.load("Vision/dists.npy")
+        self.dists[2] = self.dists[0]
+        self.dists[3] = self.dists[0]
         self.H_c1_and_c2 = np.load("Vision/H_c1_and_c2.npy")
         self.stitcher = Stitcher()
 
+    # Take CCTV view and unwarp each camera, returning result, if only_camera is set to 0,1,2, or 3, it will unwarp only
+    # the respective camera
     def unwarp_image(self, original_img, only_camera=None):
         if only_camera is not None:
             img = Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, only_camera)
@@ -45,6 +53,7 @@ class Unwarper:
                     dsts = np.concatenate((dsts, dsts2), axis=0)
             return dsts
 
+    # Unwarp all 4 cameras and merge them into a single image in real time
     def live_unwarp(self):
         cam = cv2.VideoCapture(0)
         set_res(cam, 1920, 1080)
@@ -56,26 +65,23 @@ class Unwarper:
                 if new_img is not None:
                     cv2.imshow('my webcam', new_img)
                     k = cv2.waitKey(1)
-                    if k == 48:
-                        np.save("H_c1_c2_c3_and_c4.npy", h)
-                        break
             i += 1
 
     def camera_one_segment(self, original_img):
         unwarped_camera = self.unwarp_image(original_img, 1)
         x_lower_bound = 360
-        x_upper_bound = 490 + 50
+        x_upper_bound = 540
         y_lower_bound = 120
-        y_upper_bound = 250 + 5
+        y_upper_bound = 255
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
     def camera_two_segment(self, original_img):
         unwarped_camera = self.unwarp_image(original_img, 2)
-        x_lower_bound = 125 - 100
+        x_lower_bound = 25
         x_upper_bound = 400
         y_lower_bound = 200
-        y_upper_bound = 360 + 30
+        y_upper_bound = 390
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
@@ -87,46 +93,54 @@ class Unwarper:
 
     def camera_three_segment(self, original_img):
         unwarped_camera = self.unwarp_image(original_img, 3)
-        x_lower_bound = 377
-        x_upper_bound = 558 - 38
-        y_lower_bound = 72
-        y_upper_bound = 248
+        x_lower_bound = 379
+        x_upper_bound = 492
+        y_lower_bound = 90
+        y_upper_bound = 210
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
     def camera_four_segment(self, original_img):
         unwarped_camera = self.unwarp_image(original_img, 4)
-        x_lower_bound = 144
-        x_upper_bound = 440
-        y_lower_bound = 30
-        y_upper_bound = 234
+        x_lower_bound = 275
+        x_upper_bound = 505
+        y_lower_bound = 78
+        y_upper_bound = 211
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
     def stich_three_and_four(self, img):
         img_1 = self.camera_three_segment(img)
-        img_1 = cv2.resize(img_1, (0, 0), fx=0.9315, fy=0.9315)
         img_2 = self.camera_four_segment(img)
+        img_2 = cv2.resize(img_2, (0, 0), fx=0.903846154, fy=0.903846154)
         img_1 = np.concatenate(
-            (np.zeros((img_2.shape[0] - img_1.shape[0] - 1, img_1.shape[1], 3), dtype=np.uint8), img_1), axis=0)
-        img_1 = np.concatenate((img_1, np.zeros((1, img_1.shape[1], 3), dtype=np.uint8)), axis=0)
+            (np.zeros((img_2.shape[0] - img_1.shape[0], img_1.shape[1], 3), dtype=np.uint8), img_1), axis=0)
         new_img = np.concatenate((img_1, img_2), axis=1)
         return new_img
 
     def stitch_one_two_three_and_four(self, img):
+        # Get the top of the image
         img_1 = self.stitch_one_and_two(img)
-        img_1 = img_1[:133, 12:337, :]
+        # Take a portion of top image to line walls up with bottom one
+        img_1 = img_1[:, 13:326, :]
+        # Get the bottom of the image
         img_2 = self.stich_three_and_four(img)
-        img_2 = cv2.resize(img_2, (0, 0), fx=0.854591546, fy=0.854591546)
+        # Add to the width of top image to make it the same width as the bottom one
         img_1 = np.concatenate(
             (img_1, np.zeros((img_1.shape[0], img_2.shape[1] - img_1.shape[1], 3), dtype=np.uint8)), axis=1)
-        amount_to_move_bottom_img_up = 56
-        img_2_merge_canvas = np.zeros((img_1.shape[0] + img_2.shape[0], img_2.shape[1], 3), dtype=np.uint8)
+        # Overlap between top and bottom image, so we say we want the bottom one to overlap the top one by 45 pixels
+        amount_to_move_bottom_img_up = 45
+        # Create a copy of the bottom image with it aligned to its desired new position, set space which top image will take up as black
+        img_2_merge_canvas = np.zeros((img_1.shape[0] + img_2.shape[0] - amount_to_move_bottom_img_up, img_2.shape[1], 3), dtype=np.uint8)
         img_2_merge_canvas[img_1.shape[0] - amount_to_move_bottom_img_up:
                            img_1.shape[0] + img_2.shape[0] - amount_to_move_bottom_img_up, :, :] = img_2
-        img_1 = np.concatenate((img_1, np.zeros((img_2.shape[0], img_1.shape[1], 3), dtype=np.uint8)), axis=0)
+        # Add to the top image space for the non-overlapping part of the bottom image
+        img_1 = np.concatenate((img_1, np.zeros((img_2.shape[0] - amount_to_move_bottom_img_up, img_1.shape[1], 3), dtype=np.uint8)), axis=0)
+        # For all pixels in the top image that will be overlapped by the bottom image, we set their value to 0
         mask = np.where(img_2_merge_canvas != [0, 0, 0])
         img_1[mask] = np.zeros(img_1.shape, dtype=np.uint8)[mask]
+        # New top and bottom image are then the same size, and each respective pixel is black in one image, and the desired colour
+        # in the other, meaning we can just add the matrices values and return the result for our merged image
         img_1 += img_2_merge_canvas
         return img_1
 
