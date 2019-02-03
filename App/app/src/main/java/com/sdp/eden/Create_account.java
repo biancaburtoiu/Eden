@@ -3,14 +3,13 @@ package com.sdp.eden;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
-
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
@@ -48,8 +47,7 @@ public class Create_account extends AppCompatActivity {
                 if(mPasswordField.getText().toString().equals(mPasswordConfirmField.getText().toString())){
                     createAccount(mEmailField.getText().toString(), mPasswordField.getText().toString());
                 }else{
-                    Toast.makeText(Create_account.this, "Passwords are different.",
-                            Toast.LENGTH_SHORT).show();
+                    Snackbar.make(findViewById(R.id.viewSnack), "Passwords do not match! try again.", Snackbar.LENGTH_LONG).show(); // Kieran - changed toast to snackbar
                 }
             }
         });
@@ -117,15 +115,11 @@ public class Create_account extends AppCompatActivity {
     //Update the UI, if with valid user, then enter the gameMainActivity.
     private void updateUI(FirebaseUser user) {
         if (user != null) {
-            Toast.makeText(Create_account.this, "Account created.",
-                    Toast.LENGTH_SHORT).show();
-
             Intent intent = new Intent(this, Eden_main.class);
             startActivity(intent);
 
         } else {
-            Toast.makeText(Create_account.this, "Registration failed.",
-                    Toast.LENGTH_SHORT).show();
+            Snackbar.make(findViewById(R.id.viewSnack), "Problem creating user, please try again.", Snackbar.LENGTH_LONG).show();
 
         }
     }

@@ -10,7 +10,6 @@ import android.text.TextUtils;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -112,8 +111,6 @@ public class Signin extends AppCompatActivity {
     private void updateUI(FirebaseUser user) {
         //When user is not null proceed to main activity
         if (user != null) {
-            Toast.makeText(Signin.this, "Login succeeded.",
-                    Toast.LENGTH_SHORT).show();
 
             Intent intent = new Intent(this, Eden_main.class);
             startActivity(intent);

@@ -25,7 +25,8 @@
             android:label="Eden">
         </activity>
         <activity android:name=".Create_account" />
-        <activity android:name=".Eden_main" />
+        <activity android:name=".Eden_main"
+            android:label=""/>
     </application>
 
 </manifest>
