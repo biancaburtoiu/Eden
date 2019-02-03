@@ -31,6 +31,7 @@ public class Eden_main extends AppCompatActivity {
         //the frame layout in eden_main will show the MainFragment layout inside it
         getSupportFragmentManager().beginTransaction().replace(R.id.MainFrameLayout,
                 new MainFragment()).commit();
+        
 
 
     }
