@@ -2,6 +2,7 @@ package com.sdp.eden;
 
 import android.os.Bundle;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
@@ -15,6 +16,7 @@ import android.widget.Toolbar;
 
 public class Eden_main extends AppCompatActivity {
     private android.support.v7.widget.Toolbar toolbar;
+    public Fragment fr;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -30,12 +32,14 @@ public class Eden_main extends AppCompatActivity {
         getSupportFragmentManager().beginTransaction().replace(R.id.MainFrameLayout,
                 new MainFragment()).commit();
 
+
     }
 
     @Override
     public void onBackPressed() {
         if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
             getSupportFragmentManager().popBackStack();
+
         }
     }
 
