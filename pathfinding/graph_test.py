@@ -95,5 +95,12 @@ class GraphTestingMethods(unittest.TestCase):
         result, path, _ = getPathLengthFromGrid(grid, target,(2,2))
         self.assertEqual(result, 10)
 
+    def test_bigGrid(self):
+        grid = [[0]*200 for i in range(0,200)]
+        target = (180,180)
+        result, path, _ = getPathLengthFromGrid(grid, target)
+        self.assertEqual(result, 361)
+
+
 if __name__ == '__main__':
     unittest.main()
