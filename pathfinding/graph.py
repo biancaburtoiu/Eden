@@ -48,8 +48,9 @@ class Graph:
                         open_set.put((cost_for_node, neighbour))
                         parent[neighbour] = current
 
-        # we didn't find the goal!
-        return None
+        # we didn't find the goal! return None twice because the other return branch will also return two items.
+        # avoids NoneType not iterable error
+        return None, None
 
     def constructPath(self, parent_dict, goal, start):
         # start at the goal
@@ -194,7 +195,7 @@ class Node:
     def getNeighbours(self):
         return self.neighbours.items()
 
-    # neighbour argument should be a pair: (Node obj, direction)
+    # neighbour argument should be a pair: (directiom, Node Obj)
     def addNeighbour(self, n):
         self.neighbours[n[1]] = n[0]
 
@@ -241,11 +242,25 @@ def gridprint(grid):
     for row in grid:
         print(row)
 
+# plots path on a grid
 def plotPath(grid,path):
     for node in path:
         (x,y) = node.getPos()
         grid[y][x] = 5
     return grid
+
+
+# given a grid, calculates shortest path and returns it's length
+def getPathLengthFromGrid(grid,target,start=(0,0)):
+    graph = Graph()
+    graph.graphFromGrid(start,grid)
+    path, dirs = graph.searchGraph(target)
+    length = 0
+    if path is not None:
+        length = len(path)
+
+    return length,path, dirs
+
 # =====main=======
 
 def main():
