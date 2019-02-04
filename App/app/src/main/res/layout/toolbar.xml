@@ -4,5 +4,13 @@
     android:layout_height="wrap_content"
     android:background="@color/colorPrimary">
 
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center"
+        android:src="@drawable/eden"/>
+
+
+
 
 </android.support.v7.widget.Toolbar>
