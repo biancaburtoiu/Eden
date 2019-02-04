@@ -2,31 +2,32 @@ package com.sdp.eden;
 
 
 import android.content.Context;
-import android.media.Image;
-import android.provider.ContactsContract;
+import android.graphics.Color;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
+import java.util.ArrayList;
 import java.util.List;
 
 //Generic RecyclerView adapter format
 
-public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.MyViewHolder> {
+public class RecyclerView_Adapter extends RecyclerView.Adapter<RecyclerView_Adapter.MyViewHolder> {
 
     Context mContext;
-    List<Plant> mData;
+    ArrayList<Plant> mData;
+    private SparseBooleanArray mSelectedItemsIds;
 
 
-    public RecyclerViewAdapter(Context mContext, List<Plant> mData){
+    public RecyclerView_Adapter(Context mContext, ArrayList<Plant> mData){
         this.mContext=mContext;
         this.mData=mData;
+        mSelectedItemsIds = new SparseBooleanArray();
     }
 
     @NonNull
@@ -47,6 +48,40 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
         myViewHolder.tv_species.setText(mData.get(position).getSpecies());
         myViewHolder.img.setImageResource(mData.get(position).getPhoto());
 
+        myViewHolder.itemView
+                .setBackgroundColor(mSelectedItemsIds.get(position) ? 0x9934B5E4
+                        : Color.TRANSPARENT);
+
+    }
+
+    public void toggleSelection(int position){
+        selectView(position, !mSelectedItemsIds.get(position));
+    }
+
+    //Remove selected selections
+    public void removeSelection() {
+        mSelectedItemsIds = new SparseBooleanArray();
+        notifyDataSetChanged();
+    }
+
+    //Put or delete selected position into SparseBooleanArray
+    public void selectView(int position, boolean value) {
+        if (value)
+            mSelectedItemsIds.put(position, value);
+        else
+            mSelectedItemsIds.delete(position);
+
+        notifyDataSetChanged();
+    }
+
+    //Get total selected count
+    public int getSelectedCount() {
+        return mSelectedItemsIds.size();
+    }
+
+    //Return all selected ids
+    public SparseBooleanArray getSelectedIds() {
+        return mSelectedItemsIds;
     }
 
     @Override
