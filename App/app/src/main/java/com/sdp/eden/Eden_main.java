@@ -7,6 +7,7 @@ import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
@@ -25,23 +26,32 @@ public class Eden_main extends AppCompatActivity {
         //set up toolbar at top, and setting listener for home button (back arrow)
         toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setHomeButtonEnabled(false);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        getSupportActionBar().setDisplayShowHomeEnabled(false);
         toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
         //the frame layout in eden_main will show the MainFragment layout inside it
         getSupportFragmentManager().beginTransaction().replace(R.id.MainFrameLayout,
                 new MainFragment()).commit();
-        
 
+
+    }
+
+    public void changeFrag(Fragment newFrag) {
+        getSupportFragmentManager().beginTransaction().replace(R.id.MainFrameLayout,
+                newFrag).addToBackStack(null).commit();
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
     }
 
     @Override
     public void onBackPressed() {
-        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+        if (getSupportFragmentManager().getBackStackEntryCount()>0) {
+            getSupportActionBar().setDisplayShowHomeEnabled(false);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false);
             getSupportFragmentManager().popBackStack();
-
+            }
         }
-    }
 
 }

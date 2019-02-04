@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -104,7 +105,7 @@ public class PlantListFragment extends Fragment {
 
         if (hasCheckedItems && mActionMode == null)
             // there are some selected items, start the actionMode
-                mActionMode = ((AppCompatActivity) getActivity()).startSupportActionMode(new Toolbar_ActionMode_Callback(getActivity(),adapter,plants,mainAct.getSupportFragmentManager().findFragmentById(this.getId())));
+                mActionMode = ((AppCompatActivity) getActivity()).startSupportActionMode(new Toolbar_ActionMode_Callback(getActivity(),adapter,plants,this));
         else if (!hasCheckedItems && mActionMode != null)
             // there no selected items, finish the actionMode
             mActionMode.finish();
@@ -156,7 +157,7 @@ public class PlantListFragment extends Fragment {
 
 
 
-        Button addPlantButton = v.findViewById(R.id.addPlantButton);
+        FloatingActionButton addPlantButton = v.findViewById(R.id.addPlantButton);
         addPlantButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -198,5 +199,11 @@ public class PlantListFragment extends Fragment {
                 dialog.show();
             }
         });
+/*       addPlantButton.setOnClickListener(p->{
+
+
+          ((Eden_main) getActivity()).changeFrag(new RobotFragment());
+
+       });*/
     }
 }

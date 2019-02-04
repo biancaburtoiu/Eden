@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,41 +11,30 @@
     <android.support.v7.widget.RecyclerView
         android:id="@+id/plant_recyclerview"
         android:layout_width="match_parent"
-        android:layout_height="500dp"
+        android:layout_height="match_parent"
         tools:layout_editor_absoluteX="8dp"
         tools:layout_editor_absoluteY="8dp" />
 
-    <LinearLayout
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/linearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom">
 
-        <Button
-            android:id="@+id/viewPlantScheduleButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="View Schedule" />
-
-        <Button
-            android:id="@+id/editPlantButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Edit" />
-
-        <Button
-            android:id="@+id/deletePlantButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Delete" />
-
-        <Button
+        <android.support.design.widget.FloatingActionButton
             android:id="@+id/addPlantButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Add"
-            android:layout_gravity="center"/>
+            android:layout_marginStart="327dp"
+            android:layout_marginEnd="17dp"
+            android:clickable="true"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@android:drawable/ic_input_add" />
 
-    </LinearLayout>
+    </android.support.constraint.ConstraintLayout>
 
 
 </FrameLayout>

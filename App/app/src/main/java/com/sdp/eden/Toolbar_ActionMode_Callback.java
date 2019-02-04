@@ -17,11 +17,11 @@ public class Toolbar_ActionMode_Callback implements ActionMode.Callback {
     private RecyclerView_Adapter recyclerView_adapter;
     private ArrayList<Plant> plants;
     private boolean isOtherViewFragment;
-    private Fragment frag;
+    private PlantListFragment frag;
     private int fragid;
 
 
-    public Toolbar_ActionMode_Callback(Context context, RecyclerView_Adapter recyclerView_adapter,ArrayList<Plant> plants, Fragment frag) {
+    public Toolbar_ActionMode_Callback(Context context, RecyclerView_Adapter recyclerView_adapter,ArrayList<Plant> plants, PlantListFragment frag) {
         this.context = context;
         this.recyclerView_adapter = recyclerView_adapter;
         this.plants = plants;
@@ -55,7 +55,7 @@ public class Toolbar_ActionMode_Callback implements ActionMode.Callback {
                 if (frag != null) {
                     //If recycler fragment not null
 
-                    ((PlantListFragment) frag).deleteRows();//delete selected rows
+                    frag.deleteRows();//delete selected rows
                     Log.d("testing", "value");
 
 
@@ -79,7 +79,7 @@ public class Toolbar_ActionMode_Callback implements ActionMode.Callback {
         recyclerView_adapter.removeSelection();  // remove selection
 
         if (frag != null) {
-            ((PlantListFragment) frag).setNullToActionMode();//Set action mode null
+            frag.setNullToActionMode();//Set action mode null
         }
     }
 }
