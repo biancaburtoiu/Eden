@@ -8,50 +8,6 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:482729585230:android:0a54345195103153",
-        "android_client_info": {
-          "package_name": "com.example.s1604556.eden"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "482729585230-c2posc7anhun6vvc3j8h3u6osqkcn69n.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.s1604556.eden",
-            "certificate_hash": "029ad9dae59d31a8590384fee85b539248702f3d"
-          }
-        },
-        {
-          "client_id": "482729585230-75dvnlngc2nihu5mlfisaqg5f58d8bir.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAuL6yW-c1rNJ0wyJV0V9tJcDgDF4x8tno"
-        }
-      ],
-      "services": {
-        "analytics_service": {
-          "status": 1
-        },
-        "appinvite_service": {
-          "status": 2,
-          "other_platform_oauth_client": [
-            {
-              "client_id": "482729585230-75dvnlngc2nihu5mlfisaqg5f58d8bir.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        },
-        "ads_service": {
-          "status": 2
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:482729585230:android:3076fc46656ac77b",
         "android_client_info": {
           "package_name": "com.sdp.eden"
@@ -64,6 +20,14 @@
           "android_info": {
             "package_name": "com.sdp.eden",
             "certificate_hash": "5f5f586c602a3814b46105d221c774c6288dd174"
+          }
+        },
+        {
+          "client_id": "482729585230-rjgr2aeivgevihu3ef4ls1effnp05627.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sdp.eden",
+            "certificate_hash": "d231fcfffc58f95f06762f6e44a4ca2b6e5886fd"
           }
         },
         {

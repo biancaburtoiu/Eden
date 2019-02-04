@@ -98,6 +98,9 @@ public class Create_account extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             // Sign up success, update UI with the signed-in user's information
                             FirebaseUser currentUser = mAuth.getCurrentUser();
+
+                            Log.d(TAG, "Created account.");
+                            Log.d(TAG, "User email is: "+currentUser.getEmail());  // Bianca - added some logs.
                             updateUI(currentUser);
 
                         } else {
