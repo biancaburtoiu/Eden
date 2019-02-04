@@ -12,15 +12,15 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseBooleanArray;
-import android.view.ActionMode;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
+
+import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,24 +35,28 @@ public class PlantListFragment extends Fragment {
     private android.support.v7.view.ActionMode mActionMode;
     private Eden_main mainAct;
 
-    // To keep track of the items checked (selected) in the RecyclerView
-    private List<Integer> checkedItems;
 
     @Override
     public void onResume() {
         super.onResume();
-        checkedItems = new ArrayList<>();
+        getLatestPlantList();    // Query the database to get latest list
     }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.fragment_plants,container,false);
-        populateRecyclerView();
+
+        // Moved the recyclerview initialization bit here
+        recyclerView = v.findViewById(R.id.plant_recyclerview);
+        recyclerView.setHasFixedSize(true);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+
+        getLatestPlantList();    // Query the database to get latest list
+
         implementRecyclerViewClickListeners();
         mainAct = (Eden_main) getActivity();
 
-        // TODO: Set recyclerview to grab plants list by querying the database
         return v;
     }
 
@@ -62,18 +66,17 @@ public class PlantListFragment extends Fragment {
         Log.d("realID", "value" + getId());
         ((Eden_main) getActivity()).fr= this;
 
-        plants = new ArrayList<>();
-        plants.add(new Plant("plant1","species1", R.drawable.plant1));
-        plants.add(new Plant("plant2","species2", R.drawable.plant2));
-        plants.add(new Plant("plant3","species3", R.drawable.plant3));
-
-
+        // Don't need these anymore:
+//        plants = new ArrayList<>();
+//        plants.add(new Plant("plant1","species1", R.drawable.plant1));
+//        plants.add(new Plant("plant2","species2", R.drawable.plant2));
+//        plants.add(new Plant("plant3","species3", R.drawable.plant3));
     }
 
-    private void populateRecyclerView(){
-        recyclerView = v.findViewById(R.id.plant_recyclerview);
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+    private void populateRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
+//        recyclerView = v.findViewById(R.id.plant_recyclerview);
+//        recyclerView.setHasFixedSize(true);
+//        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         adapter = new RecyclerView_Adapter(getActivity(),plants);
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
@@ -149,14 +152,6 @@ public class PlantListFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // TODO: Get number of selected items in RecyclerView
-        // If only ONE item selected, enable the Edit, Delete and View Schedule buttons. Disable Add
-        // If no item selected, disable the Edit, Delete and View Schedule buttons. Enable Add
-
-
-
-
-
         FloatingActionButton addPlantButton = v.findViewById(R.id.addPlantButton);
         addPlantButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -173,7 +168,8 @@ public class PlantListFragment extends Fragment {
                 final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
                 builder.setView(viewInflated);
 
-                String[] species = new String[]{"cacti","daisy","lily"};
+                // TODO: Kieran W - Maybe add more species here for the user interview?
+                String[] species = new String[]{"cacti","daisy","lily","orchid"};
                 ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(getContext(), R.layout.species_option, species);
                 plantSpecies.setAdapter(speciesAdapter);
 
@@ -181,8 +177,8 @@ public class PlantListFragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         Log.d(TAG, "New plant to add to database:");
-                        Log.d(TAG, "Plant name: " + plantName.getText());
-                        Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem());
+                        Log.d(TAG, "Plant name: " + plantName.getText().toString());
+                        Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString());
 
                         // Checks for empty plant name
                         if (plantName.getText().toString().trim().length() == 0) {
@@ -191,7 +187,19 @@ public class PlantListFragment extends Fragment {
                         }
                         else {
                             Log.d(TAG, "Plant name format correct.");
-                            // TODO: Add plant to database with info: name and species
+
+                            // For now any new plant would be added with this default drawable.
+                            // To implement actual photo functionality later.
+                            Plant plant = new Plant(plantName.getText().toString(),
+                                                    plantSpecies.getSelectedItem().toString(),
+                                                    R.drawable.plant1);
+                            DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
+                                @Override
+                                public void onUpdateFinished(boolean success) {
+                                    getLatestPlantList();
+                                    Toast.makeText(getContext(),"You just added a new plant!", Toast.LENGTH_LONG).show();
+                                }
+                            });
                         }
                     }
                 });
@@ -205,5 +213,21 @@ public class PlantListFragment extends Fragment {
           ((Eden_main) getActivity()).changeFrag(new RobotFragment());
 
        });*/
+    }
+
+    // Queries the database to get the most recent list of plants
+    public void getLatestPlantList() {
+        DbOps.instance.getPlantList(FirebaseAuth.getInstance().getCurrentUser().getEmail(),
+                new DbOps.OnGetPlantListFinishedListener() {
+                    @Override
+                    public void onGetPlantListFinished(List<Plant> plantsFromDB) {
+                        if (plantsFromDB==null) return;
+
+                        Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
+
+                        // Refreshes the recyclerview:
+                        populateRecyclerView(new ArrayList<Plant>(plantsFromDB));
+                    }
+                });
     }
 }

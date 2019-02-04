@@ -7,6 +7,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.EditText;
@@ -18,6 +19,8 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
 public class Signin extends AppCompatActivity {
+    private static final String TAG = "SignInActivity";
+
     private EditText mEmailField;
     private EditText mPasswordField;
     private FirebaseAuth mAuth;
@@ -63,6 +66,9 @@ public class Signin extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()){
                             FirebaseUser user = mAuth.getCurrentUser();
+
+                            Log.d(TAG, "Signed in.");
+                            Log.d(TAG, "User email is: "+user.getEmail());  // Bianca - added some logs.
                             updateUI(user);
                         } else{
                             Snackbar.make(findViewById(R.id.viewSnack), "Incorrect login, try again or register.", Snackbar.LENGTH_LONG).setAction("Register", new View.OnClickListener() {
