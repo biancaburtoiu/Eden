@@ -29,6 +29,7 @@ class Unwarper:
     def unwarp_image(self, original_img, only_camera=None):
         if only_camera is not None:
             img = Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, only_camera)
+
             h, w = img.shape[:2]
             newcameramtx, _ = cv2.getOptimalNewCameraMatrix(self.mtxs[only_camera - 1], self.dists[only_camera - 1],
                                                             (w, h), 1,
@@ -61,9 +62,12 @@ class Unwarper:
         while True:
             _, img = cam.read()
             if i > 20:
-                new_img = self.stitch_one_two_three_and_four(img)
-                if new_img is not None:
-                    cv2.imshow('my webcam', new_img)
+                unwarp_img = self.unwarp_image(img)
+                merged_img = self.stitch_one_two_three_and_four(img)
+                if merged_img is not None:
+                    cv2.imshow('1. raw', cv2.resize(img, (0,0), fx=0.33, fy=0.33))
+                    cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0,0), fx=0.5, fy=0.5))
+                    cv2.imshow('3. merged', merged_img)
                     k = cv2.waitKey(1)
             i += 1
 
