@@ -1,5 +1,6 @@
 import queue as Q
 from math import sqrt
+from sys import argv
 
 
 # ================= Graph class: references root node, and provides operations==
@@ -7,7 +8,6 @@ class Graph:
 
     def __init__(self, pos=(0, 0)):
         self.root = Node(pos)
-
 
     # perform A* on this graph, starting at the start Node, and finding a path to
     # the (x,y) pair given as goal_pos.
@@ -20,7 +20,7 @@ class Graph:
         # best route from the start to a specific node
 
         start = self.root  # start from root of graph
-        open_set = Q.PriorityQueue() # description of this structure near of Node class
+        open_set = Q.PriorityQueue()  # description of this structure near of Node class
         open_set.put((0, start))
         cost_so_far = {}
         parent = {}
@@ -86,9 +86,6 @@ class Graph:
         # ( (x-pos, y-pos) , direction) nested pairs
         COORD_DIFFS = [((0, 1), 'u'), ((-1, 0), 'l'), ((0, -1), 'd'), ((1, 0), 'r')]
 
-
-
-
         # continue until we've visited every node
         while len(node_stack):
             current = node_stack.pop()
@@ -139,9 +136,9 @@ class Graph:
 
         # the grid is now in graph form. This Graph object references the node for start_pos
 
-    #for debugging, turns our graph into a grid.
-    #pass in the size of the grid, if it's too small this will probably crash
-    def gridFromGraph(self,size):
+    # for debugging, turns our graph into a grid.
+    # pass in the size of the grid, if it's too small this will probably crash
+    def gridFromGraph(self, size):
         # create grid using list comprehension, assumes everything is obstacle initially
         grid = [[1] * size[0] for i in range(0, size[1])]
 
@@ -151,18 +148,17 @@ class Graph:
             current = node_stack.pop()
             visited.append(current)
 
-            (x,y) = current.getPos()
+            (x, y) = current.getPos()
             try:
                 grid[y][x] = 0
             except:
                 None
 
-            for (n,_) in current.getNeighbours():
+            for (n, _) in current.getNeighbours():
                 if n not in visited:
                     node_stack.append(n)
 
         return grid
-
 
 
 # ============== Node class: should not be instantiated individually, used by Graph to=
@@ -235,57 +231,93 @@ def invert(d):
     else:
         return 'l'
 
+
 # prints a grid
 def gridprint(grid):
     gridcopy = grid.copy()
     gridcopy.reverse()
-    for row in grid:
+    for row in gridcopy:
         print(row)
 
+
 # plots path on a grid
-def plotPath(grid,path):
-    for node in path:
-        (x,y) = node.getPos()
-        grid[y][x] = 5
+def plotPath(grid, path):
+    if path is not None:
+        for node in path:
+            (x, y) = node.getPos()
+            grid[y][x] = 5
     return grid
 
 
 # given a grid, calculates shortest path and returns it's length
-def getPathLengthFromGrid(grid,target,start=(0,0)):
+def getPathLengthFromGrid(grid, target, start=(0, 0)):
     graph = Graph()
-    graph.graphFromGrid(start,grid)
+    graph.graphFromGrid(start, grid)
     path, dirs = graph.searchGraph(target)
     length = 0
     if path is not None:
         length = len(path)
 
-    return length,path, dirs
+    return length, path, dirs
+
 
 # =====main=======
 
 def main():
-    # watch out because this grid is upside down ((0,0) top left
-    # but the co ordinate system works normally ((0,0) bottom left
-    # - the gridprint function will flip the grid for you
+    print(len(argv))
+    if len(argv) > 0 and argv[1] == 'f':
+        # read grid from grid.txt
 
-    grid = [
-        [0, 0, 0, 0, 1, 0, 0, 1],
-        [0, 1, 0, 0, 1, 1, 0, 0],
-        [0, 0, 1, 0, 0, 0, 1, 0],
-        [0, 0, 1, 0, 1, 0, 1, 0],
-        [0, 0, 1, 0, 1, 1, 0, 0],
-        [0, 1, 0, 0, 0, 0, 1, 0],
-        [0, 0, 0, 0, 1, 0, 0, 0],
+        '''
+        usage: call as 'python3 f [a,b] [x,y]'
+        f   - denotes read from file. The file 'grid.txt' will be read.
+            - put your grid in here, with  (0,0) at the bottom, taking a new line for each row,
+             and comma separating within a row  -- '0,0,1,0'
+        [a,b]   - the starting position (a,b)
+        [x,y]   - the target position (x,y)
+        '''
+
+        grid_file = open("grid.txt", "r")
+        start = (int(argv[2][1]), int(argv[2][3]))
+        target = (int(argv[3][1]), int(argv[3][3]))
+
+        grid = []
+        for line in grid_file:
+            line_as_char_list = line.strip().split(',')
+            line_as_list = [int(x) for x in line_as_char_list]
+            grid.insert(0, line_as_list)  # we must turn the grid 'upside down' for python
+
+    else:
+        # hard coded grid
+
+        # watch out because this grid is upside down ((0,0) top left
+        # but the co ordinate system works normally ((0,0) bottom left
+        # - the gridprint function will flip the grid for you
+
+        grid = [
+            [0, 0, 0, 0, 1, 0, 0, 1],
+            [0, 1, 0, 0, 1, 1, 0, 0],
+            [0, 0, 1, 0, 0, 0, 1, 0],
+            [0, 0, 1, 0, 1, 0, 1, 0],
+            [0, 0, 1, 0, 1, 1, 0, 0],
+            [0, 1, 0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0],
         ]
+        target = (6, 0)
+        start = (0, 0)
+
     gridprint(grid)
-    target = (6,0)
+
     print("target: ", target)
     graph = Graph()
-    graph.graphFromGrid((0, 0), grid)
-    path,dirs = graph.searchGraph(target)
-    gridprint(plotPath(graph.gridFromGraph((8,7)),path))
+    graph.graphFromGrid(start, grid)
+    path, dirs = graph.searchGraph(target)
+    gridprint(plotPath(graph.gridFromGraph((len(grid[0]), len(grid))), path))
     print(dirs)
-    print("length: ",len(path))
+    if path is not None:
+        print("length: ", len(path))
+    else:
+        print("no path!")
 
 
 if __name__ == "__main__":
