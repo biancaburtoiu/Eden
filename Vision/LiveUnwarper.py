@@ -1,7 +1,8 @@
 import cv2
-import Vision.CamerasUnwarper
+import Eden.Vision.CamerasUnwarper
 import numpy as np
 import imutils
+from Eden.Vision.FloorSegmentation import floorDetection
 
 
 def set_res(cap, x, y):
@@ -15,29 +16,35 @@ class Unwarper:
     def __init__(self):
         # Note for cameras 3 and 4 we use the calibration matrices of camera 1, this is because the calibration matrix
         # produced for it actually performed better than those trained for cameras 3 and 4
-        self.mtxs = np.load("Vision/mtxs.npy")
+        self.mtxs = np.load("Eden/Vision/mtxs.npy")
         self.mtxs[2] = self.mtxs[0]
         self.mtxs[3] = self.mtxs[0]
-        self.dists = np.load("Vision/dists.npy")
+        self.dists = np.load("Eden/Vision/dists.npy")
         self.dists[2] = self.dists[0]
         self.dists[3] = self.dists[0]
-        self.H_c1_and_c2 = np.load("Vision/H_c1_and_c2.npy")
+        self.H_c1_and_c2 = np.load("Eden/Vision/H_c1_and_c2.npy")
         self.stitcher = Stitcher()
 
     # Take CCTV view and unwarp each camera, returning result, if only_camera is set to 0,1,2, or 3, it will unwarp only
     # the respective camera
     def unwarp_image(self, original_img, only_camera=None):
         if only_camera is not None:
-            img = Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, only_camera)
+            img = Eden.Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, only_camera)
+            img_thresh = floorDetection(img)
             h, w = img.shape[:2]
             newcameramtx, _ = cv2.getOptimalNewCameraMatrix(self.mtxs[only_camera - 1], self.dists[only_camera - 1],
                                                             (w, h), 1,
                                                             (w, h))
             dst = cv2.undistort(img, self.mtxs[only_camera - 1], self.dists[only_camera - 1], None, newcameramtx)
-            return dst
+            dst_thresh = cv2.undistort(img_thresh, self.mtxs[only_camera - 1], self.dists[only_camera - 1], None, newcameramtx)
+            dst_thresh = cv2.cvtColor(dst_thresh, cv2.COLOR_GRAY2BGR)
+            # cv2.imshow("origin", img)
+            # cv2.imshow("processed", img_thresh)
+            # cv2.waitKey(1)
+            return dst_thresh
         else:
             for camera_no in range(0, 4):
-                img = Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, camera_no + 1)
+                img = Eden.Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, camera_no + 1)
                 h, w = img.shape[:2]
                 newcameramtx, _ = cv2.getOptimalNewCameraMatrix(self.mtxs[camera_no], self.dists[camera_no], (w, h), 1,
                                                                 (w, h))
@@ -58,12 +65,15 @@ class Unwarper:
         cam = cv2.VideoCapture(0)
         set_res(cam, 1920, 1080)
         i = 1
-        while True:
+        counter = 0
+        while True & counter < 100:
             _, img = cam.read()
             if i > 20:
                 new_img = self.stitch_one_two_three_and_four(img)
                 if new_img is not None:
                     cv2.imshow('my webcam', new_img)
+                    # cv2.imwrite("Eden/Vision/QA(DARK)/" + str(counter) +".jpg", new_img)
+                    counter = counter+1
                     k = cv2.waitKey(1)
             i += 1
 
