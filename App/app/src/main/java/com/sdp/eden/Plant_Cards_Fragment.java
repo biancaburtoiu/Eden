@@ -1,10 +1,6 @@
 package com.sdp.eden;
 
-import android.content.Context;
-import android.content.DialogInterface;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.SyncStateContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -27,28 +23,21 @@ import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import com.google.firebase.auth.FirebaseAuth;
-
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
 
 public class Plant_Cards_Fragment extends Fragment {
 
     private static final String TAG = "PlantListFragment";
-    private Eden_main mainAct;
-    private ArrayList<Plant> plants;
+    private ArrayList<Plant> plants; // list of plants pulled from firebase
     private RecyclerView recyclerView;
-    private RecyclerViewAdapter adapter;
 
-   public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
+    public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
        View view = inflater.inflate(R.layout.fragment_plants, container, false);
        getLatestPlantList();    // Query the database to get latest list
-       //implementRecyclerViewClickListeners();
-       mainAct = (Eden_main) getActivity();
        recyclerView = view.findViewById(R.id.Plants_Recycler_view);
-       recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+       recyclerView.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
        return view;
    }
 
@@ -58,65 +47,49 @@ public class Plant_Cards_Fragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         FloatingActionButton addPlantButton = view.findViewById(R.id.addPlantButton);
-        addPlantButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, "User input: click on Add");
+        addPlantButton.setOnClickListener(v -> {
+            Log.d(TAG, "User input: click on Add");
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                builder.setTitle("Add a new plant!");
+            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+            builder.setTitle("Add a new plant!");
 
-                View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant,
-                        (ViewGroup) getView(), false);
+            View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant,
+                    (ViewGroup) getView(), false);
 
-                final EditText plantName = viewInflated.findViewById(R.id.plantName);
-                final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
-                builder.setView(viewInflated);
+            final EditText plantName = viewInflated.findViewById(R.id.plantName);
+            final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
+            builder.setView(viewInflated);
 
-                // TODO: Kieran W - Maybe add more species here for the user interview?
-                String[] species = new String[]{"cacti","daisy","lily","orchid"};
-                ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(getContext(), R.layout.species_option, species);
-                plantSpecies.setAdapter(speciesAdapter);
+            // TODO: Kieran W - Maybe add more species here for the user interview?
+            // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
+            String[] species = new String[]{"cacti","daisy","lily","orchid"};
+            ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
+            plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
 
-                builder.setPositiveButton("Add", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Log.d(TAG, "New plant to add to database:");
-                        Log.d(TAG, "Plant name: " + plantName.getText().toString());
-                        Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString());
+            builder.setPositiveButton("Add", (dialog, which) -> {
+                Log.d(TAG, "New plant to add to database:");
+                Log.d(TAG, "Plant name: " + plantName.getText().toString());
+                Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString()); // extracts the plant data from user input
 
-                        // Checks for empty plant name
-                        if (plantName.getText().toString().trim().length() == 0) {
-                            Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
-                            Snackbar.make(getView().findViewById(R.id.viewSnack), "Name your plant!", Snackbar.LENGTH_SHORT).show();
-                        }
-                        else {
-                            Log.d(TAG, "Plant name format correct.");
+                // Checks for empty plant name
+                if (plantName.getText().toString().trim().length() == 0) {
+                    Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
+                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name your plant!", Snackbar.LENGTH_SHORT).show();
+                }
+                else {
+                    Log.d(TAG, "Plant name format correct.");
 
-                            // For now any new plant would be added with this default drawable.
-                            // To implement actual photo functionality later.
-                            Plant plant = new Plant(plantName.getText().toString(),
-                                    plantSpecies.getSelectedItem().toString(),
-                                    R.drawable.plant1);
-                            DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
-                                @Override
-                                public void onUpdateFinished(boolean success) {
-                                    getLatestPlantList();
-                                }
-                            });
-                        }
-                    }
-                });
-                AlertDialog dialog = builder.create();
-                dialog.show();
-            }
+                    // For now any new plant would be added with this default drawable.
+                    // To implement actual photo functionality later.
+                    Plant plant = new Plant(plantName.getText().toString(),
+                            plantSpecies.getSelectedItem().toString(),
+                            R.drawable.plant1);
+                    DbOps.instance.addPlant(plant, success -> getLatestPlantList());
+                }
+            });
+            AlertDialog dialog = builder.create();
+            dialog.show();
         });
-/*       addPlantButton.setOnClickListener(p->{
-
-
-          ((Eden_main) getActivity()).changeFrag(new RobotFragment());
-
-       });*/
     }
 
     @Override
@@ -126,51 +99,42 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
     public static Fragment newInstance() {
-       return new Plant_Cards_Fragment();
+       return new Plant_Cards_Fragment(); // new instance of the fragment
     }
 
     private void populateRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
-       adapter = new RecyclerViewAdapter(plants);
-       recyclerView.setAdapter(adapter);
-       adapter.notifyDataSetChanged();
+        RecyclerViewAdapter adapter = new RecyclerViewAdapter(plants);
+        recyclerView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
     }
 
 
     // Queries the database to get the most recent list of plants
     public void getLatestPlantList() {
-        DbOps.instance.getPlantList(FirebaseAuth.getInstance().getCurrentUser().getEmail(),
-                new DbOps.OnGetPlantListFinishedListener() {
-                    @Override
-                    public void onGetPlantListFinished(List<Plant> plantsFromDB) {
-                        if (plantsFromDB==null) return;
+        DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
+                plantsFromDB -> {
+                    if (plantsFromDB==null) return;
 
-                        Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
+                    Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
 
-                        // Refreshes the recyclerview:
-                        plants = new ArrayList<Plant>(plantsFromDB);
-                        populateRecyclerView(new ArrayList<Plant>(plantsFromDB));
-                    }
+                    // Refreshes the recyclerview:
+                    plants = new ArrayList<>(plantsFromDB);
+                    populateRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
                 });
     }
 
 
     private class RecyclerViewHolder extends RecyclerView.ViewHolder{
 
-       private CardView mCardView;
-       private TextView plantName;
-       private TextView plantDetail;
-       private ImageView plantImage;
+       private CardView mCardView; // card for data display
+       private TextView plantName; // plants name from firebase
+       private TextView plantDetail; // plants detail (currently species)
+       private ImageView plantImage; // plants picture
 
 
-        public RecyclerViewHolder(@NonNull View itemView) {
-            super(itemView);
-            mCardView = itemView.findViewById(R.id.card_view);
-        }
-
-
-
-        public RecyclerViewHolder(LayoutInflater inflater, ViewGroup container){
+        RecyclerViewHolder(LayoutInflater inflater, ViewGroup container){
             super(inflater.inflate(R.layout.card_layout, container, false));
+            //finding the location for each container in the display card
             mCardView = itemView.findViewById(R.id.card_view);
             plantName = itemView.findViewById(R.id.card_plant_name);
             plantDetail = itemView.findViewById(R.id.card_plant_detail);
@@ -180,40 +144,32 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
     private class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewHolder>{
-       public ArrayList<Plant> plantsList;
 
-       public RecyclerViewAdapter(ArrayList<Plant> list){
+       ArrayList<Plant> plantsList; // plants list
+
+       RecyclerViewAdapter(ArrayList<Plant> list){
            this.plantsList = list;
-       }
+       } // Adapter for the recycler view
 
         @NonNull
         @Override
         public RecyclerViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-            LayoutInflater inflater = LayoutInflater.from(getActivity());
+            LayoutInflater inflater = LayoutInflater.from(getActivity()); // inflates the view to the fragment
             return new RecyclerViewHolder(inflater, viewGroup);
         }
 
         @Override
         public void onBindViewHolder(@NonNull RecyclerViewHolder recyclerViewHolder, int i) {
-            ImageButton mImageButton = recyclerViewHolder.mCardView.findViewById(R.id.popup_menu);
+            ImageButton mImageButton = recyclerViewHolder.mCardView.findViewById(R.id.popup_menu); // creates the drop down menu in each card
 
-            recyclerViewHolder.plantName.setText(plantsList.get(i).getName());
+            recyclerViewHolder.plantName.setText(plantsList.get(i).getName()); // populating the cards with the object details
             recyclerViewHolder.plantDetail.setText(plantsList.get(i).getSpecies());
             recyclerViewHolder.plantImage.setImageResource(plantsList.get(i).getPhoto());
 
-            recyclerViewHolder.mCardView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Snackbar.make(getView().findViewById(R.id.viewSnack), "Name: " + plantsList.get(i).getName(), Snackbar.LENGTH_SHORT).show();
-                }
-            });
-
-            mImageButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    showPopupMenu(mImageButton, i);
-                }
-            });
+            //snackbar location
+            recyclerViewHolder.mCardView.setOnClickListener(v -> Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name: " + plantsList.get(i).getName(), Snackbar.LENGTH_SHORT).show());
+            //calls method to display menu
+            mImageButton.setOnClickListener(v -> showPopupMenu(mImageButton, i));
 
         }
 
@@ -235,10 +191,11 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
 
-    class MyMenuItemClickListener implements PopupMenu.OnMenuItemClickListener {
+    class MyMenuItemClickListener implements PopupMenu.OnMenuItemClickListener { // class for when an item is clicked withing the popup menu
 
         private int position;
-        public MyMenuItemClickListener(int positon) {
+
+        MyMenuItemClickListener(int positon) {
             this.position=positon;
         }
 
@@ -246,11 +203,11 @@ public class Plant_Cards_Fragment extends Fragment {
         public boolean onMenuItemClick(MenuItem menuItem) {
             switch (menuItem.getItemId()) {
 
-                case R.id.card_delete:
-                    Snackbar.make(getView().findViewById(R.id.viewSnack), "selected delete on plant: " + plants.get(position).getName(), Snackbar.LENGTH_SHORT).show();
+                case R.id.card_delete: // delete is selected
+                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "selected delete on plant: " + plants.get(position).getName(), Snackbar.LENGTH_SHORT).show();
                     return true;
-                case R.id.card_edit:
-                    Snackbar.make(getView().findViewById(R.id.viewSnack), "selected edit on plant: " + plants.get(position).getName(), Snackbar.LENGTH_SHORT).show();
+                case R.id.card_edit: // edit is selected
+                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "selected edit on plant: " + plants.get(position).getName(), Snackbar.LENGTH_SHORT).show();
                     return true;
             }
             return false;
