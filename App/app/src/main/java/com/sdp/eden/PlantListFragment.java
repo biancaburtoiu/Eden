@@ -45,10 +45,10 @@ public class PlantListFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        v = inflater.inflate(R.layout.fragment_plants,container,false);
+        v = inflater.inflate(R.layout.fragment_plant_cards,container,false);
 
         // Moved the recyclerview initialization bit here
-        recyclerView = v.findViewById(R.id.plant_recyclerview);
+        recyclerView = v.findViewById(R.id.card_plant_image);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
@@ -152,7 +152,7 @@ public class PlantListFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        FloatingActionButton addPlantButton = v.findViewById(R.id.addPlantButton);
+        FloatingActionButton addPlantButton = v.findViewById(R.id.card_plant_detail);
         addPlantButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

@@ -12,7 +12,7 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
     public Fragment getItem(int i) {
         switch(i){
             case 1: return new RobotFragment();
-            default: return new PlantListFragment();
+            default: return new Plant_Cards_Fragment().newInstance();
         }
     }
 

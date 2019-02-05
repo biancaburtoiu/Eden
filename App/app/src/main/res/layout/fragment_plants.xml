@@ -1,38 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/white"
-    android:id="@+id/fragment_plants">
+xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+android:background="@color/white"
+android:id="@+id/fragment_plants">
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/plant_recyclerview"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:background="@color/white"
+        android:id="@+id/Plants_Recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        tools:layout_editor_absoluteX="8dp"
-        tools:layout_editor_absoluteY="8dp" />
+        android:layout_height="match_parent">
+    </android.support.v7.widget.RecyclerView>
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="75dp"
         android:layout_gravity="bottom">
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/addPlantButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="327dp"
-            android:layout_marginEnd="17dp"
-            android:clickable="true"
+        <android.support.design.widget.CoordinatorLayout
+            android:id="@+id/viewSnack"
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginBottom="16dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/ic_input_add" />
+            app:layout_constraintVertical_bias="1.0" />
+
+        <android.support.design.widget.FloatingActionButton
+            android:id="@+id/addPlantButton"
+            android:layout_width="65dp"
+            android:layout_height="65dp"
+            android:layout_marginStart="327dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="17dp"
+            android:layout_marginBottom="8dp"
+            android:backgroundTint="@color/colorPrimary"
+            android:clickable="true"
+            android:elevation="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="1.0"
+            app:srcCompat="@drawable/ic_add_white_24dp" />
+
+        <!-- snack bar location -->
 
     </android.support.constraint.ConstraintLayout>
 

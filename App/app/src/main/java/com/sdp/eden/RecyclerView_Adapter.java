@@ -34,7 +34,7 @@ public class RecyclerView_Adapter extends RecyclerView.Adapter<RecyclerView_Adap
     @Override
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
         View v;
-        v=LayoutInflater.from(mContext).inflate(R.layout.item_plant,viewGroup,false);
+        v=LayoutInflater.from(mContext).inflate(R.layout.card_layout,viewGroup,false);
         MyViewHolder vHolder = new MyViewHolder(v);
 
         return vHolder;
@@ -98,9 +98,9 @@ public class RecyclerView_Adapter extends RecyclerView.Adapter<RecyclerView_Adap
         public MyViewHolder(View v) {
             super(v);
 
-            tv_name = (TextView) v.findViewById(R.id.name_plant);
-            tv_species = (TextView) v.findViewById(R.id.species_plant);
-            img = (ImageView) v.findViewById(R.id.img_plant);
+            tv_name = (TextView) v.findViewById(R.id.card_plant_name);
+            tv_species = (TextView) v.findViewById(R.id.card_plant_detail);
+            img = (ImageView) v.findViewById(R.id.card_plant_image);
         }
     }
 }
