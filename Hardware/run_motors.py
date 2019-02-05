@@ -34,7 +34,7 @@ def stop():
 motors = []
 def setupMotors():
     for i in range(1,len(sys.argv)):
-    motors.append(ev3.LargeMotor('out'+sys.argv[i]))
+        motors.append(ev3.LargeMotor('out'+sys.argv[i]))
 setupMotors()
 
 def debugfunc():
