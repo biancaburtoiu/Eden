@@ -6,7 +6,7 @@ def onConnect(client,userdata,flags,rc):
 client=mqtt.Client("desktopMachine")
 
 client.on_connect=onConnect
-client.connect("localhost")
+client.connect("129.215.202.200")
 
 client.loop_start()
 def remoteMove(rotate,speed,time):
