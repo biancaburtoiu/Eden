@@ -1,8 +1,8 @@
 import cv2
-import Eden.Vision.CamerasUnwarper
+import Vision.CamerasUnwarper
 import numpy as np
 import imutils
-from Eden.Vision.FloorSegmentation import floorDetection
+from Vision.FloorSegmentation import floorDetection
 
 
 def set_res(cap, x, y):
@@ -16,35 +16,41 @@ class Unwarper:
     def __init__(self):
         # Note for cameras 3 and 4 we use the calibration matrices of camera 1, this is because the calibration matrix
         # produced for it actually performed better than those trained for cameras 3 and 4
-        self.mtxs = np.load("Eden/Vision/mtxs.npy")
+        self.mtxs = np.load("Vision/mtxs.npy")
         self.mtxs[2] = self.mtxs[0]
         self.mtxs[3] = self.mtxs[0]
-        self.dists = np.load("Eden/Vision/dists.npy")
+        self.dists = np.load("Vision/dists.npy")
         self.dists[2] = self.dists[0]
         self.dists[3] = self.dists[0]
-        self.H_c1_and_c2 = np.load("Eden/Vision/H_c1_and_c2.npy")
+        self.H_c1_and_c2 = np.load("Vision/H_c1_and_c2.npy")
         self.stitcher = Stitcher()
 
     # Take CCTV view and unwarp each camera, returning result, if only_camera is set to 0,1,2, or 3, it will unwarp only
     # the respective camera
-    def unwarp_image(self, original_img, only_camera=None):
+    def unwarp_image(self, original_img, only_camera=None, thresh=False):
         if only_camera is not None:
-            img = Eden.Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, only_camera)
-            img_thresh = floorDetection(img)
+
+            img = Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, only_camera)
+
             h, w = img.shape[:2]
             newcameramtx, _ = cv2.getOptimalNewCameraMatrix(self.mtxs[only_camera - 1], self.dists[only_camera - 1],
                                                             (w, h), 1,
                                                             (w, h))
-            dst = cv2.undistort(img, self.mtxs[only_camera - 1], self.dists[only_camera - 1], None, newcameramtx)
-            dst_thresh = cv2.undistort(img_thresh, self.mtxs[only_camera - 1], self.dists[only_camera - 1], None, newcameramtx)
-            dst_thresh = cv2.cvtColor(dst_thresh, cv2.COLOR_GRAY2BGR)
+            if not(thresh):
+                dst = cv2.undistort(img, self.mtxs[only_camera - 1], self.dists[only_camera - 1], None, newcameramtx)
+                return dst
+            else:
+                img_thresh = floorDetection(img)
+                dst_thresh = cv2.undistort(img_thresh, self.mtxs[only_camera - 1], self.dists[only_camera - 1], None,
+                                           newcameramtx)
+                dst_thresh = cv2.cvtColor(dst_thresh, cv2.COLOR_GRAY2BGR)
+                return dst_thresh
             # cv2.imshow("origin", img)
             # cv2.imshow("processed", img_thresh)
             # cv2.waitKey(1)
-            return dst_thresh
         else:
             for camera_no in range(0, 4):
-                img = Eden.Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, camera_no + 1)
+                img = Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, camera_no + 1)
                 h, w = img.shape[:2]
                 newcameramtx, _ = cv2.getOptimalNewCameraMatrix(self.mtxs[camera_no], self.dists[camera_no], (w, h), 1,
                                                                 (w, h))
@@ -69,16 +75,19 @@ class Unwarper:
         while True & counter < 100:
             _, img = cam.read()
             if i > 20:
-                new_img = self.stitch_one_two_three_and_four(img)
-                if new_img is not None:
-                    cv2.imshow('my webcam', new_img)
-                    # cv2.imwrite("Eden/Vision/QA(DARK)/" + str(counter) +".jpg", new_img)
-                    counter = counter+1
+                unwarp_img = self.unwarp_image(img)
+                merged_img = self.stitch_one_two_three_and_four(img)
+                thresh_merged_img = self.stitch_one_two_three_and_four(img, thresh=True)
+                if merged_img is not None:
+                    cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
+                    cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
+                    cv2.imshow('3. merged', merged_img)
+                    cv2.imshow('4. thresholded', thresh_merged_img)
                     k = cv2.waitKey(1)
             i += 1
 
-    def camera_one_segment(self, original_img):
-        unwarped_camera = self.unwarp_image(original_img, 1)
+    def camera_one_segment(self, original_img, thresh=False):
+        unwarped_camera = self.unwarp_image(original_img, 1, thresh=thresh)
         x_lower_bound = 360
         x_upper_bound = 540
         y_lower_bound = 120
@@ -86,8 +95,8 @@ class Unwarper:
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
-    def camera_two_segment(self, original_img):
-        unwarped_camera = self.unwarp_image(original_img, 2)
+    def camera_two_segment(self, original_img, thresh=False):
+        unwarped_camera = self.unwarp_image(original_img, 2, thresh=thresh)
         x_lower_bound = 25
         x_upper_bound = 400
         y_lower_bound = 200
@@ -95,14 +104,14 @@ class Unwarper:
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
-    def stitch_one_and_two(self, img):
-        img_1 = self.camera_one_segment(img)
-        img_2 = self.camera_two_segment(img)
+    def stitch_one_and_two(self, img, thresh=False):
+        img_1 = self.camera_one_segment(img, thresh=thresh)
+        img_2 = self.camera_two_segment(img, thresh=thresh)
         new_img = self.stitcher.stitch((img_1, img_2), self.H_c1_and_c2)
         return new_img
 
-    def camera_three_segment(self, original_img):
-        unwarped_camera = self.unwarp_image(original_img, 3)
+    def camera_three_segment(self, original_img, thresh=False):
+        unwarped_camera = self.unwarp_image(original_img, 3, thresh=thresh)
         x_lower_bound = 379
         x_upper_bound = 492
         y_lower_bound = 90
@@ -110,8 +119,8 @@ class Unwarper:
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
-    def camera_four_segment(self, original_img):
-        unwarped_camera = self.unwarp_image(original_img, 4)
+    def camera_four_segment(self, original_img, thresh=False):
+        unwarped_camera = self.unwarp_image(original_img, 4, thresh=thresh)
         x_lower_bound = 275
         x_upper_bound = 505
         y_lower_bound = 78
@@ -119,33 +128,36 @@ class Unwarper:
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
-    def stich_three_and_four(self, img):
-        img_1 = self.camera_three_segment(img)
-        img_2 = self.camera_four_segment(img)
+    def stich_three_and_four(self, img, thresh=False):
+        img_1 = self.camera_three_segment(img, thresh=thresh)
+        img_2 = self.camera_four_segment(img, thresh=thresh)
         img_2 = cv2.resize(img_2, (0, 0), fx=0.903846154, fy=0.903846154)
         img_1 = np.concatenate(
             (np.zeros((img_2.shape[0] - img_1.shape[0], img_1.shape[1], 3), dtype=np.uint8), img_1), axis=0)
         new_img = np.concatenate((img_1, img_2), axis=1)
         return new_img
 
-    def stitch_one_two_three_and_four(self, img):
+    def stitch_one_two_three_and_four(self, img, thresh=False):
         # Get the top of the image
-        img_1 = self.stitch_one_and_two(img)
+        img_1 = self.stitch_one_and_two(img, thresh=thresh)
         # Take a portion of top image to line walls up with bottom one
         img_1 = img_1[:, 13:326, :]
         # Get the bottom of the image
-        img_2 = self.stich_three_and_four(img)
+        img_2 = self.stich_three_and_four(img, thresh=thresh)
         # Add to the width of top image to make it the same width as the bottom one
         img_1 = np.concatenate(
             (img_1, np.zeros((img_1.shape[0], img_2.shape[1] - img_1.shape[1], 3), dtype=np.uint8)), axis=1)
         # Overlap between top and bottom image, so we say we want the bottom one to overlap the top one by 45 pixels
         amount_to_move_bottom_img_up = 45
         # Create a copy of the bottom image with it aligned to its desired new position, set space which top image will take up as black
-        img_2_merge_canvas = np.zeros((img_1.shape[0] + img_2.shape[0] - amount_to_move_bottom_img_up, img_2.shape[1], 3), dtype=np.uint8)
+        img_2_merge_canvas = np.zeros(
+            (img_1.shape[0] + img_2.shape[0] - amount_to_move_bottom_img_up, img_2.shape[1], 3), dtype=np.uint8)
         img_2_merge_canvas[img_1.shape[0] - amount_to_move_bottom_img_up:
                            img_1.shape[0] + img_2.shape[0] - amount_to_move_bottom_img_up, :, :] = img_2
         # Add to the top image space for the non-overlapping part of the bottom image
-        img_1 = np.concatenate((img_1, np.zeros((img_2.shape[0] - amount_to_move_bottom_img_up, img_1.shape[1], 3), dtype=np.uint8)), axis=0)
+        img_1 = np.concatenate(
+            (img_1, np.zeros((img_2.shape[0] - amount_to_move_bottom_img_up, img_1.shape[1], 3), dtype=np.uint8)),
+            axis=0)
         # For all pixels in the top image that will be overlapped by the bottom image, we set their value to 0
         mask = np.where(img_2_merge_canvas != [0, 0, 0])
         img_1[mask] = np.zeros(img_1.shape, dtype=np.uint8)[mask]
