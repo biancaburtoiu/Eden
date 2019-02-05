@@ -75,7 +75,7 @@ def floorDetection(img):
     # img = cv2.filter2D(img, -1, kernel)
     hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     lower = (0, 0, 40) # lower bound
-    higher = (180, 110, 200) # change if white is not acceptable, s can not be smaller than 50
+    higher = (180, 120, 200) # change if white is not acceptable, s can not be smaller than 50
 
     threshold2 = cv2.inRange(hsv, lower, higher)
     reverse = cv2.bitwise_not(threshold2)
