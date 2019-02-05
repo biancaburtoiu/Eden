@@ -85,8 +85,10 @@ def floorDetection(img):
     reverse = cv2.dilate(reverse, None, iterations=1)
     # cv2.imshow("threshold", reverse)
 
-    reverse = cv2.bitwise_or(reverse, closed)
-    reverse = cv2.morphologyEx(reverse, cv2.MORPH_CLOSE, kernel)
+    reverse = cv2.bitwise_or(reverse, thresh)
+    reverse = cv2.dilate(reverse, kernel=(3,3), iterations=1)
+    reverse = cv2.erode(reverse, kernel=(3, 3), iterations=1)
+    # reverse = cv2.morphologyEx(reverse, cv2.MORPH_CLOSE, kernel)
 
     # cv2.imshow("final", reverse)
 
