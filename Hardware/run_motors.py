@@ -11,7 +11,7 @@ def move(rotate,speed,time):
         if rotate:
             motors[0].run_forever(speed_sp=speed)
             motors[1].run_forever(speed_sp=-speed)
-        else:  
+        else:
             motors[0].run_forever(speed_sp=speed)
             motors[1].run_forever(speed_sp=speed)
     else:
@@ -33,8 +33,10 @@ def stop():
 
 motors = []
 def setupMotors():
-    for i in range(1,len(sys.argv)):
-        motors.append(ev3.LargeMotor('out'+sys.argv[i]))
+    motors.append(ev3.LargeMotor('outA'))
+    motors.append(ev3.LargeMotor('outB'))
+    #for i in range(1,len(sys.argv)):
+    #    motors.append(ev3.LargeMotor('out'+sys.argv[i]))
 setupMotors()
 
 def debugfunc():
@@ -55,7 +57,7 @@ def debugfunc():
                 print("NOT WELL FORMED")
         elif inputs[0]=='r':
             if inputs[1]=='c' :
-                speed = int(inputs[2]) 
+                speed = int(inputs[2])
                 move(True,speed,-1)
             elif inputs[1]=='t':
                 speed = int(inputs[2])
