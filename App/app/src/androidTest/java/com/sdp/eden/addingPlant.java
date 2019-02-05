@@ -1,6 +1,7 @@
 package com.sdp.eden;
 
 
+import android.support.test.espresso.NoMatchingViewException;
 import android.support.test.espresso.ViewInteraction;
 import android.support.test.filters.LargeTest;
 import android.support.test.rule.ActivityTestRule;
@@ -40,50 +41,44 @@ public class addingPlant {
         // Added a sleep statement to match the app's execution delay.
         // The recommended way to handle such scenarios is to use Espresso idling resources:
         // https://google.github.io/android-testing-support-library/docs/espresso/idling-resource/index.html
+
         try {
-            Thread.sleep(7000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            ViewInteraction appCompatEditText = onView(
+                    allOf(withId(R.id.loginemailfield),
+                            childAtPosition(
+                                    childAtPosition(
+                                            withId(android.R.id.content),
+                                            0),
+                                    3),
+                            isDisplayed()));
+            appCompatEditText.perform(replaceText("tester@gmail.com"), closeSoftKeyboard());
+
+            ViewInteraction appCompatEditText2 = onView(
+                    allOf(withId(R.id.loginpasswordfield),
+                            childAtPosition(
+                                    childAtPosition(
+                                            withId(android.R.id.content),
+                                            0),
+                                    4),
+                            isDisplayed()));
+            appCompatEditText2.perform(replaceText("testing"), closeSoftKeyboard());
+
+            ViewInteraction appCompatButton = onView(
+                    allOf(withId(R.id.sign_in_button), withText("Sign in"),
+                            childAtPosition(
+                                    childAtPosition(
+                                            withId(android.R.id.content),
+                                            0),
+                                    2),
+                            isDisplayed()));
+            appCompatButton.perform(click());
+        }catch(NoMatchingViewException v){
+            //intentional, we must already be logged in
         }
-
-        ViewInteraction appCompatEditText = onView(
-                allOf(withId(R.id.loginemailfield),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                3),
-                        isDisplayed()));
-        appCompatEditText.perform(replaceText("tester@gmail.com"), closeSoftKeyboard());
-
-        ViewInteraction appCompatEditText2 = onView(
-                allOf(withId(R.id.loginpasswordfield),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                4),
-                        isDisplayed()));
-        appCompatEditText2.perform(replaceText("testing"), closeSoftKeyboard());
-
-        ViewInteraction appCompatButton = onView(
-                allOf(withId(R.id.sign_in_button), withText("Sign in"),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                2),
-                        isDisplayed()));
-        appCompatButton.perform(click());
-
         // Added a sleep statement to match the app's execution delay.
         // The recommended way to handle such scenarios is to use Espresso idling resources:
         // https://google.github.io/android-testing-support-library/docs/espresso/idling-resource/index.html
-        try {
-            Thread.sleep(7000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+
 
         ViewInteraction floatingActionButton = onView(
                 allOf(withId(R.id.addPlantButton),
@@ -104,7 +99,7 @@ public class addingPlant {
                                         0),
                                 0),
                         isDisplayed()));
-        textInputEditText.perform(replaceText("plant"), closeSoftKeyboard());
+        textInputEditText.perform(replaceText("NEW  PLANT"), closeSoftKeyboard());
 
         ViewInteraction appCompatButton2 = onView(
                 allOf(withId(android.R.id.button1), withText("Add"),

@@ -1,6 +1,7 @@
 package com.sdp.eden;
 
 
+import android.support.test.espresso.NoMatchingViewException;
 import android.support.test.espresso.ViewInteraction;
 import android.support.test.filters.LargeTest;
 import android.support.test.rule.ActivityTestRule;
@@ -40,56 +41,51 @@ public class signOut {
         // The recommended way to handle such scenarios is to use Espresso idling resources:
         // https://google.github.io/android-testing-support-library/docs/espresso/idling-resource/index.html
         try {
-            Thread.sleep(7000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+            ViewInteraction appCompatEditText = onView(
+                    allOf(withId(R.id.loginemailfield),
+                            childAtPosition(
+                                    childAtPosition(
+                                            withId(android.R.id.content),
+                                            0),
+                                    3),
+                            isDisplayed()));
+            appCompatEditText.perform(replaceText("tester@gmail.com"), closeSoftKeyboard());
 
-        ViewInteraction appCompatEditText = onView(
-                allOf(withId(R.id.loginemailfield),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                3),
-                        isDisplayed()));
-        appCompatEditText.perform(replaceText("tester@gmail.com"), closeSoftKeyboard());
+            ViewInteraction appCompatEditText2 = onView(
+                    allOf(withId(R.id.loginpasswordfield),
+                            childAtPosition(
+                                    childAtPosition(
+                                            withId(android.R.id.content),
+                                            0),
+                                    4),
+                            isDisplayed()));
+            appCompatEditText2.perform(replaceText("testing"), closeSoftKeyboard());
 
-        ViewInteraction appCompatEditText2 = onView(
-                allOf(withId(R.id.loginpasswordfield),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                4),
-                        isDisplayed()));
-        appCompatEditText2.perform(replaceText("testing"), closeSoftKeyboard());
+            ViewInteraction appCompatEditText3 = onView(
+                    allOf(withId(R.id.loginpasswordfield), withText("testing"),
+                            childAtPosition(
+                                    childAtPosition(
+                                            withId(android.R.id.content),
+                                            0),
+                                    4),
+                            isDisplayed()));
+            appCompatEditText3.perform(click());
 
-        ViewInteraction appCompatEditText3 = onView(
-                allOf(withId(R.id.loginpasswordfield), withText("testing"),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                4),
-                        isDisplayed()));
-        appCompatEditText3.perform(click());
-
-        ViewInteraction appCompatButton = onView(
-                allOf(withId(R.id.sign_in_button), withText("Sign in"),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                2),
-                        isDisplayed()));
-        appCompatButton.perform(click());
-
+            ViewInteraction appCompatButton = onView(
+                    allOf(withId(R.id.sign_in_button), withText("Sign in"),
+                            childAtPosition(
+                                    childAtPosition(
+                                            withId(android.R.id.content),
+                                            0),
+                                    2),
+                            isDisplayed()));
+            appCompatButton.perform(click());
+        }catch(NoMatchingViewException v){/*do nothing*/}
         // Added a sleep statement to match the app's execution delay.
         // The recommended way to handle such scenarios is to use Espresso idling resources:
         // https://google.github.io/android-testing-support-library/docs/espresso/idling-resource/index.html
         try {
-            Thread.sleep(7000);
+            Thread.sleep(2000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
