@@ -1,6 +1,7 @@
 import queue as Q
 from math import sqrt
 from sys import argv
+import dirToInst
 
 
 # ================= Graph class: references root node, and provides operations==
@@ -260,12 +261,24 @@ def getPathLengthFromGrid(grid, target, start=(0, 0)):
 
     return length, path, dirs
 
+# 
+def getInstructionsFromGrid(grid,target,start=(0,0)):
+    graph = Graph()
+    graph.graphFromGrid(start, grid)
+    path, dirs = graph.searchGraph(target)
+    length = 0
+    if path is not None:
+        length = len(path)
+    insts = dirToInst.main(dirs)
+
+    return length, path, dirs, insts
+
 
 # =====main=======
 
 def main():
     print(len(argv))
-    if len(argv) > 0 and argv[1] == 'f':
+    if len(argv) > 1 and argv[1] == 'f':
         # read grid from grid.txt
 
         '''
@@ -293,7 +306,8 @@ def main():
         # watch out because this grid is upside down ((0,0) top left
         # but the co ordinate system works normally ((0,0) bottom left
         # - the gridprint function will flip the grid for you
-
+        
+        '''
         grid = [
             [0, 0, 0, 0, 1, 0, 0, 1],
             [0, 1, 0, 0, 1, 1, 0, 0],
@@ -305,7 +319,27 @@ def main():
         ]
         target = (6, 0)
         start = (0, 0)
+        '''
 
+        grid = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        ]
+
+        target = (12,12)
+        start = (0, 0)
     gridprint(grid)
 
     print("target: ", target)
@@ -314,6 +348,7 @@ def main():
     path, dirs = graph.searchGraph(target)
     gridprint(plotPath(graph.gridFromGraph((len(grid[0]), len(grid))), path))
     print(dirs)
+    print(dirToInst.main(dirs))
     if path is not None:
         print("length: ", len(path))
     else:
