@@ -38,7 +38,6 @@ def segmentation(img):
     cv2.waitKey(0)
 
 def rgb_norm(img):
-
     image = img.copy()
     cv2.imshow("ms", image)
     r = image[:, :, 0]
@@ -49,25 +48,35 @@ def rgb_norm(img):
     image[:,:,2] = (b / (r + g + b)) * 255
     return image
 
+def gradient(gray):
+    gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY)
+    gradX = cv2.Sobel(gray, ddepth=cv2.CV_32F, dx=1, dy=0)
+    gradY = cv2.Sobel(gray, ddepth=cv2.CV_32F, dx=0, dy=1)
+    gradient = cv2.subtract(gradX, gradY)
+    gradient = cv2.convertScaleAbs(gradient)
+    cv2.imshow("gradient", gradient)
+    return gradient
+
 
 def backgroundSubtraction(back, fore):
     # back = cv2.GaussianBlur(back, (5, 5), 0)
     # fore = cv2.GaussianBlur(fore, (5, 5), 0)
-    back = cv2.pyrMeanShiftFiltering(back, 50, 20, maxLevel=2)
-    cv2.imshow("back", back)
-    fore = cv2.pyrMeanShiftFiltering(fore, 50, 20, maxLevel=2)
-    cv2.imshow("fore", fore)
-    thresh = 15
-
-    diff = cv2.absdiff(back, fore)
-    cv2.imshow('BACK', diff)
-    _, diffB = cv2.threshold(diff[:, :, 0], thresh, 255, cv2.THRESH_BINARY)
-    cv2.imshow('B', diffB)
-    _, diffG = cv2.threshold(diff[:, :, 1], thresh, 255, cv2.THRESH_BINARY)
-    cv2.imshow('G', diffG)
-    _, diffR = cv2.threshold(diff[:, :, 2], thresh, 255, cv2.THRESH_BINARY)
-    cv2.imshow('R', diffR)
-    return cv2.bitwise_or(diffB, cv2.bitwise_or(diffR, diffG))
+    gradient(fore)
+    # back = cv2.pyrMeanShiftFiltering(back, 50, 20, maxLevel=2)
+    # cv2.imshow("back", back)
+    # fore = cv2.pyrMeanShiftFiltering(fore, 50, 20, maxLevel=2)
+    # cv2.imshow("fore", fore)
+    # thresh = 15
+    #
+    # diff = cv2.absdiff(back, fore)
+    # cv2.imshow('BACK', diff)
+    # _, diffB = cv2.threshold(diff[:, :, 0], thresh, 255, cv2.THRESH_BINARY)
+    # cv2.imshow('B', diffB)
+    # _, diffG = cv2.threshold(diff[:, :, 1], thresh, 255, cv2.THRESH_BINARY)
+    # cv2.imshow('G', diffG)
+    # _, diffR = cv2.threshold(diff[:, :, 2], thresh, 255, cv2.THRESH_BINARY)
+    # cv2.imshow('R', diffR)
+    # return cv2.bitwise_or(diffB, cv2.bitwise_or(diffR, diffG))
 
 
 def floorDetection(img):

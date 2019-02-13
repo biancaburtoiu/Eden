@@ -1,8 +1,8 @@
 import cv2
-import Vision.CamerasUnwarper
+import Eden.Vision.CamerasUnwarper
 import numpy as np
 import imutils
-from Vision.FloorSegmentation import floorDetection
+from Eden.Vision.FloorSegmentation import floorDetection
 
 
 def set_res(cap, x, y):
@@ -16,13 +16,13 @@ class Unwarper:
     def __init__(self):
         # Note for cameras 3 and 4 we use the calibration matrices of camera 1, this is because the calibration matrix
         # produced for it actually performed better than those trained for cameras 3 and 4
-        self.mtxs = np.load("Vision/mtxs.npy")
+        self.mtxs = np.load("Eden/Vision/mtxs.npy")
         self.mtxs[2] = self.mtxs[0]
         self.mtxs[3] = self.mtxs[0]
-        self.dists = np.load("Vision/dists.npy")
+        self.dists = np.load("Eden/Vision/dists.npy")
         self.dists[2] = self.dists[0]
         self.dists[3] = self.dists[0]
-        self.H_c1_and_c2 = np.load("Vision/H_c1_and_c2.npy")
+        self.H_c1_and_c2 = np.load("Eden/Vision/H_c1_and_c2.npy")
         self.stitcher = Stitcher()
 
     # Take CCTV view and unwarp each camera, returning result, if only_camera is set to 0,1,2, or 3, it will unwarp only
@@ -30,7 +30,7 @@ class Unwarper:
     def unwarp_image(self, original_img, only_camera=None, thresh=False):
         if only_camera is not None:
 
-            img = Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, only_camera)
+            img = Eden.Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, only_camera)
 
             h, w = img.shape[:2]
             newcameramtx, _ = cv2.getOptimalNewCameraMatrix(self.mtxs[only_camera - 1], self.dists[only_camera - 1],
@@ -50,7 +50,7 @@ class Unwarper:
             # cv2.waitKey(1)
         else:
             for camera_no in range(0, 4):
-                img = Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, camera_no + 1)
+                img = Eden.Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, camera_no + 1)
                 h, w = img.shape[:2]
                 newcameramtx, _ = cv2.getOptimalNewCameraMatrix(self.mtxs[camera_no], self.dists[camera_no], (w, h), 1,
                                                                 (w, h))
@@ -77,12 +77,16 @@ class Unwarper:
             if i > 20:
                 unwarp_img = self.unwarp_image(img)
                 merged_img = self.stitch_one_two_three_and_four(img)
+                # cv2.imwrite("Eden/Vision/Background/background.jpg", merged_img)
+                background = cv2.imread("Eden/Vision/Background/background.jpg")
+                # cv2.imshow('5. bs', Eden.Vision.FloorSegmentation.backgroundSubtraction(background, merged_img))
                 thresh_merged_img = self.stitch_one_two_three_and_four(img, thresh=True)
                 if merged_img is not None:
                     cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
                     cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
                     cv2.imshow('3. merged', merged_img)
                     cv2.imshow('4. thresholded', thresh_merged_img)
+                    Eden.Vision.FloorSegmentation.gradient(merged_img)
                     k = cv2.waitKey(1)
             i += 1
 
