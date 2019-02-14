@@ -3,7 +3,7 @@ import cv2
 import glob
 
 
-class FindRobot:
+class RobotFinder:
 
     def __init__(self):
         # Input colour in RGB format, and then array order is flipped (using [::-1]) to give BGR format,
@@ -29,7 +29,7 @@ class FindRobot:
 
     # Given the merged image, find the position of the pink circle that gives us the position of the robot
 
-    def find_robot(self, img, return_found_pos=False):
+    def find_robot(self, img, return_image_pos=False):
 
         # Threshold the image to the specified BGR range
 
@@ -58,7 +58,7 @@ class FindRobot:
 
             robot_pos = keypoints[0].pt
 
-            if return_found_pos:
+            if return_image_pos:
                 # Draw the blob onto the thresholded image to make it easier to understand where it is
                 thresh_robot = cv2.drawKeypoints(inverted_thresh_img, keypoints, np.array([]), (0, 0, 255),
                                                  cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
@@ -71,7 +71,7 @@ class FindRobot:
 
             robot_pos = (None, None)
 
-            if return_found_pos:
+            if return_image_pos:
                 return inverted_thresh_img, robot_pos
             else:
                 return robot_pos
