@@ -179,13 +179,13 @@ class Node:
     # the priority queue contains tuples of (score,Node). If scores are equal, it tries to compare nodes.
     # if the score is the same, we don't care. So we implement a trivial comparison function for python to use
     def __lt__(self, other):
-        x1, y1 = self.pos
-        (x2, y2) = other.getPos()
-        if x1 > x2:
+        x1,y1 = self.pos
+        (x2,y2) = other.getPos()
+        if x1>x2:
             return 1
-        elif x1 < x2:
+        elif x1<x2:
             return -1
-        elif y1 > y2:
+        elif y1>y2:
             return 1
         else:
             return -1
