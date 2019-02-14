@@ -1,8 +1,13 @@
+import glob
+
 import cv2
-import Vision.CamerasUnwarper
-import numpy as np
 import imutils
-from Vision.FloorSegmentation import floorDetection
+import numpy as np
+import math
+
+import Vision.CamerasUnwarper
+from Vision import Gridify
+from Vision.Finder import RobotFinder
 
 
 def set_res(cap, x, y):
@@ -24,10 +29,48 @@ class Unwarper:
         self.dists[3] = self.dists[0]
         self.H_c1_and_c2 = np.load("Vision/H_c1_and_c2.npy")
         self.stitcher = Stitcher()
+        self.errors = self.where_error(
+            [(np.load("Vision/lhs_adj_errors.npy"), [125, 7]), (np.load("Vision/rhs_adj_errors.npy"), [104, 140])])
+        self.robot_finder = RobotFinder()
+
+    # Give a numpy array of erroneous pixels, return the location of pixels adjacent to them
+    # error_descriptions is a list of tuples, the first element of each tuple should be another tuple in the format
+    # output by np.where, the second argument of each tuple should be a list containing [y,x] where each corresponds to the
+    # arguments in np.where(arr[y:i,x:j==some_condition)
+
+    def where_error(self, error_descritpions):
+        # Find the locations of the errors in the image
+        errors = []
+        if type(error_descritpions) != list:
+            error_descritpions = list(error_descritpions)
+        for error_descritpion in error_descritpions:
+            relative_y_pos = error_descritpion[1][0]
+            relative_x_pos = error_descritpion[1][1]
+            error_array = error_descritpion[0]
+            for i in range(0, error_array[0].shape[0], 3):
+                errors.append((int(error_array[0][i]) + relative_y_pos, int(error_array[1][i]) + relative_x_pos))
+        # Create a list of the pixels adjacent to the errors
+        adjacent_to_error = []
+        for error in errors:
+            for i in [error[0] - 1, error[0] + 1]:
+                for j in [error[1] - 1, error[1] + 1]:
+                    if (i, j) not in errors and (i, j) not in adjacent_to_error:
+                        adjacent_to_error.append((i, j))
+        errors += adjacent_to_error
+        # Convert the errors and pixels adjacent back into a list of coordinates we can use to address them by index
+        x_errors = []
+        y_errors = []
+        z_errors = []
+        for error in errors:
+            for z in range(0, 3):
+                x_errors.append(error[0])
+                y_errors.append(error[1])
+                z_errors.append(z)
+        return np.array(x_errors), np.array(y_errors), np.array(z_errors)
 
     # Take CCTV view and unwarp each camera, returning result, if only_camera is set to 0,1,2, or 3, it will unwarp only
     # the respective camera
-    def unwarp_image(self, original_img, only_camera=None, thresh=False):
+    def unwarp_image(self, original_img, only_camera=None):
         if only_camera is not None:
 
             img = Vision.CamerasUnwarper.getImgRegionByCameraNo(original_img, only_camera)
@@ -36,15 +79,8 @@ class Unwarper:
             newcameramtx, _ = cv2.getOptimalNewCameraMatrix(self.mtxs[only_camera - 1], self.dists[only_camera - 1],
                                                             (w, h), 1,
                                                             (w, h))
-            if not(thresh):
-                dst = cv2.undistort(img, self.mtxs[only_camera - 1], self.dists[only_camera - 1], None, newcameramtx)
-                return dst
-            else:
-                img_thresh = floorDetection(img)
-                dst_thresh = cv2.undistort(img_thresh, self.mtxs[only_camera - 1], self.dists[only_camera - 1], None,
-                                           newcameramtx)
-                dst_thresh = cv2.cvtColor(dst_thresh, cv2.COLOR_GRAY2BGR)
-                return dst_thresh
+            dst = cv2.undistort(img, self.mtxs[only_camera - 1], self.dists[only_camera - 1], None, newcameramtx)
+            return dst
             # cv2.imshow("origin", img)
             # cv2.imshow("processed", img_thresh)
             # cv2.waitKey(1)
@@ -83,11 +119,34 @@ class Unwarper:
                     cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
                     cv2.imshow('3. merged', merged_img)
                     cv2.imshow('4. thresholded', thresh_merged_img)
-                    k = cv2.waitKey(1)
+                    object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, visualize=True)
+                    robot_pos = self.robot_finder.find_robot(merged_img)
+                    if robot_pos[0] is not None:
+                        robot_pos = [int(math.floor(i / 6)) for i in robot_pos]
+                        object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
+                            [0, 0, 255], dtype=np.uint8)
+                    cv2.imshow('6. object graph', cv2.resize(object_graph, (0, 0), fx=6, fy=6))
+                    cv2.waitKey(1)
             i += 1
 
-    def camera_one_segment(self, original_img, thresh=False):
-        unwarped_camera = self.unwarp_image(original_img, 1, thresh=thresh)
+    def static_unwarp(self, photo_path="Vision/Calibrated Pictures/*.jpg"):
+        images = glob.glob(photo_path)
+
+        for fname in images:
+            img = cv2.imread(fname)
+            unwarp_img = self.unwarp_image(img)
+            merged_img = self.stitch_one_two_three_and_four(img)
+            thresh_merged_img = self.stitch_one_two_three_and_four(img, thresh=True)
+            grid = Gridify.convert_thresh_to_map(thresh_merged_img)
+            if merged_img is not None:
+                cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
+                cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
+                cv2.imshow('3. merged', merged_img)
+                cv2.imshow('4. thresholded', thresh_merged_img)
+                cv2.waitKey()
+
+    def camera_one_segment(self, original_img):
+        unwarped_camera = self.unwarp_image(original_img, 1)
         x_lower_bound = 360
         x_upper_bound = 540
         y_lower_bound = 120
@@ -95,8 +154,8 @@ class Unwarper:
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
-    def camera_two_segment(self, original_img, thresh=False):
-        unwarped_camera = self.unwarp_image(original_img, 2, thresh=thresh)
+    def camera_two_segment(self, original_img):
+        unwarped_camera = self.unwarp_image(original_img, 2)
         x_lower_bound = 25
         x_upper_bound = 400
         y_lower_bound = 200
@@ -105,13 +164,13 @@ class Unwarper:
         return segment
 
     def stitch_one_and_two(self, img, thresh=False):
-        img_1 = self.camera_one_segment(img, thresh=thresh)
-        img_2 = self.camera_two_segment(img, thresh=thresh)
-        new_img = self.stitcher.stitch((img_1, img_2), self.H_c1_and_c2)
+        img_1 = self.camera_one_segment(img)
+        img_2 = self.camera_two_segment(img)
+        new_img = self.stitcher.stitch((img_1, img_2), self.H_c1_and_c2, thresh=thresh)
         return new_img
 
-    def camera_three_segment(self, original_img, thresh=False):
-        unwarped_camera = self.unwarp_image(original_img, 3, thresh=thresh)
+    def camera_three_segment(self, original_img):
+        unwarped_camera = self.unwarp_image(original_img, 3)
         x_lower_bound = 379
         x_upper_bound = 492
         y_lower_bound = 90
@@ -119,8 +178,8 @@ class Unwarper:
         segment = unwarped_camera[y_lower_bound:y_upper_bound, x_lower_bound:x_upper_bound]
         return segment
 
-    def camera_four_segment(self, original_img, thresh=False):
-        unwarped_camera = self.unwarp_image(original_img, 4, thresh=thresh)
+    def camera_four_segment(self, original_img):
+        unwarped_camera = self.unwarp_image(original_img, 4)
         x_lower_bound = 275
         x_upper_bound = 505
         y_lower_bound = 78
@@ -129,9 +188,12 @@ class Unwarper:
         return segment
 
     def stich_three_and_four(self, img, thresh=False):
-        img_1 = self.camera_three_segment(img, thresh=thresh)
-        img_2 = self.camera_four_segment(img, thresh=thresh)
+        img_1 = self.camera_three_segment(img)
+        img_2 = self.camera_four_segment(img)
         img_2 = cv2.resize(img_2, (0, 0), fx=0.903846154, fy=0.903846154)
+        if thresh:
+            img_1 = cv2.cvtColor(cv2.Canny(img_1, 100, 255), cv2.COLOR_GRAY2RGB)
+            img_2 = cv2.cvtColor(cv2.Canny(img_2, 100, 255), cv2.COLOR_GRAY2RGB)
         img_1 = np.concatenate(
             (np.zeros((img_2.shape[0] - img_1.shape[0], img_1.shape[1], 3), dtype=np.uint8), img_1), axis=0)
         new_img = np.concatenate((img_1, img_2), axis=1)
@@ -164,6 +226,19 @@ class Unwarper:
         # New top and bottom image are then the same size, and each respective pixel is black in one image, and the desired colour
         # in the other, meaning we can just add the matrices values and return the result for our merged image
         img_1 += img_2_merge_canvas
+
+        if thresh:
+            # Canny edge detection detects the edge of the images as edges, which can lead to false positives for objects
+            # in the vision system. To get around this we recorded the errenous pixels positions in one frame. We then marked
+            # all adjacent pixels to this errenous pixtures as well (as the errors can move around slightly). self.errors
+            # lists the positions of all these pixels, and we set them to black to get rid of the false positives.
+            img_1[self.errors] = np.uint8(0)
+            # There were a few pixels that were still errenously white after the postprocessing above, so we manual
+            # set these to black
+            img_1[132, 67] = np.array([0, 0, 0], dtype=np.uint8)
+            img_1[133, 87] = np.array([0, 0, 0], dtype=np.uint8)
+            img_1[134, 88] = np.array([0, 0, 0], dtype=np.uint8)
+
         return img_1
 
 
@@ -198,11 +273,16 @@ class Stitcher:
 
         return (self.stitch(images, H), H)
 
-    def stitch(self, images, H):
+    def stitch(self, images, H, thresh=False):
         (imageB, imageA) = images
 
         result = cv2.warpPerspective(imageA, H,
                                      (imageA.shape[1] + imageB.shape[1], imageA.shape[0]))
+
+        if thresh:
+            result = cv2.cvtColor(cv2.Canny(result, 100, 255), cv2.COLOR_GRAY2RGB)
+            imageB = cv2.cvtColor(cv2.Canny(imageB, 100, 255), cv2.COLOR_GRAY2RGB)
+
         result[0:imageB.shape[0], 0:imageB.shape[1]] = imageB
 
         # return the stitched image
