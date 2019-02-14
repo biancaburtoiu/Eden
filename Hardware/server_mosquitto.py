@@ -1,3 +1,5 @@
+"""provides a remoteMove method and a debug to access it"""
+
 import paho.mqtt.client as mqtt
 
 def onConnect(client,userdata,flags,rc):
