@@ -8,6 +8,7 @@ import math
 import Vision.CamerasUnwarper
 from Vision import Gridify
 from Vision.Finder import RobotFinder
+from pathfinding.graph import getInstructionsFromGrid
 
 
 def set_res(cap, x, y):
@@ -32,6 +33,7 @@ class Unwarper:
         self.errors = self.where_error(
             [(np.load("Vision/lhs_adj_errors.npy"), [125, 7]), (np.load("Vision/rhs_adj_errors.npy"), [104, 140])])
         self.robot_finder = RobotFinder()
+        self.path = None
 
     # Give a numpy array of erroneous pixels, return the location of pixels adjacent to them
     # error_descriptions is a list of tuples, the first element of each tuple should be another tuple in the format
@@ -102,6 +104,19 @@ class Unwarper:
                     dsts = np.concatenate((dsts, dsts2), axis=0)
             return dsts
 
+    def find_path(self, graph, to, frm):
+        if self.path is None:
+            _, self.path, _, _ = getInstructionsFromGrid(graph, frm, to)
+        else:
+            path_broken = False
+            for node in self.path:
+                x, y = node.pos
+                if graph[y][x] == 1:
+                    path_broken = True
+                    break
+            if path_broken:
+                _, self.path, _, _ = getInstructionsFromGrid(graph, frm, to)
+
     # Unwarp all 4 cameras and merge them into a single image in real time
     def live_unwarp(self):
         cam = cv2.VideoCapture(0)
@@ -121,6 +136,13 @@ class Unwarper:
                     cv2.imshow('4. thresholded', thresh_merged_img)
                     object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, visualize=True)
                     robot_pos = self.robot_finder.find_robot(merged_img)
+                    self.find_path(
+                        Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, cell_length=6), (45, 9),
+                        (5, 25))
+                    if self.path is not None:
+                        for node in self.path:
+                            x, y = node.pos
+                            object_graph[y, x] = np.array([255, 0, 0], dtype=np.uint8)
                     if robot_pos[0] is not None:
                         robot_pos = [int(math.floor(i / 6)) for i in robot_pos]
                         object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
