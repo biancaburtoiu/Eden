@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import glob
 
 import cv2
@@ -10,6 +11,7 @@ from Vision import Gridify
 from Vision.Finder import RobotFinder
 from pathfinding.graph import getInstructionsFromGrid
 
+import paho.mqtt.client as mqtt
 
 def set_res(cap, x, y):
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(x))
@@ -33,7 +35,13 @@ class Unwarper:
         self.errors = self.where_error(
             [(np.load("Vision/lhs_adj_errors.npy"), [125, 7]), (np.load("Vision/rhs_adj_errors.npy"), [104, 140])])
         self.robot_finder = RobotFinder()
+
+        self.mqtt=mqtt.Client("PathCommunicator")
+        self.mqtt.on_connect=self.on_connect
+        self.mqtt.connect("129.215.202.200")
+
         self.path = None
+
 
     # Give a numpy array of erroneous pixels, return the location of pixels adjacent to them
     # error_descriptions is a list of tuples, the first element of each tuple should be another tuple in the format
@@ -123,6 +131,7 @@ class Unwarper:
         set_res(cam, 1920, 1080)
         i = 1
         counter = 0
+        
         while True & counter < 100:
             _, img = cam.read()
             if i > 20:
@@ -144,7 +153,9 @@ class Unwarper:
                             x, y = node.pos
                             object_graph[y, x] = np.array([255, 0, 0], dtype=np.uint8)
                     if robot_pos[0] is not None:
+                        self.mqtt.publish("pos", "%f,%f" % (robot_pos[0], robot_pos[1]))
                         robot_pos = [int(math.floor(i / 6)) for i in robot_pos]
+                        
                         object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
                             [0, 0, 255], dtype=np.uint8)
                     cv2.imshow('6. object graph', cv2.resize(object_graph, (0, 0), fx=6, fy=6))
@@ -262,7 +273,8 @@ class Unwarper:
             img_1[134, 88] = np.array([0, 0, 0], dtype=np.uint8)
 
         return img_1
-
+    def on_connect(client,userdata,flags,rc):
+        print("connected")
 
 # The stitcher class is a varitation of the one found in the tutorial here https://www.pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
 
@@ -388,3 +400,4 @@ class Stitcher:
 
         # return the visualization
         return vis
+
