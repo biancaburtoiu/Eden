@@ -104,7 +104,6 @@ class Unwarper:
         cam = cv2.VideoCapture(0)
         set_res(cam, 1920, 1080)
         i = 1
-        j = 0
         counter = 0
         while True & counter < 100:
             _, img = cam.read()
@@ -117,6 +116,10 @@ class Unwarper:
                     cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
                     cv2.imshow('3. merged', merged_img)
                     cv2.imshow('4. thresholded', thresh_merged_img)
+                    cv2.imshow('5. object graph',
+                               cv2.resize(Gridify.convert_thresh_to_map(thresh_merged_img, visualize=True), (0, 0),
+                                          fx=5, fy=5))
+                    cv2.waitKey(1)
             i += 1
 
     def static_unwarp(self, photo_path="Vision/Calibrated Pictures/*.jpg"):
