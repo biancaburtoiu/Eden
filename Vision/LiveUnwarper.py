@@ -35,8 +35,8 @@ class Unwarper:
             [(np.load("Vision/lhs_adj_errors.npy"), [125, 7]), (np.load("Vision/rhs_adj_errors.npy"), [104, 140])])
         self.robot_finder = RobotFinder()
         self.mqtt=mqtt.Client("PathCommunicator")
-        self.mqtt.on_connect=self.on_connect()
-        client.connect("129.215.202.200")
+        self.mqtt.on_connect=self.on_connect
+        self.mqtt.connect("129.215.202.200")
 
     # Give a numpy array of erroneous pixels, return the location of pixels adjacent to them
     # error_descriptions is a list of tuples, the first element of each tuple should be another tuple in the format
@@ -128,7 +128,7 @@ class Unwarper:
                     object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, visualize=True)
                     robot_pos = self.robot_finder.find_robot(merged_img)
                     if robot_pos[0] is not None:
-                        self.client.publish("pos", ",".join(robot_pos))
+                        self.mqtt.publish("pos", ",".join(robot_pos))
                         robot_pos = [int(math.floor(i / 6)) for i in robot_pos]
                         
                         object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
@@ -248,7 +248,8 @@ class Unwarper:
             img_1[134, 88] = np.array([0, 0, 0], dtype=np.uint8)
 
         return img_1
-
+    def on_connect(client,userdata,flags,rc):
+        print("connected")
 
 # The stitcher class is a varitation of the one found in the tutorial here https://www.pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
 
@@ -374,5 +375,4 @@ class Stitcher:
 
         # return the visualization
         return vis
-    def on_connect():
-        print("connected")
+
