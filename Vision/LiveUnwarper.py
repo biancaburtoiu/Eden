@@ -8,6 +8,7 @@ import math
 import Vision.CamerasUnwarper
 from Vision import Gridify
 from Vision.Finder import RobotFinder
+from pathfinding.graph import getInstructionsFromGrid
 
 
 def set_res(cap, x, y):
@@ -121,6 +122,12 @@ class Unwarper:
                     cv2.imshow('4. thresholded', thresh_merged_img)
                     object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, visualize=True)
                     robot_pos = self.robot_finder.find_robot(merged_img)
+                    _, path, _, _ = getInstructionsFromGrid(
+                        Gridify.convert_thresh_to_map(thresh_merged_img, cell_length=6, shift_amount=6), (45, 9), (5, 25))
+                    if path is not None:
+                        for node in path:
+                            x, y = node.pos
+                            object_graph[y, x] = np.array([255, 0, 0], dtype=np.uint8)
                     if robot_pos[0] is not None:
                         robot_pos = [int(math.floor(i / 6)) for i in robot_pos]
                         object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
