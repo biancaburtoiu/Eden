@@ -1,5 +1,6 @@
 package com.sdp.eden;
 
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -17,12 +18,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.TimePicker;
+import android.widget.Toast;
+
 import com.google.firebase.auth.FirebaseAuth;
 import java.util.ArrayList;
 import java.util.Objects;
@@ -45,6 +51,64 @@ public class Plant_Cards_Fragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        Button schedule = view.findViewById(R.id.addschedule);
+        schedule.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+                builder.setTitle("Add schedule for plant");
+
+                View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant_schedule,
+                        (ViewGroup) getView(), false);
+
+                final TimePicker timePicker = viewInflated.findViewById(R.id.timePicker);
+                timePicker.setIs24HourView(true);
+
+                CheckBox checkBox_Monday = viewInflated.findViewById(R.id.checkbox_Monday);
+                CheckBox checkBox_Tuesday = viewInflated.findViewById(R.id.checkbox_Tuesday);
+                CheckBox checkBox_Wednesday = viewInflated.findViewById(R.id.checkbox_Wednesday);
+                CheckBox checkBox_Thursday = viewInflated.findViewById(R.id.checkbox_Thursday);
+                CheckBox checkBox_Friday = viewInflated.findViewById(R.id.checkbox_Friday);
+                CheckBox checkBox_Saturday = viewInflated.findViewById(R.id.checkbox_Saturday);
+                CheckBox checkBox_Sunday = viewInflated.findViewById(R.id.checkbox_Sunday);
+
+                EditText quantityInput = viewInflated.findViewById(R.id.quantityInput);
+
+                // TODO: This should contain a written explanation of the schedule:
+                // e.g. if the user ticked Monday and Friday and chose time 5pm
+                // this string should update as the user checks/unchecks checkboxes
+                // and it would say "Plant will be watered on Mondays and Fridays at 5pm"
+                TextView scheduleExplanation = viewInflated.findViewById(R.id.scheduleExplanation);
+
+                builder.setView(viewInflated); // MOVED THIS HERE
+
+                builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String currentPlant = "bob";
+                        String time = timePicker.getHour()+":"+timePicker.getMinute();
+                        int quantity = Integer.parseInt(quantityInput.getText().toString());
+
+                        if (checkBox_Monday.isChecked()) {
+                            ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Monday", time, quantity);
+                            // TODO: Add newEntry to database in User/users/Schedules
+                            DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
+                                @Override
+                                public void onAddScheduleEntryFinished(boolean success) {
+                                    //TODO: Why does this not work?
+                                    Toast.makeText(getContext(), "Added!", Toast.LENGTH_LONG);
+                                }
+                            });
+                        }
+                    }
+                });
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        });
+
 
         FloatingActionButton addPlantButton = view.findViewById(R.id.addPlantButton);
         addPlantButton.setOnClickListener(v -> {

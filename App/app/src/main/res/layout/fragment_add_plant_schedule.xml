@@ -54,6 +54,34 @@
             android:timePickerMode="spinner">
         </TimePicker>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quantity:"/>
+
+            <EditText
+                android:id="@+id/quantityInput"
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:inputType="number"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ml"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/scheduleExplanation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Explanation"/>
+
     </LinearLayout>
 
 </FrameLayout>

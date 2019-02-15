@@ -66,6 +66,27 @@ public class DbOps {
                 });
     }
 
+    void addScheduleEntry(ScheduleEntry scheduleEntry, onAddScheduleEntryFinishedListener listener){
+        db.collection("Users")
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .collection("Schedules")
+                // Not entirely sure here: might have to change the document name later on
+                .document().set(scheduleEntry)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            listener.onAddScheduleEntryFinished(true);
+                            Log.d(TAG, "Schedule for plant: "+scheduleEntry.getPlantName()+" successfully added to database!");
+                        }
+                        else {
+                            listener.onAddScheduleEntryFinished(false);
+                            Log.d(TAG, "Could not add schedule entry for plant: "+scheduleEntry.getPlantName()+" to database.");
+                        }
+                    }
+                });
+    }
+
 
 
 
@@ -75,6 +96,10 @@ public class DbOps {
 
     interface onAddPlantFinishedListener {
         void onUpdateFinished(boolean success);
+    }
+
+    interface onAddScheduleEntryFinishedListener {
+        void onAddScheduleEntryFinished(boolean success);
     }
 
     interface OnGetPlantListFinishedListener {
