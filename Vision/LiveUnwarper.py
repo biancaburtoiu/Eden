@@ -10,6 +10,8 @@ from Vision import Gridify
 from Vision.Finder import RobotFinder
 from pathfinding.graph import getInstructionsFromGrid
 
+from matplotlib import pyplot as plt
+
 
 def set_res(cap, x, y):
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(x))
@@ -111,12 +113,15 @@ class Unwarper:
                 _, self.path, _, _ = getInstructionsFromGrid(graph, frm, to)
             else:
                 path_broken = False
+                closest = float('inf')
                 for node in self.path:
                     x, y = node.pos
+                    if abs(x - frm[0]) + abs(y - frm[1]) < closest:
+                        closest = abs(x - frm[0]) + abs(y - frm[1])
                     if graph[y][x] == 1:
                         path_broken = True
                         break
-                if path_broken:
+                if path_broken or closest > 2:
                     _, self.path, _, _ = getInstructionsFromGrid(graph, frm, to)
         else:
             self.path = None
@@ -142,13 +147,14 @@ class Unwarper:
                     search_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, cell_length=6)
                     robot_pos = self.robot_finder.find_robot(merged_img)
                     if robot_pos[0] is not None:
-                        robot_pos = [int(math.floor(i / 6)) for i in robot_pos]
+                        robot_pos = tuple([int(math.floor(i / 6)) for i in robot_pos])
                         object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
                             [0, 0, 255], dtype=np.uint8)
                         for j in range(robot_pos[1] - 2, robot_pos[1] + 3):
                             for k in range(robot_pos[0] - 2, robot_pos[0] + 3):
                                 search_graph[j][k] = 0
-                    self.find_path(search_graph, (45, 9), (25, 9))
+                    cv2.imshow("search graph", np.array(search_graph, dtype=np.uint8) * np.uint8(255))
+                    self.find_path(search_graph, (33, 17), robot_pos)
                     if self.path is not None:
                         for node in self.path:
                             x, y = node.pos
