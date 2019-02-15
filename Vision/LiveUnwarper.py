@@ -34,6 +34,7 @@ class Unwarper:
             [(np.load("Vision/lhs_adj_errors.npy"), [125, 7]), (np.load("Vision/rhs_adj_errors.npy"), [104, 140])])
         self.robot_finder = RobotFinder()
         self.path = None
+        self.overlap_area = None
 
     # Give a numpy array of erroneous pixels, return the location of pixels adjacent to them
     # error_descriptions is a list of tuples, the first element of each tuple should be another tuple in the format
@@ -248,8 +249,11 @@ class Unwarper:
             (img_1, np.zeros((img_2.shape[0] - amount_to_move_bottom_img_up, img_1.shape[1], 3), dtype=np.uint8)),
             axis=0)
         # For all pixels in the top image that will be overlapped by the bottom image, we set their value to 0
-        mask = np.where(img_2_merge_canvas != [0, 0, 0])
-        img_1[mask] = np.zeros(img_1.shape, dtype=np.uint8)[mask]
+        if not thresh or self.overlap_area is None:
+            self.overlap_area = np.where(img_2_merge_canvas != [0, 0, 0])
+            if thresh:
+                print("WARNING: self.overlap_area undefined, this is likely due to not merging the colour image first")
+        img_1[self.overlap_area] = np.zeros(img_1.shape, dtype=np.uint8)[self.overlap_area]
         # New top and bottom image are then the same size, and each respective pixel is black in one image, and the desired colour
         # in the other, meaning we can just add the matrices values and return the result for our merged image
         img_1 += img_2_merge_canvas
