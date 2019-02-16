@@ -12,13 +12,23 @@ import numpy as np
 
 ## tell app people what you're doing
 
+'''
+gotta change it:
+    - not gonna be called by vision, just gonna get a webcam frame itself
+    - no unwarper in init!
+    - doesn't really need to be OO, and the callback cannot be OO, probably don't
+      make any of it OO 
+'''
+
+
+
 
 class FirebaseInteraction:
-    def __init__(unwarper):
+    def __init__(self,unwarper):
         self.unwarper = unwarper
         self.db = self.init_fb()
 
-    def main(image_as_np):
+    def main(self,image_as_np):
         ''' get image from np array '''
         scipy.misc.toimage(image_as_np).save("overhead-image-for-app.png")
 
@@ -27,24 +37,24 @@ class FirebaseInteraction:
         image_blob = bucket.blob("overhead-image")
         image_blob.upload_from_filename("overhead-image-for-app.png")
 
+        '''update status in firestore'''
         new_status = {'status':'request_complete'}
-        db.collection(u'overhead-image').document(u'overhead-image').set(new_status)
+        self.db.collection(u'overhead-image').document(u'overhead-image').set(new_status)
 
-    ii = np.array([[1,1,0,0,0,0],[0,0,1,1,1,1]])
-    main(ii)
-
-    def init_fb():
+    def init_fb(self):
         cred = fba.credentials.Certificate("eden-34f6a-firebase-adminsdk-yigr5-83fe6dc575.json")
         fba.initialize_app(cred,{
             'storageBucket': "eden-34f6a.appspot.com"
         })
         db = firestore.client()
         
-        db.collection(u'overhead-image').document(u'overhead-images').on_snapshot(get_image_from_vision())
+        db.collection(u'overhead-image').document(u'overhead-images').on_snapshot(get_image_from_vision)
+        
         return db
 
-    def get_image_from_vision():
-
+    def get_image_from_vision(self):
+        image = self.unwarper.get_recent_image()
+        self.main(image)
 
 
     
