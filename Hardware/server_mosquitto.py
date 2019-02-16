@@ -22,30 +22,7 @@ def debugfunc():
         inputs = input("e:").split(" ")
 
         ##check input format, and perform action
-        if inputs[0]=='m':
-            if inputs[1]=='c' :
-                speed = int(inputs[2])
-                remoteMove(False,speed,-1)
-            elif inputs[1]=='t':
-                speed = int(inputs[2])
-                time = int(inputs[3])
-                remoteMove(False,speed,time)
-            else:
-                print("NOT WELL FORMED")
-        elif inputs[0]=='r':
-            if inputs[1]=='c' :
-                speed = int(inputs[2])
-                remoteMove(True,speed,-1)
-            elif inputs[1]=='t':
-                speed = int(inputs[2])
-                time = int(inputs[3])
-                remoteMove(True,speed,time)
-            else:
-                print("NOT WELL FORMED")
-        elif inputs[0] =='s':
-            stop()
-        else:
-            print("NOT WELL FORMED")
+        client.publish(inputs[0],inputs[1].encode())
 
 if __name__ == "__main__":
     debugfunc()
