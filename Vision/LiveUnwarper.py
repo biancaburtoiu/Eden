@@ -10,8 +10,6 @@ from Vision import Gridify
 from Vision.Finder import RobotFinder
 from pathfinding.graph import getInstructionsFromGrid
 
-from matplotlib import pyplot as plt
-
 
 def set_res(cap, x, y):
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(x))
@@ -121,7 +119,7 @@ class Unwarper:
                     if graph[y][x] == 1:
                         path_broken = True
                         break
-                if path_broken or closest > 2:
+                if path_broken or closest > 0:
                     _, self.path, _, _ = getInstructionsFromGrid(graph, frm, to)
         else:
             self.path = None
