@@ -13,6 +13,8 @@ from pathfinding.graph import getInstructionsFromGrid
 
 import paho.mqtt.client as mqtt
 
+import Vision.firebase_interaction as fbi
+
 def set_res(cap, x, y):
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, int(x))
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, int(y))
@@ -39,9 +41,12 @@ class Unwarper:
         self.mqtt=mqtt.Client("PathCommunicator")
         self.mqtt.on_connect=self.on_connect
         self.mqtt.connect("129.215.202.200")
-
+        self.overhead_image = None
+        fbi.start_script(self)
         self.path = None
 
+    def get_overhead_image(self):
+        return self.overhead_image
 
     # Give a numpy array of erroneous pixels, return the location of pixels adjacent to them
     # error_descriptions is a list of tuples, the first element of each tuple should be another tuple in the format
@@ -137,6 +142,7 @@ class Unwarper:
             if i > 20:
                 unwarp_img = self.unwarp_image(img)
                 merged_img = self.stitch_one_two_three_and_four(img)
+                self.overhead_image = merged_img
                 thresh_merged_img = self.stitch_one_two_three_and_four(img, thresh=True)
                 if merged_img is not None:
                     cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
