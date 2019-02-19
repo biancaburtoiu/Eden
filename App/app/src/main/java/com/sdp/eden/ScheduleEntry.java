@@ -1,7 +1,5 @@
 package com.sdp.eden;
 
-import java.util.ArrayList;
-
 public class ScheduleEntry {
     private String PlantName;
     private String Day;

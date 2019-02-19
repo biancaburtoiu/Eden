@@ -76,12 +76,6 @@
                 android:text="ml"/>
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/scheduleExplanation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Explanation"/>
-
     </LinearLayout>
 
 </FrameLayout>

@@ -67,11 +67,14 @@ public class DbOps {
     }
 
     void addScheduleEntry(ScheduleEntry scheduleEntry, onAddScheduleEntryFinishedListener listener){
+        // Sets the name of the database document to something user-friendly
+        String scheduleString = scheduleEntry.getPlantName()+"-"+scheduleEntry.getDay()+"-"+
+                                scheduleEntry.getTime()+"-"+scheduleEntry.getQuantity()+"ml";
+
         db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Schedules")
-                // Not entirely sure here: might have to change the document name later on
-                .document().set(scheduleEntry)
+                .document(scheduleString).set(scheduleEntry)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {

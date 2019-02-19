@@ -56,6 +56,7 @@ public class Plant_Cards_Fragment extends Fragment {
         schedule.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
                 builder.setTitle("Add schedule for plant");
 
@@ -75,29 +76,89 @@ public class Plant_Cards_Fragment extends Fragment {
 
                 EditText quantityInput = viewInflated.findViewById(R.id.quantityInput);
 
-                // TODO: This should contain a written explanation of the schedule:
-                // e.g. if the user ticked Monday and Friday and chose time 5pm
-                // this string should update as the user checks/unchecks checkboxes
-                // and it would say "Plant will be watered on Mondays and Fridays at 5pm"
-                TextView scheduleExplanation = viewInflated.findViewById(R.id.scheduleExplanation);
-
-                builder.setView(viewInflated); // MOVED THIS HERE
+                builder.setView(viewInflated);
 
                 builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String currentPlant = "bob";
-                        String time = timePicker.getHour()+":"+timePicker.getMinute();
+
+                        // getMinute is in 0-59 interval. This adds a 0 ahead of the minutes 0-9
+                        // Result: 20:01 instead of 20:1
+                        String time = "";
+                        if (timePicker.getMinute()<10)
+                            time = timePicker.getHour()+":0"+timePicker.getMinute();
+                        else
+                            time = timePicker.getHour()+":"+timePicker.getMinute();
                         int quantity = Integer.parseInt(quantityInput.getText().toString());
 
                         if (checkBox_Monday.isChecked()) {
                             ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Monday", time, quantity);
-                            // TODO: Add newEntry to database in User/users/Schedules
                             DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                 @Override
                                 public void onAddScheduleEntryFinished(boolean success) {
-                                    //TODO: Why does this not work?
-                                    Toast.makeText(getContext(), "Added!", Toast.LENGTH_LONG);
+                                    Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
+                                            " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        if (checkBox_Tuesday.isChecked()) {
+                            ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Tuesday", time, quantity);
+                            DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
+                                @Override
+                                public void onAddScheduleEntryFinished(boolean success) {
+                                    Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
+                                            " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        if (checkBox_Wednesday.isChecked()) {
+                            ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Wednesday", time, quantity);
+                            DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
+                                @Override
+                                public void onAddScheduleEntryFinished(boolean success) {
+                                    Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
+                                            " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        if (checkBox_Thursday.isChecked()) {
+                            ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Thursday", time, quantity);
+                            DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
+                                @Override
+                                public void onAddScheduleEntryFinished(boolean success) {
+                                    Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
+                                            " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        if (checkBox_Friday.isChecked()) {
+                            ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Friday", time, quantity);
+                            DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
+                                @Override
+                                public void onAddScheduleEntryFinished(boolean success) {
+                                    Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
+                                            " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        if (checkBox_Saturday.isChecked()) {
+                            ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Saturday", time, quantity);
+                            DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
+                                @Override
+                                public void onAddScheduleEntryFinished(boolean success) {
+                                    Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
+                                            " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                        if (checkBox_Sunday.isChecked()) {
+                            ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Sunday", time, quantity);
+                            DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
+                                @Override
+                                public void onAddScheduleEntryFinished(boolean success) {
+                                    Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
+                                            " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
                                 }
                             });
                         }
