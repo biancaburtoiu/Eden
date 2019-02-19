@@ -31,6 +31,7 @@ import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class Plant_Cards_Fragment extends Fragment {
@@ -81,10 +82,12 @@ public class Plant_Cards_Fragment extends Fragment {
                 builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+
                         String currentPlant = "bob";
 
                         // getMinute is in 0-59 interval. This adds a 0 ahead of the minutes 0-9
                         // Result: 20:01 instead of 20:1
+                        // Hours between 12am and 12pm will have a single digit: e.g. 2:45
                         String time = "";
                         if (timePicker.getMinute()<10)
                             time = timePicker.getHour()+":0"+timePicker.getMinute();

@@ -90,8 +90,39 @@ public class DbOps {
                 });
     }
 
+    void getScheduleEntriesForPlant(String user_email, String plant_name, OnGetSchedulesForPlantFinishedListener listener) {
+        db.collection("Users")
+                .document(user_email)
+                .collection("Schedules")
+                .whereEqualTo("plantName", plant_name)
+                .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (!task.getResult().isEmpty()) {
+                    List<ScheduleEntry> scheduleEntries = task.getResult().toObjects(ScheduleEntry.class);
+                    Log.d(TAG, "Retrieved scheduleEntries for plant " + plant_name + " size: " + scheduleEntries.size());
+                    listener.onGetSchedulesForPlantFinished(scheduleEntries);
+                } else listener.onGetSchedulesForPlantFinished(null);
+            }
+        });
+    }
 
-
+    void getAllScheduleEntries(String user_email, OnGetAllSchedulesFinishedListener listener) {
+        db.collection("Users")
+                .document(user_email)
+                .collection("Schedules")
+                .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if (!task.getResult().isEmpty()) {
+                    List<ScheduleEntry> scheduleEntries = task.getResult().toObjects(ScheduleEntry.class);
+                    Log.d(TAG, "Retrieved scheduleEntries size: "+scheduleEntries.size());
+                    listener.onGetAllSchedulesFinished(scheduleEntries);
+                }
+                else listener.onGetAllSchedulesFinished(null);
+            }
+        });
+    }
 
 
 
@@ -107,5 +138,13 @@ public class DbOps {
 
     interface OnGetPlantListFinishedListener {
         void onGetPlantListFinished(List<Plant> plants);
+    }
+
+    interface OnGetSchedulesForPlantFinishedListener {
+        void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries);
+    }
+
+    interface OnGetAllSchedulesFinishedListener {
+        void onGetAllSchedulesFinished(List<ScheduleEntry> scheduleEntries);
     }
 }
