@@ -1,12 +1,8 @@
-#import movement
+import movement
 import paho.mqtt.client as mqtt
 import sys
 #import ev3dev.ev3 as ev3
 import math
-
-###
-movement = None
-###
 
 calibrated=False
 calibrating=False
@@ -38,8 +34,8 @@ def onConnect(client,userdata,flags,rc):
 def onMessage(client,userdata,msg):
     print("Received message with payload:%s "%(msg.payload.decode()))
     if (msg.topic=="instructions"):
-        instructions_from_server = msg.payload.decode("ascii").split(",")
-        instructions_to_follow = [(t,int(v)) for (t,v) in instructions_from_server]
+        print("instruction message!")
+        instructions_to_follow= msg.payload.decode().split(";")
         follow_insts_in_list()
 
     # if msg.topic=="pos":
@@ -70,9 +66,11 @@ def onMessage(client,userdata,msg):
     #         print("calibrated")
     
 def follow_insts_in_list():
+    print("starting to follow instructions")
     while len(instructions_to_follow)>0:
         # instruction type t and value v - i.e. ('m',5)
         inst = instructions_to_follow.remove(0)
+        print("following instruction:" + inst)
         if inst in ['u','d','l','r']:
         # used to synch robot's direction to match relative instructions
             print("facing %s"%inst)
@@ -84,15 +82,19 @@ def follow_insts_in_list():
                 face(90)
             else:
                 face(270)
+            print("done")
         else:
             # (type,value) format
             (t,v) = inst
+            v=int(v)
             if t=='m':
-                forward(v)
                 print("moved %i squares"%v)
+                forward(v)
+                print("done")
             elif t=='r':
-                relativeTurn(v)
                 print("turned %i degrees"%v)
+                relativeTurn(v)
+                print("done")
             else:
                 print("Invalid instruction!: (%s,%i)"%(t,v))
                 ##error

@@ -142,10 +142,10 @@ class Unwarper:
             # first instruction gives an initial direction
             # subsequent ones are in (type,value) format
             if inst in ['u','d','l','r']:
-                insts_string+=inst+","
+                insts_string+=inst+";"
             else:
                 (t,v) = inst
-                insts_string += "(%s,%i),"%(t,v)
+                insts_string += "(%s,%i);"%(t,v)
 
         # send this string to ev3
         print("publishing instructions for new path!")
