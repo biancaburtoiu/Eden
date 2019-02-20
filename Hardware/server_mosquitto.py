@@ -11,10 +11,9 @@ client.on_connect=onConnect
 client.connect("129.215.202.200")
 
 client.loop_start()
-def remoteMove(rotate,speed,time):
+def remoteMove(insts_string):
     """send a command to the ev3 to move remotely"""
-    client.publish("move",'%i,%i,%i'% (rotate,speed,time))
-    print('%i,%i,%i'% (rotate,speed,time))
+    client.publish("instructions",insts_string)
 
 def debugfunc():
     while True:

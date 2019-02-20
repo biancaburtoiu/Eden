@@ -51,7 +51,8 @@ class RobotFinder:
         if len(keypoints) > 0:
 
             if len(keypoints) > 1:
-                print("ROBOT FINDER FOUND MORE THAN ONE POSSIBLE POSITION FOR THE ROBOT, USING FIRST FOUND")
+                None
+                #print("ROBOT FINDER FOUND MORE THAN ONE POSSIBLE POSITION FOR THE ROBOT, USING FIRST FOUND")
 
             # We assume there will only ever be one blob, as the simple blob detector filters the blobs based on their
             # circularity and area. So we can say the robot is at the centre of the first blob
@@ -67,7 +68,8 @@ class RobotFinder:
                 return robot_pos
 
         elif len(keypoints) == 0:
-            print("ROBOT FINDER COULD NOT FIND THE ROBOT, RETURNING POSITION AS NONE")
+            None
+            #print("ROBOT FINDER COULD NOT FIND THE ROBOT, RETURNING POSITION AS NONE")
 
             robot_pos = (None, None)
 

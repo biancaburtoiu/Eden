@@ -119,7 +119,8 @@ class Unwarper:
 
     def find_path(self, graph, to, frm):
         if self.path is None:
-            _, self.path, _, _ = getInstructionsFromGrid(graph, frm, to)
+            _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to)
+            self.send_insts_to_robot(insts)
         else:
             path_broken = False
             for node in self.path:
@@ -128,7 +129,28 @@ class Unwarper:
                     path_broken = True
                     break
             if path_broken:
-                _, self.path, _, _ = getInstructionsFromGrid(graph, frm, to)
+                _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to)
+                self.send_insts_to_robot(insts)
+
+    # takes a list of tuples of instructions, in format 
+    # given by dirToInsts.getInstructionsFromGrid(..).
+    # the converts these to a string and sends them to the ev3 by mqtt
+    def send_insts_to_robot(self,insts):
+        # convert insts from list to csv string
+        insts_string = ""
+        for inst in insts:
+            # first instruction gives an initial direction
+            # subsequent ones are in (type,value) format
+            if inst in ['u','d','l','r']:
+                insts_string+=inst+","
+            else:
+                (t,v) = inst
+                insts_string += "(%s,%i),"%(t,v)
+
+        # send this string to ev3
+        print("publishing instructions for new path!")
+        print(insts_string)
+        self.mqtt.publish("instructions",insts_string)        
 
     # Unwarp all 4 cameras and merge them into a single image in real time
     def live_unwarp(self):
