@@ -3,7 +3,7 @@ import paho.mqtt.client as mqtt
 import sys
 import ev3dev.ev3 as ev3
 import math
-
+import time
 calibrated=False
 calibrating=False
 waiting=False
@@ -45,7 +45,7 @@ def onMessage(client,userdata,msg):
         if (msg.topic=="instructions"):
             print("instruction message!")
             instructions_to_follow= msg.payload.decode().split(";")
-            follow_insts_in_list()
+            follow_insts_in_list(instructions_to_follow)
 
         if msg.topic=="pos":
              print("positional input")
@@ -58,6 +58,7 @@ def onMessage(client,userdata,msg):
                  initial=position
                  print("right before")
                  movement.forward_t(1000)
+                 time.sleep(2)
                  waiting=True
                  print("past")
              elif waiting:
@@ -68,7 +69,7 @@ def onMessage(client,userdata,msg):
                  print(math.atan(difference[0]/difference[1]))
                  angle=math.atan(difference[0]/difference[1])
                  print(3)
-                 speed=math.sqrt(difference[0]^2+difference[1]^2)
+                 speed=math.sqrt(difference[0]**2+difference[1]**2)
                  print(4)
                  calibrated=True
                  print("calibrated")
@@ -79,7 +80,7 @@ def onMessage(client,userdata,msg):
         sys.exit()
         raise
 
-def follow_insts_in_list():
+def follow_insts_in_list(instructions_to_follow):
     print("starting to follow instructions")
     while len(instructions_to_follow)>0:
         # instruction type t and value v - i.e. ('m',5)
