@@ -159,9 +159,8 @@ class Unwarper:
                             x, y = node.pos
                             object_graph[y, x] = np.array([255, 0, 0], dtype=np.uint8)
                     if robot_pos[0] is not None:
-                        self.mqtt.publish("pos", "%f,%f" % (robot_pos[0], robot_pos[1]))
                         robot_pos = [int(math.floor(i / 6)) for i in robot_pos]
-                        
+                        self.mqtt.publish("pos", "%f,%f" % (robot_pos[0], robot_pos[1]))
                         object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
                             [0, 0, 255], dtype=np.uint8)
                     cv2.imshow('6. object graph', cv2.resize(object_graph, (0, 0), fx=6, fy=6))
