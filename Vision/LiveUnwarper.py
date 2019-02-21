@@ -135,6 +135,9 @@ class Unwarper:
                     if graph[y][x] == 1:
                         path_broken = True
                         break
+                ####################
+                closest=False
+                #####################
                 if path_broken or closest > 0:
                     _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to,upside_down=True)
                     self.send_insts_to_robot(insts)
@@ -156,7 +159,7 @@ class Unwarper:
                 insts_string+=inst+";"
             else:
                 (t,v) = inst
-                insts_string += "(%s,%i);"%(t,v)
+                insts_string += "%s,%i;"%(t,v)
 
         # send this string to ev3
         print("publishing instructions for new path!")
@@ -186,11 +189,12 @@ class Unwarper:
                     search_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, cell_length=6)
                     robot_pos = self.robot_finder.find_robot(merged_img)
                     if robot_pos[0] is not None:
+                        robot_pos = tuple([i/6 for i in robot_pos])
                         if abs(robot_pos[0]-last_robot_pos_sent[0])>0.1 or abs(robot_pos[1]-last_robot_pos_sent[1])>0.1:
                             self.mqtt.publish("pos", "%f,%f" % (robot_pos[0], robot_pos[1]))
                             last_robot_pos_sent=robot_pos
-                            print("sending robot position")
-                        robot_pos = tuple([int(math.floor(i / 6)) for i in robot_pos])
+                            print("sending robot position: (%f,%f)"%(robot_pos))
+                        robot_pos = tuple([int(i) for i in robot_pos])
                         object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
                             [0, 0, 255], dtype=np.uint8)
                         for j in range(robot_pos[1] - 2, robot_pos[1] + 3):
