@@ -39,22 +39,22 @@ android:id="@+id/fragment_plants">
 
         <android.support.design.widget.FloatingActionButton
             android:id="@+id/addPlantButton"
-            android:layout_width="65dp"
-            android:layout_height="65dp"
-            android:layout_marginStart="327dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end|bottom"
+            android:layout_margin="16dp"
+            android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:layout_marginEnd="17dp"
+            android:layout_marginEnd="8dp"
             android:layout_marginBottom="8dp"
-            android:backgroundTint="@color/colorPrimary"
-            android:clickable="true"
             android:elevation="8dp"
+            android:backgroundTint="@color/colorPrimary"
+            android:src="@drawable/ic_add_white_24dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="1.0"
-            app:srcCompat="@drawable/ic_add_white_24dp" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <!-- snack bar location -->
 

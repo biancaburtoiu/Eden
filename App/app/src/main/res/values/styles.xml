@@ -23,4 +23,9 @@
 
     </style>
 
+    <style name="Dialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:textColorPrimary">#000</item>
+        <item name="android:textColorAlertDialogListItem">#000</item>
+    </style>
+
 </resources>

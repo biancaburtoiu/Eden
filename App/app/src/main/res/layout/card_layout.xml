@@ -10,7 +10,7 @@
     card_view:cardCornerRadius="12dp"
     card_view:cardElevation="8dp"
     card_view:cardUseCompatPadding="true"
-    android:foreground="?selectableItemBackground"
+    android:foreground="@drawable/ripple_card"
     android:clickable="true">
 
     <RelativeLayout
@@ -19,14 +19,14 @@
         android:clipChildren="false"
         android:padding="16dp">
 
-        <ImageView
+        <de.hdodenhof.circleimageview.CircleImageView
+            xmlns:app="http://schemas.android.com/apk/res-auto"
             android:id="@+id/card_plant_image"
             android:layout_width="70dp"
             android:layout_height="70dp"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_marginStart="16dp"
-            android:src="@mipmap/ic_launcher_round" />
+            android:src="@mipmap/ic_launcher_round"
+            />
+
 
         <ImageButton
             android:id="@+id/popup_menu"

@@ -1,34 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="40dp"
     android:orientation="vertical">
 
-    <android.support.design.widget.TextInputLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
 
-        <android.support.design.widget.TextInputEditText
-            android:id="@+id/plantName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Enter plant name"
-            android:imeOptions="actionDone"
-            android:inputType="text"/>
-
-    </android.support.design.widget.TextInputLayout>
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/plantPic"
+        android:layout_width="70dp"
+        android:layout_height="70dp"
+        android:layout_gravity="center"
+        android:src="@mipmap/ic_launcher_round"
+        />
 
     <TextView
+        android:id="@+id/textView3"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Enter plant species"/>
+        android:layout_height="wrap_content"
+        android:paddingTop="10dp"
+        android:text="Tap to change plant picture"
+        android:textAlignment="center" />
+
+    <EditText
+        android:id="@+id/plantName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:hint="Plant Name" />
 
     <Spinner
         android:id="@+id/plantSpecies"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:spinnerMode="dropdown">
-    </Spinner>
+        android:layout_height="wrap_content" />
+
 
 </LinearLayout>

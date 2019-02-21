@@ -10,7 +10,7 @@
 
         <bitmap
             android:gravity="center"
-            android:src="@drawable/eden"/>
+            android:src="@drawable/eden_white"/>
     </item>
 
 </layer-list>
