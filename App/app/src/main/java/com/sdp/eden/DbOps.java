@@ -73,7 +73,7 @@ public class DbOps {
 
     void addScheduleEntry(ScheduleEntry scheduleEntry, onAddScheduleEntryFinishedListener listener){
         // Sets the name of the database document to something user-friendly
-        String scheduleString = scheduleEntry.getPlantName()+"-"+scheduleEntry.getDay()+"-"+
+        String scheduleString = scheduleEntry.getDay()+"-"+
                                 scheduleEntry.getTime()+"-"+scheduleEntry.getQuantity()+"ml";
 
         db.collection("Users")
@@ -150,8 +150,8 @@ public class DbOps {
     }
 
     void deleteSchedulesOfPlant(Plant plant, onDeletePlantFinishedListener listener) {
-
         // Gets the schedule entries of that specific plant and then removes them in a batch operation.
+
         WriteBatch batch1 = db.batch();
 
         DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
@@ -163,9 +163,9 @@ public class DbOps {
                 }
 
                 for (ScheduleEntry scheduleEntry : scheduleEntries) {
-                    String scheduleString = scheduleEntry.getPlantName()+"-"+scheduleEntry.getDay()+"-"+
-                            scheduleEntry.getTime()+"-"+scheduleEntry.getQuantity()+"ml";
-                    Log.d(TAG, "Schedule string: "+scheduleString);
+                    String scheduleString = scheduleEntry.getDay() + "-" +
+                            scheduleEntry.getTime() + "-" + scheduleEntry.getQuantity() + "ml";
+                    Log.d(TAG, "(Deleting: ) Schedule string: " + scheduleString);
 
                     DocumentReference scheduleToRemove =
                             db.collection("Users")
@@ -174,56 +174,82 @@ public class DbOps {
                                     .document(scheduleString);
                     batch1.delete(scheduleToRemove);
                 }
-            }
-        });
 
-        batch1.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                if (task.isSuccessful()){
-                    Log.d(TAG, "Successfully removed schedule entries for plant");
-                    Log.d(TAG, "AND Successfully removed plant");
-                    listener.onDeletePlantFinished(true);
-                }
-                else {
-                    Log.d(TAG, "Could not remove schedule entries for plant");
-                    Log.d(TAG, "And could not remove plant");
-                    listener.onDeletePlantFinished(false);
-                }
+                batch1.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()){
+                            Log.d(TAG, "Successfully removed schedule entries for plant");
+                            Log.d(TAG, "AND Successfully removed plant");
+                            listener.onDeletePlantFinished(true);
+                        }
+                        else {
+                            Log.d(TAG, "Could not remove schedule entries for plant");
+                            Log.d(TAG, "And could not remove plant");
+                            listener.onDeletePlantFinished(false);
+                        }
+                    }
+                });
             }
         });
     }
 
     void editPlantName(Plant oldPlant, String newName, onEditPlantFinishedListener listener) {
-        // Create new document with same old properties BUT new name. Then delete old document
-
         WriteBatch batch = db.batch();
 
+        // Create new plant with same properties but new name
         DocumentReference creator = db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
                 .document(newName);
         batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto()));
 
+        // Remove current plant document
         DocumentReference remover = db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
                 .document(oldPlant.getName());
         batch.delete(remover);
 
-        batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+        // Update schedule entries for old plant name with new plant name
+        DbOps.instance.getScheduleEntriesForPlant(oldPlant, new OnGetSchedulesForPlantFinishedListener() {
             @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                if (task.isSuccessful()) {
-                    listener.onEditPlantFinished(true);
-                    Log.d(TAG, "Deleted old document / created new document with edited name!");
+            public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
+                if (scheduleEntries==null) {
+                    Log.d(TAG, "No schedules to delete.");
+                    return;
                 }
-                else {
-                    listener.onEditPlantFinished(false);
-                    Log.d(TAG, "Could not delete old document / create new document with edited name.");
+
+                for (ScheduleEntry scheduleEntry : scheduleEntries) {
+                    String scheduleString = scheduleEntry.getDay() + "-" +
+                            scheduleEntry.getTime() + "-" + scheduleEntry.getQuantity() + "ml";
+                    Log.d(TAG, "(Editing: ) Schedule string: " + scheduleString);
+
+                    DocumentReference scheduleToUpdate =
+                            db.collection("Users")
+                                    .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                                    .collection("Schedules")
+                                    .document(scheduleString);
+                    batch.set(scheduleToUpdate, new ScheduleEntry(scheduleEntry.getDay(), newName,
+                            scheduleEntry.getQuantity(), scheduleEntry.getTime()));
                 }
+
+                batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            listener.onEditPlantFinished(true);
+                            Log.d(TAG, "Edit plant name finished!");
+                        }
+                        else {
+                            listener.onEditPlantFinished(false);
+                            Log.d(TAG, "Could not edit plant name.");
+                        }
+                    }
+                });
             }
         });
+
     }
 
     interface onAddPlantFinishedListener {
