@@ -11,6 +11,8 @@ from Vision import Gridify
 from Vision.Finder import RobotFinder
 from pathfinding.graph import getInstructionsFromGrid
 
+from matplotlib import pyplot as plt
+
 import paho.mqtt.client as mqtt
 
 import Vision.firebase_interaction as fbi
@@ -44,6 +46,8 @@ class Unwarper:
         self.overhead_image = None
         fbi.start_script(self)
         self.path = None
+        self.overlap_area = None
+
     def get_overhead_image(self):
         return self.overhead_image
 
@@ -117,19 +121,27 @@ class Unwarper:
             return dsts
 
     def find_path(self, graph, to, frm):
-        if self.path is None:
-            _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to,upside_down=True)
-            self.send_insts_to_robot(insts)
-        else:
-            path_broken = False
-            for node in self.path:
-                x, y = node.pos
-                if graph[y][x] == 1:
-                    path_broken = True
-                    break
-            if path_broken:
+        if frm[0] is not None:
+            if self.path is None:
                 _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to,upside_down=True)
                 self.send_insts_to_robot(insts)
+            else:
+                path_broken = False
+                closest = float('inf')
+                for node in self.path:
+                    x, y = node.pos
+                    if abs(x - frm[0]) + abs(y - frm[1]) < closest:
+                        closest = abs(x - frm[0]) + abs(y - frm[1])
+                    if graph[y][x] == 1:
+                        path_broken = True
+                        break
+                if path_broken or closest > 0:
+                    _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to,upside_down=True)
+                    self.send_insts_to_robot(insts)
+        else:
+            self.path = None
+
+                
 
     # takes a list of tuples of instructions, in format 
     # given by dirToInsts.getInstructionsFromGrid(..).
@@ -171,9 +183,15 @@ class Unwarper:
                     cv2.imshow('3. merged', merged_img)
                     cv2.imshow('4. thresholded', thresh_merged_img)
                     object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, visualize=True)
+                    search_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, cell_length=6)
                     robot_pos = self.robot_finder.find_robot(merged_img)
-                    robot_pos_as_ints = tuple([int(pos) for pos in robot_pos])
-                    print(robot_pos_as_ints)
+                    robot_pos = tuple([int(math.floor(i / 6)) for i in robot_pos])
+                    object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
+                        [0, 0, 255], dtype=np.uint8)
+                    for j in range(robot_pos[1] - 2, robot_pos[1] + 3):
+                        for k in range(robot_pos[0] - 2, robot_pos[0] + 3):
+                            search_graph[j][k] = 0
+                    cv2.imshow("search graph", np.array(search_graph, dtype=np.uint8) * np.uint8(255))
                     self.find_path(
                         Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, cell_length=6), (45, 9),
                         (32,12))
@@ -185,11 +203,6 @@ class Unwarper:
                         if abs(robot_pos[0]-last_robot_pos_sent[0])>0.2 and abs(robot_pos[1]-last_robot_pos_sent[1])>0.2:
                             self.mqtt.publish("pos", "%f,%f" % (robot_pos[0], robot_pos[1]))
                             last_robot_pos_sent=robot_pos
-
-                        robot_pos = tuple([int(math.floor(i / 6)) for i in robot_pos])
-                        object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
-                            [0, 0, 255], dtype=np.uint8)
-
                     cv2.imshow('6. object graph', cv2.resize(object_graph, (0, 0), fx=6, fy=6))
                     cv2.waitKey(1)
             i += 1
@@ -286,8 +299,11 @@ class Unwarper:
             (img_1, np.zeros((img_2.shape[0] - amount_to_move_bottom_img_up, img_1.shape[1], 3), dtype=np.uint8)),
             axis=0)
         # For all pixels in the top image that will be overlapped by the bottom image, we set their value to 0
-        mask = np.where(img_2_merge_canvas != [0, 0, 0])
-        img_1[mask] = np.zeros(img_1.shape, dtype=np.uint8)[mask]
+        if not thresh or self.overlap_area is None:
+            self.overlap_area = np.where(img_2_merge_canvas != [0, 0, 0])
+            if thresh:
+                print("WARNING: self.overlap_area undefined, this is likely due to not merging the colour image first")
+        img_1[self.overlap_area] = np.zeros(img_1.shape, dtype=np.uint8)[self.overlap_area]
         # New top and bottom image are then the same size, and each respective pixel is black in one image, and the desired colour
         # in the other, meaning we can just add the matrices values and return the result for our merged image
         img_1 += img_2_merge_canvas
