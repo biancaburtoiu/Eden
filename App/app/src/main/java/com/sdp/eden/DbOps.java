@@ -4,9 +4,12 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
@@ -149,7 +152,7 @@ public class DbOps {
     void deleteSchedulesOfPlant(Plant plant, onDeletePlantFinishedListener listener) {
 
         // Gets the schedule entries of that specific plant and then removes them in a batch operation.
-        WriteBatch batch = db.batch();
+        WriteBatch batch1 = db.batch();
 
         DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
             @Override
@@ -169,13 +172,12 @@ public class DbOps {
                                     .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                                     .collection("Schedules")
                                     .document(scheduleString);
-
-                    batch.delete(scheduleToRemove);
+                    batch1.delete(scheduleToRemove);
                 }
             }
         });
 
-        batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+        batch1.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if (task.isSuccessful()){
@@ -187,6 +189,38 @@ public class DbOps {
                     Log.d(TAG, "Could not remove schedule entries for plant");
                     Log.d(TAG, "And could not remove plant");
                     listener.onDeletePlantFinished(false);
+                }
+            }
+        });
+    }
+
+    void editPlantName(Plant oldPlant, String newName, onEditPlantFinishedListener listener) {
+        // Create new document with same old properties BUT new name. Then delete old document
+
+        WriteBatch batch = db.batch();
+
+        DocumentReference creator = db.collection("Users")
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .collection("Plants")
+                .document(newName);
+        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto()));
+
+        DocumentReference remover = db.collection("Users")
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .collection("Plants")
+                .document(oldPlant.getName());
+        batch.delete(remover);
+
+        batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful()) {
+                    listener.onEditPlantFinished(true);
+                    Log.d(TAG, "Deleted old document / created new document with edited name!");
+                }
+                else {
+                    listener.onEditPlantFinished(false);
+                    Log.d(TAG, "Could not delete old document / create new document with edited name.");
                 }
             }
         });
@@ -215,4 +249,10 @@ public class DbOps {
     interface onDeletePlantFinishedListener {
         void onDeletePlantFinished(boolean success);
     }
+
+    interface onEditPlantFinishedListener {
+        void onEditPlantFinished(boolean success);
+    }
+
+
 }

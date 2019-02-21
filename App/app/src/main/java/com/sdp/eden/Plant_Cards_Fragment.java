@@ -247,7 +247,41 @@ public class Plant_Cards_Fragment extends Fragment {
                     return true;
 
                 case R.id.card_edit: // edit is selected
-                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "selected edit on plant: " + plants.get(position).getName(), Snackbar.LENGTH_SHORT).show();
+
+                    Plant currentPlant = plants.get(position);
+
+                    AlertDialog.Builder editbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+                    editbuilder.setTitle("Edit plant name");
+
+                    View editviewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_edit_plant,
+                            (ViewGroup) getView(), false);
+
+                    TextView currentPlantName = editviewInflated.findViewById(R.id.currentPlantName);
+                    TextView currentPlantSpecies = editviewInflated.findViewById(R.id.currentPlantSpecies);
+
+                    currentPlantName.setText(currentPlant.getName());
+                    currentPlantSpecies.setText(currentPlant.getSpecies());
+
+                    EditText newPlantName = editviewInflated.findViewById(R.id.newPlantName);
+                    Spinner newPlantSpecies = editviewInflated.findViewById(R.id.plantSpecies);
+
+                    editbuilder.setView(editviewInflated);
+
+                    editbuilder.setPositiveButton("Save changes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            DbOps.instance.editPlantName(currentPlant, newPlantName.getText().toString(), new DbOps.onEditPlantFinishedListener() {
+                                @Override
+                                public void onEditPlantFinished(boolean success) {
+                                    getLatestPlantList();
+                                    Toast.makeText(getContext(), "Saved changes!", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
+                    });
+                    AlertDialog editdialog = editbuilder.create();
+                    editdialog.show();
+
                     return true;
 
                 case R.id.card_addSchedule: // Schedule watering is selected
