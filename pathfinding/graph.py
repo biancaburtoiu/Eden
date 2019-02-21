@@ -1,7 +1,7 @@
 import queue as Q
 from math import sqrt
 from sys import argv
-from pathfinding import dirToInst
+import dirToInst
 
 
 # ================= Graph class: references root node, and provides operations==
@@ -269,9 +269,9 @@ def plotPath(grid, path):
 
 
 # given a grid, calculates shortest path and returns it's length
-def getPathLengthFromGrid(grid, target, start=(0, 0)):
+def getPathLengthFromGrid(grid, target, start=(0, 0),upside_down=False):
     graph = Graph()
-    graph.graphFromGrid(start, grid)
+    graph.graphFromGrid(start, grid,upside_down)
     path, dirs = graph.searchGraph(target)
     length = 0
     if path is not None:
@@ -339,30 +339,20 @@ def main():
         start = (0, 0)
         '''
 
-        grid = [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        ]
-
-        target = (12,12)
-        start = (0, 0)
+        grid = [[0, 0, 0, 1, 0, 0, 0],
+                [0, 1, 0, 0, 0, 1, 0],
+                [0, 0, 1, 1, 1, 0, 0],
+                [1, 0, 1, 0, 1, 0, 1],
+                [0, 0, 1, 0, 1, 0, 0],
+                [0, 1, 1, 0, 1, 1, 0],
+                [0, 0, 1, 0, 0, 0, 0]]
+        target = (1,0)
+        start = (3,3)
     gridprint(grid)
 
     print("target: ", target)
     graph = Graph()
-    graph.graphFromGrid(start, grid)
+    graph.graphFromGrid(start, grid,True)
     path, dirs = graph.searchGraph(target)
     gridprint(plotPath(graph.gridFromGraph((len(grid[0]), len(grid))), path))
     print(dirs)
