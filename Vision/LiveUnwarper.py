@@ -119,7 +119,7 @@ class Unwarper:
 
     def find_path(self, graph, to, frm):
         if self.path is None:
-            _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to)
+            _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to,upside_down=True)
             self.send_insts_to_robot(insts)
         else:
             path_broken = False
@@ -129,7 +129,7 @@ class Unwarper:
                     path_broken = True
                     break
             if path_broken:
-                _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to)
+                _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to,upside_down=True)
                 self.send_insts_to_robot(insts)
 
     # takes a list of tuples of instructions, in format 

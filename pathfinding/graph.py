@@ -1,7 +1,7 @@
 import queue as Q
 from math import sqrt
 from sys import argv
-import dirToInst
+from pathfinding import dirToInst
 
 
 # ================= Graph class: references root node, and provides operations==
