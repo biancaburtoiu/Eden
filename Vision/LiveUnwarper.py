@@ -185,24 +185,23 @@ class Unwarper:
                     object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, visualize=True)
                     search_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, cell_length=6)
                     robot_pos = self.robot_finder.find_robot(merged_img)
-                    robot_pos = tuple([int(math.floor(i / 6)) for i in robot_pos])
-                    object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
-                        [0, 0, 255], dtype=np.uint8)
-                    for j in range(robot_pos[1] - 2, robot_pos[1] + 3):
-                        for k in range(robot_pos[0] - 2, robot_pos[0] + 3):
-                            search_graph[j][k] = 0
+                    if robot_pos[0] is not None:
+                        if abs(robot_pos[0]-last_robot_pos_sent[0])>0.1 or abs(robot_pos[1]-last_robot_pos_sent[1])>0.1:
+                            self.mqtt.publish("pos", "%f,%f" % (robot_pos[0], robot_pos[1]))
+                            last_robot_pos_sent=robot_pos
+                            print("sending robot position")
+                        robot_pos = tuple([int(math.floor(i / 6)) for i in robot_pos])
+                        object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
+                            [0, 0, 255], dtype=np.uint8)
+                        for j in range(robot_pos[1] - 2, robot_pos[1] + 3):
+                            for k in range(robot_pos[0] - 2, robot_pos[0] + 3):
+                                search_graph[j][k] = 0
                     cv2.imshow("search graph", np.array(search_graph, dtype=np.uint8) * np.uint8(255))
-                    self.find_path(
-                        Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, cell_length=6), (45, 9),
-                        (32,12))
+                    self.find_path(search_graph, (45, 9),robot_pos)
                     if self.path is not None:
                         for node in self.path:
                             x, y = node.pos
-                            object_graph[y, x] = np.array([255, 0, 0], dtype=np.uint8)
-                    if robot_pos[0] is not None:
-                        if abs(robot_pos[0]-last_robot_pos_sent[0])>0.2 and abs(robot_pos[1]-last_robot_pos_sent[1])>0.2:
-                            self.mqtt.publish("pos", "%f,%f" % (robot_pos[0], robot_pos[1]))
-                            last_robot_pos_sent=robot_pos
+                            object_graph[y][x] = np.array([255, 0, 0], dtype=np.uint8)
                     cv2.imshow('6. object graph', cv2.resize(object_graph, (0, 0), fx=6, fy=6))
                     cv2.waitKey(1)
             i += 1
