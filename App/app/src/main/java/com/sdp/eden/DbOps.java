@@ -249,7 +249,30 @@ public class DbOps {
                 });
             }
         });
+    }
 
+    void editPlantSpecies(Plant oldPlant, String newSpecies, onEditPlantFinishedListener listener) {
+        WriteBatch batch = db.batch();
+
+        // Create new plant with same properties but new species (this will just update the document)
+        db.collection("Users")
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .collection("Plants")
+                .document(oldPlant.getName())
+                .update("species", newSpecies)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Log.d(TAG, "Successfully modified plant species.");
+                            listener.onEditPlantFinished(true);
+                        }
+                        else {
+                            Log.d(TAG, "Could not modify plant species.");
+                            listener.onEditPlantFinished(false);
+                        }
+                    }
+                });
     }
 
     interface onAddPlantFinishedListener {

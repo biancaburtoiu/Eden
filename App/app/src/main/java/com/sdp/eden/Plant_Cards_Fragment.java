@@ -262,21 +262,39 @@ public class Plant_Cards_Fragment extends Fragment {
                     currentPlantName.setText(currentPlant.getName());
                     currentPlantSpecies.setText(currentPlant.getSpecies());
 
-                    EditText newPlantName = editviewInflated.findViewById(R.id.newPlantName);
-                    Spinner newPlantSpecies = editviewInflated.findViewById(R.id.plantSpecies);
+                    final EditText newPlantName = editviewInflated.findViewById(R.id.newPlantName);
+
+                    final Spinner newPlantSpecies = editviewInflated.findViewById(R.id.plantSpecies);
+                    // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
+                    String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
+                    ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
+                    newPlantSpecies.setAdapter(speciesAdapter);
 
                     editbuilder.setView(editviewInflated);
 
                     editbuilder.setPositiveButton("Save changes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            DbOps.instance.editPlantName(currentPlant, newPlantName.getText().toString(), new DbOps.onEditPlantFinishedListener() {
-                                @Override
-                                public void onEditPlantFinished(boolean success) {
-                                    getLatestPlantList();
-                                    Toast.makeText(getContext(), "Saved changes!", Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                            if (newPlantName.getText().toString().trim().length() != 0) {
+                                DbOps.instance.editPlantName(currentPlant, newPlantName.getText().toString(), new DbOps.onEditPlantFinishedListener() {
+                                    @Override
+                                    public void onEditPlantFinished(boolean success) {
+                                        getLatestPlantList();
+                                        Toast.makeText(getContext(), "Saved changes!", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                            if (newPlantSpecies.getSelectedItem().toString() != "") {
+                                DbOps.instance.editPlantSpecies(currentPlant, newPlantSpecies.getSelectedItem().toString(), new DbOps.onEditPlantFinishedListener() {
+                                    @Override
+                                    public void onEditPlantFinished(boolean success) {
+                                        getLatestPlantList();
+                                        Toast.makeText(getContext(), "Saved changes!", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+
+
                         }
                     });
                     AlertDialog editdialog = editbuilder.create();
