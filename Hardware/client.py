@@ -1,7 +1,7 @@
 import movement
 import paho.mqtt.client as mqtt
 import sys
-#import ev3dev.ev3 as ev3
+import ev3dev.ev3 as ev3
 import math
 
 calibrated=False
@@ -12,13 +12,14 @@ angle=0
 instructions_to_follow = []
 client=mqtt.Client("ev3")
 initial=None
-SINGLE_SQUARE_TIME_TO_MOVE=500
+
 
 
 def forward(x):
-    movement.forward_t(x*SINGLE_SQUARE_TIME_TO_MOVE)
+    movement.forward_t(x/speed)
 
 def face(x):
+    global angle
     movement.turn(300, x-angle)
     angle=x
 
@@ -30,40 +31,54 @@ def onConnect(client,userdata,flags,rc):
     print("connected with result code %i" % rc)
     client.subscribe("instructions")
     client.subscribe("pos")
+    ev3.Sound.speak("connected")
 
 def onMessage(client,userdata,msg):
-    print("Received message with payload:%s "%(msg.payload.decode()))
-    if (msg.topic=="instructions"):
-        print("instruction message!")
-        instructions_to_follow= msg.payload.decode().split(";")
-        follow_insts_in_list()
+    try:
+        global angle
+        global speed
+        global calibrating
+        global waiting
+        global calibrated
+        global initial
+        print("Received message with payload:%s "%(msg.payload.decode()))
+        if (msg.topic=="instructions"):
+            print("instruction message!")
+            instructions_to_follow= msg.payload.decode().split(";")
+            follow_insts_in_list()
 
-     if msg.topic=="pos":
-         position=arguements
-         print("positional input")
-         print(waiting)
-         if not calibrating:
-             print("calibrating")
-             calibrating=True
-             initial=position
-             print("right before")
-             movement.forward_t(1000)
-             waiting=True
-             print("past")
-         elif waiting:
-             waiting=False
-             print(1)
-             difference=[position[0]-initial[0], position[1]-initial[1]]
-             print("2")
-             print(math.atan(difference[0]/difference[1]))
-             angle=math.atan(difference[0]/difference[1])
-             print(3)
-             speed=math.sqrt(difference[0]^2+difference[1]^2)
-             print(4)
-             calibrated=True
-             print("calibrated")
-             print("speed is %f"% speed)
-    
+        if msg.topic=="pos":
+             print("positional input")
+             print(msg.payload.decode().split(","))
+             position=[float(x) for x in msg.payload.decode().split(",")]
+             print(waiting)
+             if not calibrating:
+                 print("calibrating")
+                 calibrating=True
+                 initial=position
+                 print("right before")
+                 movement.forward_t(1000)
+                 waiting=True
+                 print("past")
+             elif waiting:
+                 waiting=False
+                 print(1)
+                 difference=[position[0]-initial[0], position[1]-initial[1]]
+                 print("2")
+                 print(math.atan(difference[0]/difference[1]))
+                 angle=math.atan(difference[0]/difference[1])
+                 print(3)
+                 speed=math.sqrt(difference[0]^2+difference[1]^2)
+                 print(4)
+                 calibrated=True
+                 print("calibrated")
+                 print("speed is %f"% speed)
+    except:
+        print("Error")
+        print(sys.exc_info()[0])
+        sys.exit()
+        raise
+
 def follow_insts_in_list():
     print("starting to follow instructions")
     while len(instructions_to_follow)>0:
