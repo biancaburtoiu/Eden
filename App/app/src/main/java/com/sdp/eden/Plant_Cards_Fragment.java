@@ -244,7 +244,6 @@ public class Plant_Cards_Fragment extends Fragment {
 
                 case R.id.card_delete: // delete is selected
                     DbOps.instance.deletePlant(plants.get(position), success -> getLatestPlantList());
-                    // TODO: Refresh CardView here so that the plant actually goes away
                     return true;
 
                 case R.id.card_edit: // edit is selected
@@ -292,7 +291,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             int quantity = Integer.parseInt(quantityInput.getText().toString());
 
                             if (checkBox_Monday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Monday", time, quantity);
+                                ScheduleEntry scheduleEntry = new ScheduleEntry("Monday",currentPlant, quantity, time);
                                 DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                     @Override
                                     public void onAddScheduleEntryFinished(boolean success) {
@@ -302,7 +301,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                 });
                             }
                             if (checkBox_Tuesday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Tuesday", time, quantity);
+                                ScheduleEntry scheduleEntry = new ScheduleEntry("Tuesday",currentPlant, quantity, time);
                                 DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                     @Override
                                     public void onAddScheduleEntryFinished(boolean success) {
@@ -312,7 +311,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                 });
                             }
                             if (checkBox_Wednesday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Wednesday", time, quantity);
+                                ScheduleEntry scheduleEntry = new ScheduleEntry("Wednesday", currentPlant, quantity, time);
                                 DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                     @Override
                                     public void onAddScheduleEntryFinished(boolean success) {
@@ -322,7 +321,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                 });
                             }
                             if (checkBox_Thursday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Thursday", time, quantity);
+                                ScheduleEntry scheduleEntry = new ScheduleEntry("Thursday",currentPlant,quantity, time);
                                 DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                     @Override
                                     public void onAddScheduleEntryFinished(boolean success) {
@@ -332,7 +331,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                 });
                             }
                             if (checkBox_Friday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Friday", time, quantity);
+                                ScheduleEntry scheduleEntry = new ScheduleEntry("Friday",currentPlant, quantity, time);
                                 DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                     @Override
                                     public void onAddScheduleEntryFinished(boolean success) {
@@ -342,7 +341,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                 });
                             }
                             if (checkBox_Saturday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Saturday", time, quantity);
+                                ScheduleEntry scheduleEntry = new ScheduleEntry("Saturday",currentPlant, quantity, time);
                                 DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                     @Override
                                     public void onAddScheduleEntryFinished(boolean success) {
@@ -352,7 +351,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                 });
                             }
                             if (checkBox_Sunday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry(currentPlant,"Sunday", time, quantity);
+                                ScheduleEntry scheduleEntry = new ScheduleEntry("Sunday",currentPlant, quantity, time);
                                 DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                     @Override
                                     public void onAddScheduleEntryFinished(boolean success) {

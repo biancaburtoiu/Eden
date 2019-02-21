@@ -1,24 +1,30 @@
 package com.sdp.eden;
 
 public class ScheduleEntry {
-    private String PlantName;
     private String Day;
+    private String PlantName;
+    private Integer Quantity;
     private String Time;
-    private int Quantity;
+
 
     public ScheduleEntry() {
 
     }
 
-    public ScheduleEntry(String plantName, String day, String time, int quantity) {
-        PlantName = plantName;
+    public ScheduleEntry(String day, String plantName, Integer quantity, String time) {
         Day = day;
-        Time = time;
+        PlantName = plantName;
         Quantity = quantity;
+        Time = time;
     }
 
     public String getPlantName() {return PlantName; }
     public String getDay() {return Day; }
     public String getTime() {return Time; }
-    public int getQuantity() {return Quantity; }
+    public Integer getQuantity() {return Quantity; }
+
+    public void setPlantName(String plantName) {PlantName = plantName; }
+    public void setDay(String day) {Day = day; }
+    public void setTime(String time) {Time = time; }
+    public void setQuantity(Integer quantity) {Quantity=quantity; }
 }

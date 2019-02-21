@@ -6,8 +6,10 @@ import android.util.Log;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -90,26 +92,26 @@ public class DbOps {
                 });
     }
 
-    void getScheduleEntriesForPlant(String user_email, String plant_name, OnGetSchedulesForPlantFinishedListener listener) {
+    void getScheduleEntriesForPlant(Plant plant, OnGetSchedulesForPlantFinishedListener listener) {
         db.collection("Users")
-                .document(user_email)
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Schedules")
-                .whereEqualTo("plantName", plant_name)
+                .whereEqualTo("plantName", plant.getName())
                 .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
                 if (!task.getResult().isEmpty()) {
                     List<ScheduleEntry> scheduleEntries = task.getResult().toObjects(ScheduleEntry.class);
-                    Log.d(TAG, "Retrieved scheduleEntries for plant " + plant_name + " size: " + scheduleEntries.size());
+                    Log.d(TAG, "Retrieved scheduleEntries for plant " + plant.getName() + " size: " + scheduleEntries.size());
                     listener.onGetSchedulesForPlantFinished(scheduleEntries);
                 } else listener.onGetSchedulesForPlantFinished(null);
             }
         });
     }
 
-    void getAllScheduleEntries(String user_email, OnGetAllSchedulesFinishedListener listener) {
+    void getAllScheduleEntries(OnGetAllSchedulesFinishedListener listener) {
         db.collection("Users")
-                .document(user_email)
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Schedules")
                 .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
@@ -134,11 +136,57 @@ public class DbOps {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if (task.isSuccessful()) {
-                    listener.onDeletePlantFinished(true);
-                    Log.d(TAG, "Plant Deleted");
+                    Log.d(TAG, "Task was successful, entering deleteSchedulesOfPlant");
+                    deleteSchedulesOfPlant(plant, listener);
                 } else {
                     listener.onDeletePlantFinished(false);
                     Log.d(TAG, "Could not delete plant");
+                }
+            }
+        });
+    }
+
+    void deleteSchedulesOfPlant(Plant plant, onDeletePlantFinishedListener listener) {
+
+        // Gets the schedule entries of that specific plant and then removes them in a batch operation.
+        WriteBatch batch = db.batch();
+
+        DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
+            @Override
+            public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
+                if (scheduleEntries==null) {
+                    Log.d(TAG, "No schedules to delete.");
+                    return;
+                }
+
+                for (ScheduleEntry scheduleEntry : scheduleEntries) {
+                    String scheduleString = scheduleEntry.getPlantName()+"-"+scheduleEntry.getDay()+"-"+
+                            scheduleEntry.getTime()+"-"+scheduleEntry.getQuantity()+"ml";
+                    Log.d(TAG, "Schedule string: "+scheduleString);
+
+                    DocumentReference scheduleToRemove =
+                            db.collection("Users")
+                                    .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                                    .collection("Schedules")
+                                    .document(scheduleString);
+
+                    batch.delete(scheduleToRemove);
+                }
+            }
+        });
+
+        batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful()){
+                    Log.d(TAG, "Successfully removed schedule entries for plant");
+                    Log.d(TAG, "AND Successfully removed plant");
+                    listener.onDeletePlantFinished(true);
+                }
+                else {
+                    Log.d(TAG, "Could not remove schedule entries for plant");
+                    Log.d(TAG, "And could not remove plant");
+                    listener.onDeletePlantFinished(false);
                 }
             }
         });
