@@ -6,4 +6,6 @@
         android:title="Delete" />
     <item android:id="@+id/card_addSchedule"
         android:title="Schedule watering" />
+    <item android:id="@+id/card_viewSchedule"
+        android:title="View current schedule" />
 </menu>

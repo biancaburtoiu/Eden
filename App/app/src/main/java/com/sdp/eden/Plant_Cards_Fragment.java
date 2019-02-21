@@ -299,7 +299,6 @@ public class Plant_Cards_Fragment extends Fragment {
                     });
                     AlertDialog editdialog = editbuilder.create();
                     editdialog.show();
-
                     return true;
 
                 case R.id.card_addSchedule: // Schedule watering is selected
@@ -416,7 +415,13 @@ public class Plant_Cards_Fragment extends Fragment {
                     });
                     AlertDialog dialog = builder.create();
                     dialog.show();
+                    return true;
 
+                case R.id.card_viewSchedule:
+
+                    Plant curPlant = plants.get(position);
+                    //TODO: List of plants in fragment?
+                    
                     return true;
             }
             return false;
