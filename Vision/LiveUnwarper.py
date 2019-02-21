@@ -44,7 +44,7 @@ class Unwarper:
         self.overhead_image = None
         fbi.start_script(self)
         self.path = None
-
+        last_robot_pos=[0,0]
     def get_overhead_image(self):
         return self.overhead_image
 
@@ -180,7 +180,7 @@ class Unwarper:
                         for node in self.path:
                             x, y = node.pos
                             object_graph[y, x] = np.array([255, 0, 0], dtype=np.uint8)
-                    if robot_pos[0] is not None:
+                    if robot_pos[0] is not None and abs(robot_pos[0]-last_robot_pos[0])<0.2 and abs(robot_pos[1]-last_robot_pos[1])<0.2:
                         self.mqtt.publish("pos", "%f,%f" % (robot_pos[0], robot_pos[1]))
                         robot_pos = [int(math.floor(i / 6)) for i in robot_pos]
                         

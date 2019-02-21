@@ -38,32 +38,31 @@ def onMessage(client,userdata,msg):
         instructions_to_follow= msg.payload.decode().split(";")
         follow_insts_in_list()
 
-    # if msg.topic=="pos":
-    #     position=arguements
-    #     print("positional input")
-    #     print(waiting)
-    #     if not calibrating:
-    #         print("calibrating")
-    #         calibrating=True
-    #         initial=position
-    #         print("right before")
-    #         movement.forward_t(1000)
-    #         waiting=True
-    #         print("past")
-    #     elif waiting:
-    #         waiting=False
-    #         print(1)
-    #         difference=[position[0]-initial[0], position[1]-initial[1]]
-    #         print("2")
-    #         print(math.atan(difference[0]/difference[1]))
-    #         angle=math.atan(difference[0]/difference[1])
-    #         print(3)
-    #         speed=math.sqrt(difference[0]^2+difference[1]^2)
-    #         print(4)
-    #         print(5)
-    #         print(6)
-    #         calibrated=True
-    #         print("calibrated")
+     if msg.topic=="pos":
+         position=arguements
+         print("positional input")
+         print(waiting)
+         if not calibrating:
+             print("calibrating")
+             calibrating=True
+             initial=position
+             print("right before")
+             movement.forward_t(1000)
+             waiting=True
+             print("past")
+         elif waiting:
+             waiting=False
+             print(1)
+             difference=[position[0]-initial[0], position[1]-initial[1]]
+             print("2")
+             print(math.atan(difference[0]/difference[1]))
+             angle=math.atan(difference[0]/difference[1])
+             print(3)
+             speed=math.sqrt(difference[0]^2+difference[1]^2)
+             print(4)
+             calibrated=True
+             print("calibrated")
+             print("speed is %f"% speed)
     
 def follow_insts_in_list():
     print("starting to follow instructions")
