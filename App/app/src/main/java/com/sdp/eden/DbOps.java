@@ -26,7 +26,7 @@ public class DbOps {
         db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
-                .document().set(plant)
+                .document(plant.getName()).set(plant) // Kieran - changed so the id is now the plant name
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
@@ -127,6 +127,24 @@ public class DbOps {
 
 
 
+    // deletes plant from firebase
+    void deletePlant(Plant plant, onDeletePlantFinishedListener listener){
+        db.collection("Users")
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .collection("Plants")
+                .document(plant.getName()).delete().addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful()) {
+                    listener.onDeletePlantFinished(true);
+                    Log.d(TAG, "Plant Deleted");
+                } else {
+                    listener.onDeletePlantFinished(false);
+                    Log.d(TAG, "Could not delete plant");
+                }
+            }
+        });
+    }
 
     interface onAddPlantFinishedListener {
         void onUpdateFinished(boolean success);
@@ -146,5 +164,7 @@ public class DbOps {
 
     interface OnGetAllSchedulesFinishedListener {
         void onGetAllSchedulesFinished(List<ScheduleEntry> scheduleEntries);
+    interface onDeletePlantFinishedListener {
+        void onDeletePlantFinished(boolean success);
     }
 }

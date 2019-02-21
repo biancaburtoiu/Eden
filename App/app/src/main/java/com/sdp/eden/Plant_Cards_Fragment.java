@@ -1,7 +1,11 @@
 package com.sdp.eden;
 
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.provider.MediaStore;
+import android.provider.SyncStateContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -11,6 +15,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Base64;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
@@ -30,6 +35,8 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.google.firebase.auth.FirebaseAuth;
+
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -39,14 +46,15 @@ public class Plant_Cards_Fragment extends Fragment {
     private static final String TAG = "PlantListFragment";
     private ArrayList<Plant> plants; // list of plants pulled from firebase
     private RecyclerView recyclerView;
+    private ImageView plantPic;
 
     public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
-       View view = inflater.inflate(R.layout.fragment_plants, container, false);
-       getLatestPlantList();    // Query the database to get latest list
-       recyclerView = view.findViewById(R.id.Plants_Recycler_view);
-       recyclerView.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
-       return view;
-   }
+        View view = inflater.inflate(R.layout.fragment_plants, container, false);
+        getLatestPlantList();    // Query the database to get latest list
+        recyclerView = view.findViewById(R.id.Plants_Recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
+        return view;
+    }
 
 
     @Override
@@ -181,18 +189,29 @@ public class Plant_Cards_Fragment extends Fragment {
             AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
             builder.setTitle("Add a new plant!");
 
-            View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant,
-                    (ViewGroup) getView(), false);
+            View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant, (ViewGroup) getView(), false);
 
             final EditText plantName = viewInflated.findViewById(R.id.plantName);
             final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
+            plantPic = viewInflated.findViewById(R.id.plantPic);
             builder.setView(viewInflated);
 
             // TODO: Kieran W - Maybe add more species here for the user interview?
             // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
-            String[] species = new String[]{"cacti","daisy","lily","orchid"};
+            String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
             ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
             plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
+
+            plantPic.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
+                    // TODO: Kieran - upload to firebase storage and pull for each card (having trouble with this)
+                    if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                        startActivityForResult(takePictureIntent, 111);
+                    }
+                }
+            });
 
             builder.setPositiveButton("Add", (dialog, which) -> {
                 Log.d(TAG, "New plant to add to database:");
@@ -221,13 +240,27 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 111 && resultCode == getActivity().RESULT_OK) {
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            plantPic.setImageBitmap(imageBitmap);
+            //encodeBitmapAndSaveToFirebase(imageBitmap); // TODO upload image to fire base for each card
+        }
+    }
+
+
+
+
+    @Override
     public void onResume() {
         super.onResume();
         getLatestPlantList();    // Query the database to get latest list
     }
 
     public static Fragment newInstance() {
-       return new Plant_Cards_Fragment(); // new instance of the fragment
+        return new Plant_Cards_Fragment(); // new instance of the fragment
     }
 
     private void populateRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
@@ -254,10 +287,10 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private class RecyclerViewHolder extends RecyclerView.ViewHolder{
 
-       private CardView mCardView; // card for data display
-       private TextView plantName; // plants name from firebase
-       private TextView plantDetail; // plants detail (currently species)
-       private ImageView plantImage; // plants picture
+        private CardView mCardView; // card for data display
+        private TextView plantName; // plants name from firebase
+        private TextView plantDetail; // plants detail (currently species)
+        private ImageView plantImage; // plants picture
 
 
         RecyclerViewHolder(LayoutInflater inflater, ViewGroup container){
@@ -273,11 +306,11 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewHolder>{
 
-       ArrayList<Plant> plantsList; // plants list
+        ArrayList<Plant> plantsList; // plants list
 
-       RecyclerViewAdapter(ArrayList<Plant> list){
-           this.plantsList = list;
-       } // Adapter for the recycler view
+        RecyclerViewAdapter(ArrayList<Plant> list){
+            this.plantsList = list;
+        } // Adapter for the recycler view
 
         @NonNull
         @Override
@@ -332,7 +365,7 @@ public class Plant_Cards_Fragment extends Fragment {
             switch (menuItem.getItemId()) {
 
                 case R.id.card_delete: // delete is selected
-                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "selected delete on plant: " + plants.get(position).getName(), Snackbar.LENGTH_SHORT).show();
+                    DbOps.instance.deletePlant(plants.get(position), success -> getLatestPlantList());
                     return true;
                 case R.id.card_edit: // edit is selected
                     Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "selected edit on plant: " + plants.get(position).getName(), Snackbar.LENGTH_SHORT).show();
