@@ -125,8 +125,6 @@ public class DbOps {
     }
 
 
-
-
     // deletes plant from firebase
     void deletePlant(Plant plant, onDeletePlantFinishedListener listener){
         db.collection("Users")
@@ -164,6 +162,8 @@ public class DbOps {
 
     interface OnGetAllSchedulesFinishedListener {
         void onGetAllSchedulesFinished(List<ScheduleEntry> scheduleEntries);
+    }
+
     interface onDeletePlantFinishedListener {
         void onDeletePlantFinished(boolean success);
     }
