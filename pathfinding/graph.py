@@ -1,7 +1,7 @@
 import queue as Q
 from math import sqrt
 from sys import argv
-from pathfinding import dirToInst
+import dirToInst
 
 
 # ================= Graph class: references root node, and provides operations==
@@ -80,7 +80,7 @@ class Graph:
     # takes a starting position pair, and a 2d bool grid of visitable squares
     # and turns it into a graph structure
     # A grid square is 0 iff the square is accessible
-    def graphFromGrid(self, start_pos, grid):
+    def graphFromGrid(self, start_pos, grid, upside_down=False):
         # sychronise root note and starting position
         self.root.setPos(start_pos)
 
@@ -89,7 +89,12 @@ class Graph:
 
         # list of co ords, relative to us, that we want to visit. They are stored as
         # ( (x-pos, y-pos) , direction) nested pairs
-        COORD_DIFFS = [((0, 1), 'u'), ((-1, 0), 'l'), ((0, -1), 'd'), ((1, 0), 'r')]
+        # note upside_down flag determines whether increasing y co-ord equates to
+        # moving 'up' or moving 'down'
+        if (upside_down):
+            COORD_DIFFS = [((0, 1), 'd'), ((-1, 0), 'l'), ((0, -1), 'u'), ((1, 0), 'r')]
+        else:
+            COORD_DIFFS = [((0, 1), 'u'), ((-1, 0), 'l'), ((0, -1), 'd'), ((1, 0), 'r')]
 
         # continue until we've visited every node
         while len(node_stack):
@@ -264,9 +269,9 @@ def plotPath(grid, path):
 
 
 # given a grid, calculates shortest path and returns it's length
-def getPathLengthFromGrid(grid, target, start=(0, 0)):
+def getPathLengthFromGrid(grid, target, start=(0, 0),upside_down=False):
     graph = Graph()
-    graph.graphFromGrid(start, grid)
+    graph.graphFromGrid(start, grid,upside_down)
     path, dirs = graph.searchGraph(target)
     length = 0
     if path is not None:
@@ -275,9 +280,9 @@ def getPathLengthFromGrid(grid, target, start=(0, 0)):
     return length, path, dirs
 
 # 
-def getInstructionsFromGrid(grid,target,start=(0,0)):
+def getInstructionsFromGrid(grid,target,start=(0,0),upside_down=False):
     graph = Graph()
-    graph.graphFromGrid(start, grid)
+    graph.graphFromGrid(start, grid,upside_down)
     path, dirs = graph.searchGraph(target)
     length = 0
     if path is not None:
@@ -334,30 +339,20 @@ def main():
         start = (0, 0)
         '''
 
-        grid = [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-        ]
-
-        target = (12,12)
-        start = (0, 0)
+        grid = [[0, 0, 0, 1, 0, 0, 0],
+                [0, 1, 0, 0, 0, 1, 0],
+                [0, 0, 1, 1, 1, 0, 0],
+                [1, 0, 1, 0, 1, 0, 1],
+                [0, 0, 1, 0, 1, 0, 0],
+                [0, 1, 1, 0, 1, 1, 0],
+                [0, 0, 1, 0, 0, 0, 0]]
+        target = (1,0)
+        start = (3,3)
     gridprint(grid)
 
     print("target: ", target)
     graph = Graph()
-    graph.graphFromGrid(start, grid)
+    graph.graphFromGrid(start, grid,True)
     path, dirs = graph.searchGraph(target)
     gridprint(plotPath(graph.gridFromGraph((len(grid[0]), len(grid))), path))
     print(dirs)
