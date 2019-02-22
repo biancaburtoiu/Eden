@@ -217,21 +217,21 @@ public class DbOps {
             public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
                 if (scheduleEntries==null) {
                     Log.d(TAG, "No schedules to delete.");
-                    return;
                 }
+                else {
+                    for (ScheduleEntry scheduleEntry : scheduleEntries) {
+                        String scheduleString = scheduleEntry.getDay() + "-" +
+                                scheduleEntry.getTime() + "-" + scheduleEntry.getQuantity() + "ml";
+                        Log.d(TAG, "(Editing: ) Schedule string: " + scheduleString);
 
-                for (ScheduleEntry scheduleEntry : scheduleEntries) {
-                    String scheduleString = scheduleEntry.getDay() + "-" +
-                            scheduleEntry.getTime() + "-" + scheduleEntry.getQuantity() + "ml";
-                    Log.d(TAG, "(Editing: ) Schedule string: " + scheduleString);
-
-                    DocumentReference scheduleToUpdate =
-                            db.collection("Users")
-                                    .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
-                                    .collection("Schedules")
-                                    .document(scheduleString);
-                    batch.set(scheduleToUpdate, new ScheduleEntry(scheduleEntry.getDay(), newName,
-                            scheduleEntry.getQuantity(), scheduleEntry.getTime()));
+                        DocumentReference scheduleToUpdate =
+                                db.collection("Users")
+                                        .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                                        .collection("Schedules")
+                                        .document(scheduleString);
+                        batch.set(scheduleToUpdate, new ScheduleEntry(scheduleEntry.getDay(), newName,
+                                scheduleEntry.getQuantity(), scheduleEntry.getTime()));
+                    }
                 }
 
                 batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {

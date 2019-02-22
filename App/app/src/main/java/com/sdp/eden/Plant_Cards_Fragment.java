@@ -284,7 +284,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                     }
                                 });
                             }
-                            if (newPlantSpecies.getSelectedItem().toString() != "") {
+                            if (!newPlantSpecies.getSelectedItem().toString().equals("Select Species")) {
                                 DbOps.instance.editPlantSpecies(currentPlant, newPlantSpecies.getSelectedItem().toString(), new DbOps.onEditPlantFinishedListener() {
                                     @Override
                                     public void onEditPlantFinished(boolean success) {
@@ -293,8 +293,6 @@ public class Plant_Cards_Fragment extends Fragment {
                                     }
                                 });
                             }
-
-
                         }
                     });
                     AlertDialog editdialog = editbuilder.create();
@@ -420,8 +418,8 @@ public class Plant_Cards_Fragment extends Fragment {
                 case R.id.card_viewSchedule:
 
                     Plant curPlant = plants.get(position);
-                    //TODO: List of plants in fragment?
-                    
+
+
                     return true;
             }
             return false;
