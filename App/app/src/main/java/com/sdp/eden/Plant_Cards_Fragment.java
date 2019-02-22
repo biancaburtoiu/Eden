@@ -28,6 +28,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -416,10 +417,43 @@ public class Plant_Cards_Fragment extends Fragment {
                     return true;
 
                 case R.id.card_viewSchedule:
-
                     Plant curPlant = plants.get(position);
 
+                    AlertDialog.Builder viewbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+                    viewbuilder.setTitle("View scheduled waterings of plant");
 
+                    View scheduleViewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.individual_schedule_view,
+                            (ViewGroup) getView(), false);
+
+                    ListView scheduleList = scheduleViewInflated.findViewById(R.id.individualScheduleList);
+
+                    DbOps.instance.getScheduleEntriesForPlant(curPlant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
+                        @Override
+                        public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
+                            if (scheduleEntries==null) {
+                                String[] values = new String[] {"No schedule entries to display."};
+                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Objects.requireNonNull(getContext()),
+                                        R.layout.individual_schedule_view_item, R.id.schedule, values);
+                                scheduleList.setAdapter(adapter);
+                            }
+                            else {
+                                List<String> values = new ArrayList<String>();
+
+                                for (ScheduleEntry entry : scheduleEntries) {
+                                    String entryText = entry.getDay()+"s at "+entry.getTime()+" with quantity: "+entry.getQuantity()+"ml";
+                                    values.add(entryText);
+                                }
+
+                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Objects.requireNonNull(getContext()),
+                                        R.layout.individual_schedule_view_item, R.id.schedule, values);
+                                scheduleList.setAdapter(adapter);
+                            }
+                        }
+                    });
+                    viewbuilder.setView(scheduleViewInflated);
+
+                    AlertDialog viewdialog = viewbuilder.create();
+                    viewdialog.show();
                     return true;
             }
             return false;
