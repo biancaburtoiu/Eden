@@ -324,9 +324,16 @@ class Unwarper:
             img_1[134, 88] = np.array([0, 0, 0], dtype=np.uint8)
 
         return img_1
+    
     def on_connect(client,userdata,flags,rc):
         print("connected")
+        self.mqtt.subscribe("battery-updates")
 
+    def onMessage(client,userdata,msg):
+        if (msg.topic=="battery-updates"):
+            # decode status and send it to db using fbi method
+            new_battery_status = msg.payload.decode()
+            fbi.update_battery_status_in_db(new_battery_status)
 # The stitcher class is a varitation of the one found in the tutorial here https://www.pyimagesearch.com/2016/01/11/opencv-panorama-stitching/
 
 class Stitcher:
