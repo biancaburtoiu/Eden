@@ -82,6 +82,11 @@ public class Eden_main extends AppCompatActivity {
             return true;
         }
 
+        if(id == R.id.identify_plant){
+            startActivity(new Intent(this, Image_split.class));
+            return true;
+        }
+
         return super.onOptionsItemSelected(item);
     }
 

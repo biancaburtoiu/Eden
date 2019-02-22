@@ -251,6 +251,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "selected edit on plant: " + plants.get(position).getName(), Snackbar.LENGTH_SHORT).show();
                     return true;
 
+
                 case R.id.card_addSchedule: // Schedule watering is selected
                     AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
                     builder.setTitle("Add schedule for plant");

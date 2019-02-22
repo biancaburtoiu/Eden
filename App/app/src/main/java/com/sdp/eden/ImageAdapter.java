@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,8 +19,13 @@ import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 //The adapter class associated with the image split class
 public class ImageAdapter extends BaseAdapter {
@@ -30,7 +36,8 @@ public class ImageAdapter extends BaseAdapter {
     private int imageWidth, imageHeight;
     private boolean longClick=true;
     private Bitmap selectedImage;
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
+    StorageReference storageRef = storage.getReference();
 
     //constructor
     public ImageAdapter(Context c, ArrayList<Bitmap> images){
@@ -52,13 +59,24 @@ public class ImageAdapter extends BaseAdapter {
 
     public void send_to_robot(){
         if(selectedImage!=null){
-            Log.d("testing","testing");
-            try (FileOutputStream out = new FileOutputStream("")) {
-                selectedImage.compress(Bitmap.CompressFormat.PNG, 100, out); // bmp is your Bitmap instance
-                // PNG is a lossless format, the compression factor (100) is ignored
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            StorageReference imageRef = storageRef.child("selected_image.jpg");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            selectedImage.compress(Bitmap.CompressFormat.PNG, 100, baos);
+            byte[] data = baos.toByteArray();
+
+            UploadTask uploadTask = imageRef.putBytes(data);
+            uploadTask.addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                    // Handle unsuccessful uploads
+                }
+            }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                @Override
+                public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                }
+            });
+
         }
     }
 
@@ -90,15 +108,12 @@ public class ImageAdapter extends BaseAdapter {
                 selectedImage=imageChunks.get(position);
             } else {
                 image.setBackgroundColor(Color.TRANSPARENT);
-
-
+                selectedImage=null;
             }
         }else{
             image.setBackgroundColor(Color.TRANSPARENT);
-
-
+            selectedImage=null;
         }
-
         image.setImageBitmap(imageChunks.get(position));
         return image;
     }

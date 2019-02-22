@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class Image_split extends AppCompatActivity {
 
     private Bitmap bmp;
-    private ArrayList<Bitmap> chunkedImages = new ArrayList<>(30);
+    private ArrayList<Bitmap> chunkedImages = new ArrayList<>(40);
     private ImageAdapter adapter;
 
     @Override
@@ -24,7 +24,7 @@ public class Image_split extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.image_split);
 
-        bmp = BitmapFactory.decodeResource(getResources(), R.drawable.source_image);
+        bmp = BitmapFactory.decodeResource(getResources(), R.drawable.overhead_image);
         splitImage(bmp);
         adapter = new ImageAdapter(this,chunkedImages);
         displaySplit(chunkedImages);
@@ -44,7 +44,7 @@ public class Image_split extends AppCompatActivity {
         //Getting the scaled bitmap of the source image
         Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, bitmap.getWidth(), bitmap.getHeight(), true);
 
-        rows = cols = (int) Math.sqrt(25);
+        rows = cols = (int) Math.sqrt(36);
         chunkHeight = bitmap.getHeight()/rows;
         chunkWidth = bitmap.getWidth()/cols;
 

@@ -31,6 +31,14 @@
           }
         },
         {
+          "client_id": "482729585230-c3l8qvitnb73kejm2ce6ekss7k3ojr2t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.sdp.eden",
+            "certificate_hash": "f12a896b0b9d765a12cc627de2da4691c2ea3276"
+          }
+        },
+        {
           "client_id": "482729585230-75dvnlngc2nihu5mlfisaqg5f58d8bir.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -8,4 +8,7 @@
         android:title="Sign Out"
         app:showAsAction="never"
         />
+    <item
+        android:id="@+id/identify_plant"
+        android:title="Identify plant" />
 </menu>

@@ -118,7 +118,7 @@ public class Signin extends AppCompatActivity {
         //When user is not null proceed to main activity
         if (user != null) {
 
-            Intent intent = new Intent(this, Image_split.class);
+            Intent intent = new Intent(this, Eden_main.class);
             startActivity(intent);
 
         }
