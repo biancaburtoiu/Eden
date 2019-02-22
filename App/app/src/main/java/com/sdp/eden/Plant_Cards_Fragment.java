@@ -273,7 +273,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     editbuilder.setView(editviewInflated);
 
-                    editbuilder.setPositiveButton("Save changes", new DialogInterface.OnClickListener() {
+                    editbuilder.setPositiveButton("Change name", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             if (newPlantName.getText().toString().trim().length() != 0) {
@@ -281,19 +281,26 @@ public class Plant_Cards_Fragment extends Fragment {
                                     @Override
                                     public void onEditPlantFinished(boolean success) {
                                         getLatestPlantList();
-                                        Toast.makeText(getContext(), "Saved changes!", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), "Successfully changed name!", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             }
+                            else Toast.makeText(getContext(), "Invalid new plant name. Please use a valid name.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    editbuilder.setNeutralButton("Change species", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
                             if (!newPlantSpecies.getSelectedItem().toString().equals("Select Species")) {
                                 DbOps.instance.editPlantSpecies(currentPlant, newPlantSpecies.getSelectedItem().toString(), new DbOps.onEditPlantFinishedListener() {
                                     @Override
                                     public void onEditPlantFinished(boolean success) {
                                         getLatestPlantList();
-                                        Toast.makeText(getContext(), "Saved changes!", Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(getContext(), "Successfully changed species!", Toast.LENGTH_SHORT).show();
                                     }
                                 });
                             }
+                            else Toast.makeText(getContext(), "No species selected. Please select species.", Toast.LENGTH_SHORT).show();
                         }
                     });
                     AlertDialog editdialog = editbuilder.create();
@@ -440,6 +447,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                 List<String> values = new ArrayList<String>();
 
                                 for (ScheduleEntry entry : scheduleEntries) {
+                                    // Simple approach - could be done differently
                                     String entryText = entry.getDay()+"s at "+entry.getTime()+" with quantity: "+entry.getQuantity()+"ml";
                                     values.add(entryText);
                                 }
@@ -459,5 +467,4 @@ public class Plant_Cards_Fragment extends Fragment {
             return false;
         }
     }
-
 }

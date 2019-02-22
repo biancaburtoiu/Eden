@@ -73,8 +73,7 @@ public class DbOps {
 
     void addScheduleEntry(ScheduleEntry scheduleEntry, onAddScheduleEntryFinishedListener listener){
         // Sets the name of the database document to something user-friendly
-        String scheduleString = scheduleEntry.getDay()+"-"+
-                                scheduleEntry.getTime()+"-"+scheduleEntry.getQuantity()+"ml";
+        String scheduleString = scheduleEntry.getDay()+"-"+scheduleEntry.getTime();
 
         db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
@@ -152,7 +151,7 @@ public class DbOps {
     void deleteSchedulesOfPlant(Plant plant, onDeletePlantFinishedListener listener) {
         // Gets the schedule entries of that specific plant and then removes them in a batch operation.
 
-        WriteBatch batch1 = db.batch();
+        WriteBatch batch = db.batch();
 
         DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
             @Override
@@ -162,8 +161,7 @@ public class DbOps {
                 }
                 else {
                     for (ScheduleEntry scheduleEntry : scheduleEntries) {
-                        String scheduleString = scheduleEntry.getDay() + "-" +
-                                scheduleEntry.getTime() + "-" + scheduleEntry.getQuantity() + "ml";
+                        String scheduleString = scheduleEntry.getDay() + "-" +scheduleEntry.getTime();
                         Log.d(TAG, "(Deleting: ) Schedule string: " + scheduleString);
 
                         DocumentReference scheduleToRemove =
@@ -171,11 +169,11 @@ public class DbOps {
                                         .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                                         .collection("Schedules")
                                         .document(scheduleString);
-                        batch1.delete(scheduleToRemove);
+                        batch.delete(scheduleToRemove);
                     }
                 }
 
-                batch1.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+                batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()){
@@ -212,6 +210,10 @@ public class DbOps {
         batch.delete(remover);
 
         // Update schedule entries for old plant name with new plant name
+
+        // Issue - this overwrites entries if two+ plants are to be watered at the exact SAME time
+        // BUT plants can't be watered at the same time anyway so I guess that's okay?
+        // We should warn the user somehow but that's not a priority right now.
         DbOps.instance.getScheduleEntriesForPlant(oldPlant, new OnGetSchedulesForPlantFinishedListener() {
             @Override
             public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
@@ -220,8 +222,7 @@ public class DbOps {
                 }
                 else {
                     for (ScheduleEntry scheduleEntry : scheduleEntries) {
-                        String scheduleString = scheduleEntry.getDay() + "-" +
-                                scheduleEntry.getTime() + "-" + scheduleEntry.getQuantity() + "ml";
+                        String scheduleString = scheduleEntry.getDay() + "-" +scheduleEntry.getTime();
                         Log.d(TAG, "(Editing: ) Schedule string: " + scheduleString);
 
                         DocumentReference scheduleToUpdate =
