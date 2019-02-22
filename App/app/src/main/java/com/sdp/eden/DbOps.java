@@ -159,20 +159,20 @@ public class DbOps {
             public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
                 if (scheduleEntries==null) {
                     Log.d(TAG, "No schedules to delete.");
-                    return;
                 }
+                else {
+                    for (ScheduleEntry scheduleEntry : scheduleEntries) {
+                        String scheduleString = scheduleEntry.getDay() + "-" +
+                                scheduleEntry.getTime() + "-" + scheduleEntry.getQuantity() + "ml";
+                        Log.d(TAG, "(Deleting: ) Schedule string: " + scheduleString);
 
-                for (ScheduleEntry scheduleEntry : scheduleEntries) {
-                    String scheduleString = scheduleEntry.getDay() + "-" +
-                            scheduleEntry.getTime() + "-" + scheduleEntry.getQuantity() + "ml";
-                    Log.d(TAG, "(Deleting: ) Schedule string: " + scheduleString);
-
-                    DocumentReference scheduleToRemove =
-                            db.collection("Users")
-                                    .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
-                                    .collection("Schedules")
-                                    .document(scheduleString);
-                    batch1.delete(scheduleToRemove);
+                        DocumentReference scheduleToRemove =
+                                db.collection("Users")
+                                        .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                                        .collection("Schedules")
+                                        .document(scheduleString);
+                        batch1.delete(scheduleToRemove);
+                    }
                 }
 
                 batch1.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
