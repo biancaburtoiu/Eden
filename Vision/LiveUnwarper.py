@@ -162,8 +162,8 @@ class Unwarper:
                     search_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=6, cell_length=6)
                     robot_pos = self.robot_finder.find_robot(merged_img)
                     if robot_pos[0] is not None:
+                        robot_pos = [int(math.floor(i / 6)) for i in robot_pos]
                         self.mqtt.publish("pos", "%f,%f" % (robot_pos[0], robot_pos[1]))
-                        robot_pos = tuple([int(math.floor(i / 6)) for i in robot_pos])
                         object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
                             [0, 0, 255], dtype=np.uint8)
                         for j in range(robot_pos[1] - 2, robot_pos[1] + 3):
