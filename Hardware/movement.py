@@ -28,14 +28,14 @@ class Movement:
 
         # wait until gyro has changed by target amount
         while abs(current_gyro_angle-target_gyro_angle)>2:
-            current_angle = self.gyro.angle
+            current_gyro_angle = self.gyro.angle
 
         # stop the motors
         self.motors[0].run_timed(speed_sp=0,time_sp=0)
         self.motors[1].run_timed(speed_sp=0,time_sp=0)
 
         # update the internal measure of angle
-        self.angle=current_angle
+        self.angle+=degrees
         print("finished turn, facing: %s"%(self.angle))
     
     def absolute_turn(self,degrees):

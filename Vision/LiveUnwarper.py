@@ -123,7 +123,7 @@ class Unwarper:
     def find_path(self, graph, to, frm):
         if frm[0] is not None:
             if self.path is None:
-                _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to,upside_down=True)
+                _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to)
                 self.send_insts_to_robot(insts)
             else:
                 path_broken = False
@@ -139,7 +139,7 @@ class Unwarper:
                 closest=False
                 #####################
                 if path_broken or closest > 0:
-                    _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to,upside_down=True)
+                    _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to)
                     self.send_insts_to_robot(insts)
         else:
             self.path = None
