@@ -1,87 +1,75 @@
 import ev3dev.ev3 as ev3
-import sys
 
-def move(rotate,speed,time):
-    if speed>1050 or speed < -1050:
-        #speed must be in range [-1050,1050]
-        print("too fast")
-    elif time<0:
-        # flag for constant movement
-        if rotate:
-            motors[0].run_forever(speed_sp=speed)
-            motors[1].run_forever(speed_sp=-speed)
-        else:
-            motors[0].run_forever(speed_sp=speed)
-            motors[1].run_forever(speed_sp=speed)
-    else:
-        #timed movement
-        if rotate:
-            motors[0].run_timed(speed_sp=speed, time_sp=time)
-            motors[1].run_timed(speed_sp=-speed, time_sp=time)
-        else:
-            motors[0].run_timed(speed_sp=speed, time_sp=time)
-            motors[1].run_timed(speed_sp=speed, time_sp=time)
-
-
-def turn(speed,degrees):
-    target_angle=gyro.angle+degrees
+# =============== class for controlling ev3 movement =================== #
+class Movement:
+    def __init__(self,initial_angle):
+        self.angle = initial_angle
+        # note gyro angle is NOT representitive of robot's real angle
+        self.gyro = gyro=ev3.GyroSensor('in1')
+        self.gyro.mode="GYRO-ANG"
+        self.motors = setupMotors()
+        self.time_per_square = 750
     
-    if degrees>=0:
-        motors[0].run_forever(speed_sp=speed)
-        motors[1].run_forever(speed_sp=-speed)
-        while gyro.angle<target_angle:
-            print(gyro.angle)
-        motors[0].run_timed(speed_sp=0,time_sp=0)
-        motors[1].run_timed(speed_sp=0,time_sp=0)
-    else:
-        motors[0].run_forever(speed_sp=-speed)
-        motors[1].run_forever(speed_sp=speed)
-        while gyro.angle>target_angle:
-            print(gyro.angle)
-        motors[0].run_timed(speed_sp=0,time_sp=0)
-        motors[1].run_timed(speed_sp=0,time_sp=0)
+    def relative_turn(self,degrees):
+        # we will measure difference in gyro angle from start to finish
+        current_gyro_angle = self.gyro.angle
+        target_gyro_angle = degrees + current_gyro_angle
 
-def forward_t(time):
-    print("going")
-    motors[0].run_timed(time_sp=time, speed_sp=1000, stop_action="brake")
-    motors[1].run_timed(time_sp=time, speed_sp=1000, stop_action="brake")
-    motors[0].wait_while("running")
-    print("gone")
-#print(mm/((speed/motors[0].count_per_rot)*45.03))
-    #motors[0].run_timed(speed_sp=speed, time_sp=1000*(mm/((speed/motors[0].count_per_rot)*45.03)))
-    #motors[1].run_timed(speed_sp=speed, time_sp=1000*(mm/((speed/motors[1].count_per_rot)*45.03)))
+        print("facing: %s,   turning to: %s"%(current_gyro_angle,target_gyro_angle))
+        
+        if degrees>=0:
+            # turn right
+            self.motors[0].run_forever(speed_sp=200)
+            self.motors[1].run_forever(speed_sp=-200)
+        else:
+            # turn left
+            self.motors[0].run_forever(speed_sp=-200)
+            self.motors[1].run_forever(speed_sp=200)
 
-def stop():
-    for m in motors:
-        m.run_timed(speed_sp=0, time_sp=0)
+        # wait until gyro has changed by target amount
+        while abs(current_gyro_angle-target_gyro_angle)>2:
+            current_angle = self.gyro.angle
 
-#add two motors to array, from command line args
-#motors[0] is left, motors[1] is right
+        # stop the motors
+        self.motors[0].run_timed(speed_sp=0,time_sp=0)
+        self.motors[1].run_timed(speed_sp=0,time_sp=0)
 
-motors = []
-gyro=ev3.GyroSensor('in1')
-gyro.mode="GYRO-ANG"
+        # update the internal measure of angle
+        self.angle=current_angle
+        print("finished turn, facing: %s"%(self.angle))
+    
+    def absolute_turn(self,degrees):
+        rel_angle = rel_from_abs_turn(degrees,self.angle)
+        self.relative_turn(rel_angle)
+
+    def forward(self,num_squares):
+        print("beginning to move %s squares"%num_squares)
+        self.motors[0].run_timed(time_sp=num_squares*self.time_per_square, speed_sp=1000, stop_action="brake")
+        self.motors[1].run_timed(time_sp=num_squares*self.time_per_square, speed_sp=1000, stop_action="brake")
+        
+        # no more instructions can interrupt this
+        self.motors[0].wait_while("running")
+        
+        print("finished moving!")
+
+# =============helpers=================================================== # 
+
+# registers motors - must be plugged in to A and B !
 def setupMotors():
+    motors = []
     motors.append(ev3.LargeMotor('outA'))
     motors.append(ev3.LargeMotor('outB'))
+    return motors
 
-    #for i in range(1,len(sys.argv)):
-    #    motors.append(ev3.LargeMotor('out'+sys.argv[i]))
-setupMotors()
-
-def debugfunc():
-    while 1: 
-        i=input()
-        try:
-            args=i.split(" ")
-            if args[0]=="s":
-                linear(int(args[1]),int(args[2]))
-            elif args[0]=="r":
-                turn(int(args[1]),int(args[2]))
-            else:
-                print("Malformed")
-        except Exception as e:
-            print(e)
-
-if __name__ == "__main__":
-    debugfunc()
+# derive a relative turn from absolute current and target angles
+def rel_from_abs_turn(target_angle,current_angle):
+    #rel turn from absolute formula
+    rel_angle = (target_angle-current_angle) % 360
+    
+    if rel_angle<=180:
+        # rel angle in [0,180]
+        return rel_angle
+    else:
+        # rel angle in (180,360)
+        # faster to turn the other way
+        return rel_angle - 360

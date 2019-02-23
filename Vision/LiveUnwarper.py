@@ -201,7 +201,7 @@ class Unwarper:
                             for k in range(robot_pos[0] - 2, robot_pos[0] + 3):
                                 search_graph[j][k] = 0
                     cv2.imshow("search graph", np.array(search_graph, dtype=np.uint8) * np.uint8(255))
-                    self.find_path(search_graph, (45, 9),robot_pos)
+                    self.find_path(search_graph, (24, 9),robot_pos)
                     if self.path is not None:
                         for node in self.path:
                             x, y = node.pos
