@@ -8,26 +8,34 @@ class Movement:
         self.gyro = gyro=ev3.GyroSensor('in1')
         self.gyro.mode="GYRO-ANG"
         self.motors = setupMotors()
-        self.time_per_square = 750
-    
+        self.time_per_square = 650
+
     def relative_turn(self,degrees):
         # we will measure difference in gyro angle from start to finish
         current_gyro_angle = self.gyro.angle
         target_gyro_angle = degrees + current_gyro_angle
 
         print("facing: %s,   turning to: %s"%(current_gyro_angle,target_gyro_angle))
-        
+        ##
+        i=0
+        print("c: %s \t t: %s"%(current_gyro_angle,target_gyro_angle)) 
+        ##
         if degrees>=0:
             # turn right
-            self.motors[0].run_forever(speed_sp=200)
-            self.motors[1].run_forever(speed_sp=-200)
-        else:
-            # turn left
             self.motors[0].run_forever(speed_sp=-200)
             self.motors[1].run_forever(speed_sp=200)
+        else:
+            # turn left
+            self.motors[0].run_forever(speed_sp=200)
+            self.motors[1].run_forever(speed_sp=-200)
 
         # wait until gyro has changed by target amount
         while abs(current_gyro_angle-target_gyro_angle)>2:
+            ###
+            if (i%10==0):
+                print("c: %s  t: %s abs: %s "%(current_gyro_angle,target_gyro_angle,abs(current_gyro_angle-target_gyro_angle)))
+            i+=1
+            ###
             current_gyro_angle = self.gyro.angle
 
         # stop the motors
@@ -39,6 +47,10 @@ class Movement:
         print("finished turn, facing: %s"%(self.angle))
     
     def absolute_turn(self,degrees):
+        ###
+        print("degrees: %s"%degrees)
+        print("current angle: %s"%self.angle)
+        ###
         rel_angle = rel_from_abs_turn(degrees,self.angle)
         self.relative_turn(rel_angle)
 
