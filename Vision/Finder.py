@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import glob
+import requests
 
 
 class RobotFinder:
@@ -87,3 +88,8 @@ class RobotFinder:
             robot_pos, thresh_robot = self.find_robot(img, return_found_pos=True)
             cv2.imshow("Thresh Robot", thresh_robot)
             cv2.waitKey()
+
+def find_plant(img):
+    params = {
+        'features': 'OBJECT_LOCALIZATION'
+    }
