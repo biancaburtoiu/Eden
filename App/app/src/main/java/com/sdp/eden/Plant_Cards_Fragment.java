@@ -1,8 +1,11 @@
 package com.sdp.eden;
 
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.SyncStateContract;
@@ -35,12 +38,20 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
+import static android.app.Activity.RESULT_OK;
 
 public class Plant_Cards_Fragment extends Fragment {
 
@@ -48,6 +59,9 @@ public class Plant_Cards_Fragment extends Fragment {
     private ArrayList<Plant> plants; // list of plants pulled from firebase
     private RecyclerView recyclerView;
     private ImageView plantPic;
+    private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
+    private String enteredPlantName; // this will hopefully be temp
+    private Uri takenImage; // once again hopeful;ly this will be temp!
 
     public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
@@ -84,11 +98,19 @@ public class Plant_Cards_Fragment extends Fragment {
             plantPic.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
-                    // TODO: Kieran - upload to firebase storage and pull for each card (having trouble with this)
-                    if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-                        startActivityForResult(takePictureIntent, 111);
+
+                    if (plantName.getText().toString().trim().length() == 0){
+                        plantName.setError("Enter a plant name");
+                    }else{
+                        enteredPlantName = plantName.getText().toString().trim();
+                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
+                        // TODO: Kieran - upload to firebase storage and pull for each card (having trouble with this)
+                        if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                            startActivityForResult(takePictureIntent, 111); // set the request code for the photo to 111
+                        }
                     }
+
+
                 }
             });
 
@@ -111,6 +133,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             plantSpecies.getSelectedItem().toString(),
                             R.drawable.plant1);
                     DbOps.instance.addPlant(plant, success -> getLatestPlantList());
+                    completePlantCreation(); // completes the new plant
                 }
             });
             AlertDialog dialog = builder.create();
@@ -119,17 +142,42 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
     @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 111 && resultCode == getActivity().RESULT_OK) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data){ // retrieves the camera image
+        super.onActivityResult(requestCode,resultCode,data);
+
+        if (requestCode == 111 && resultCode == RESULT_OK){
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
             plantPic.setImageBitmap(imageBitmap);
-            //encodeBitmapAndSaveToFirebase(imageBitmap); // TODO upload image to fire base for each card
+            takenImage = getImageUri(getContext(), imageBitmap);
+            System.out.println("taken image is " + takenImage);
+            System.out.println("Plant name is " + enteredPlantName);
+
+
         }
     }
 
+    public Uri getImageUri(Context inContext, Bitmap inImage) { // converts the BitMap to Uri
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+        String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
+        return Uri.parse(path);
+    }
 
+    public void completePlantCreation(){ // uploads the image to firebase
+        ProgressDialog mProgress;
+        mProgress = new ProgressDialog(getContext());
+        mProgress.setMessage("Creating Plant ...");
+        mProgress.show();
+        StorageReference filepath = mStorage.child("PlantPhotos").child(FirebaseAuth.getInstance().getCurrentUser().getEmail().toString()).child(enteredPlantName);
+        filepath.putFile(takenImage).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                mProgress.dismiss();
+            }
+        });
+
+    }
 
 
     @Override
