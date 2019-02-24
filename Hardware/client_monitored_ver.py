@@ -11,12 +11,9 @@ global movement_controller
 def onConnect(client,userdata,flags,rc):
     print("connected with result code %i" % rc)
     client.subscribe("start-instruction")
-    client.publish("finish-instruction","0",qos=2)
 
     ###garbage###
-    ev3.Sound.speak("BANG")
-    time.sleep(1)
-    ev3.Sound.speak("BANG")
+    ev3.Sound.speak("EDEN")
     #############
 
 def onMessage(client,userdata,msg):
@@ -36,7 +33,7 @@ def onMessage(client,userdata,msg):
 def follow_one_instruction(instruction_as_string):
     print("about to follow instruction: %s"%instruction_as_string)
     global currently_moving
-
+    
     if currently_moving:
         # stop (moving) instruction
         if instruction_as_string=='s':
@@ -50,6 +47,7 @@ def follow_one_instruction(instruction_as_string):
 
         # absolute turn instructions ( first inst received)
         if instruction_as_string in ['u','d','l','r']:
+            currently_moving=True
             if instruction_as_string=='u':
                 movement_controller.absolute_turn(0)
             elif instruction_as_string=='r':
@@ -59,8 +57,10 @@ def follow_one_instruction(instruction_as_string):
             elif instruction_as_string=='l':
                 movement_controller.absolute_turn(270)
             ask_for_next_inst(movement_controller.angle)
-
         # movement / relative turn instructions (subsequent insts)
+        elif instruction_as_string == 's':
+            # received a stop when we're already stopped!
+            print("ignoring useless s instruction")
         else:
             # tuple received is either 'u','d','l','r', or 
             # in form (r,[degrees]), or (m,[squares])
@@ -71,12 +71,15 @@ def follow_one_instruction(instruction_as_string):
                 currently_moving=True
                 movement_controller.forward_forever()
             elif inst_type=='r':
+                currently_moving=True
                 movement_controller.relative_turn(inst_val)
                 ask_for_next_inst(movement_controller.angle)
             else:
                 print("received a malformed instruction!: %s"%instruction_as_string)
 
 def ask_for_next_inst(current_angle):
+    global currently_moving
+    currently_moving = False
     print("about to send finish-instruction ",current_angle)
     client.publish("finish-instruction",str(current_angle),qos=2)
     print("instruction sent!")
@@ -86,7 +89,7 @@ client=mqtt.Client("ev3")
 client.on_connect=onConnect
 client.on_message=onMessage
 
-# if this is true, robot is waiting for a stop instruction from vision
+# if this is true, robot is either turning or moving forever
 currently_moving = False
 
 # movement object, with initial angle of 0

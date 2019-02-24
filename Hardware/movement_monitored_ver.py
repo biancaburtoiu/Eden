@@ -21,12 +21,12 @@ class Movement:
         # ##
         if degrees>=0:
             # turn right
-            self.motors[0].run_forever(speed_sp=-200)
-            self.motors[1].run_forever(speed_sp=200)
+            self.motors[0].run_forever(speed_sp=-300)
+            self.motors[1].run_forever(speed_sp=300)
         else:
             # turn left
-            self.motors[0].run_forever(speed_sp=200)
-            self.motors[1].run_forever(speed_sp=-200)
+            self.motors[0].run_forever(speed_sp=300)
+            self.motors[1].run_forever(speed_sp=-300)
 
         # wait until gyro has changed by target amount
         while abs(current_gyro_angle-target_gyro_angle)>2:
