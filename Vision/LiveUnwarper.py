@@ -28,6 +28,16 @@ global insts
 insts = []
 global square_length
 square_length = None
+global goal_pos
+goal_pos = None
+global search_graph
+search_graph = None
+global path
+path = None
+global cell_length
+cell_length = 6
+global shift_amount
+shift_amount = 6
 
 
 def set_res(cap, x, y):
@@ -41,13 +51,53 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("finish-instruction")
 
 
+def check_on_path(graph, to, frm_dec):
+    print(1)
+    try:
+        global path
+        global insts
+
+    except Exception as e:
+        print(e.message, e.args)
+        sys.exit()
+        raise
+
+
 def on_message(client, userdata, msg):
+    global robot_moving
+    global robot_rotating
+    global robot_direction
+    global robot_target
+    global global_robot_pos
+    global search_graph
+    global goal_pos
+    global path
+    global insts
+    print("HEARD DONE")
     try:
         if msg.topic == "finish-instruction":
-            global robot_moving
-            global robot_rotating
+            robot_was_moving = robot_moving
             robot_moving = False
             robot_rotating = False
+            if robot_was_moving:
+                path_broken = False
+                closest = float('inf')
+                print(path)
+                grid_robot_pos = tuple([i / cell_length for i in global_robot_pos])
+                for node in path:
+                    x, y = node.pos
+                    # Add 0.5 as we want robot to be in centre of each square
+                    if math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2) < closest:
+                        closest = abs(x - grid_robot_pos[0]) + abs(y - grid_robot_pos[1])
+                    if search_graph[y][x] == 1:
+                        path_broken = True
+                        break
+                print(str(grid_robot_pos))
+                print("CLOSEST IS %s" % closest)
+                if path_broken or closest > 3:
+                    frm = tuple([round(i) for i in grid_robot_pos])
+                    _, path, _, insts = getInstructionsFromGrid(search_graph, target=goal_pos, start=frm,
+                                                                upside_down=True)
             # robot_direction = 0 if facing south, 1 if facing west, 2 if facing north, 3 if facing east
             robot_direction = round((int(msg.payload.decode()) % 360) / 90)
             if len(insts) != 0:
@@ -56,33 +106,32 @@ def on_message(client, userdata, msg):
                     client.publish("start-instruction", next_inst, qos=2)
                 else:
                     if next_inst[0] == "m":
+                        print("pos: %s, square_length: %s" % (str(global_robot_pos), str(square_length)))
                         distance = next_inst[1] * square_length
-                        global robot_target
-                        global global_robot_pos
                         robot_target = list(global_robot_pos)
-                        # north
-                        if robot_direction == 2:
-                            robot_target[0] -= distance
-                        # east
-                        if robot_direction == 3:
-                            robot_target[1] += distance
-                        # south
+                        # up
                         if robot_direction == 0:
-                            robot_target[0] += distance
-                        # west
-                        if robot_direction == 1:
                             robot_target[1] -= distance
+                        # right
+                        if robot_direction == 1:
+                            robot_target[0] += distance
+                        # down
+                        if robot_direction == 2:
+                            robot_target[1] += distance
+                        # left
+                        if robot_direction == 3:
+                            robot_target[0] -= distance
                         robot_target = tuple(robot_target)
                         robot_moving = True
                     if next_inst[0] == "r":
                         robot_rotating = True
                     client.publish("start-instruction", "%s,%s" % next_inst, qos=2)
                 print("TOLD TO DO %s" % str(next_inst))
-        print("FINISHED ON MESSAGE")
     except Exception as e:
         print(e)
-        sys.exit()
         raise
+        sys.exit()
+    print("ON MESSAGE FINISHED")
 
 
 class Unwarper:
@@ -109,7 +158,6 @@ class Unwarper:
         self.mqtt.loop_start()
         self.overhead_image = None
         fbi.start_script(self)
-        self.path = None
         self.overlap_area = None
 
     def get_overhead_image(self):
@@ -186,69 +234,56 @@ class Unwarper:
 
     def determine_new_path(self, graph, to, frm):
         global insts
-        _, self.path, _, insts = getInstructionsFromGrid(graph, frm, to)
+        global path
+        _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True)
         print(str(insts))
-        if not robot_rotating and not robot_moving:
+        if not robot_rotating and not robot_moving and insts != []:
             next_inst = insts.pop(0)
             self.mqtt.publish("start-instruction", next_inst, qos=2)
             print("TOLD TO DO %s" % str(next_inst))
 
     def check_robot_at_target(self, robot_pos):
-        if robot_moving:
-            global robot_target
-            global robot_direction
-            global square_length
-            # north
-            if robot_direction == 2:
-                dist_to_target = robot_pos[0] - robot_target[0]
-            # east
-            elif robot_direction == 3:
-                dist_to_target = robot_target[1] - robot_pos[1]
-            # south
-            elif robot_direction == 0:
-                dist_to_target = robot_target[0] - robot_pos[0]
-            # west
-            elif robot_direction == 1:
+        global robot_target
+        global robot_moving
+        global robot_direction
+        global square_length
+        # print("ROBOT POS IS %s AND TARGET POS IS %s" % (str(robot_pos), str(robot_target)))
+        if robot_moving and robot_pos[0] is not None and robot_pos[1] is not None:
+            # up
+            if robot_direction == 0:
                 dist_to_target = robot_pos[1] - robot_target[1]
-            if dist_to_target < square_length:
+            # right
+            elif robot_direction == 1:
+                dist_to_target = robot_target[0] - robot_pos[0]
+            # down
+            elif robot_direction == 2:
+                dist_to_target = robot_target[1] - robot_pos[1]
+            # left
+            elif robot_direction == 3:
+                dist_to_target = robot_pos[0] - robot_target[0]
+            if dist_to_target < 6:
                 self.mqtt.publish("start-instruction", "s", qos=2)
                 print("TOLD TO STOP")
 
-    def find_path(self, graph, to, frm):
-        if frm[0] is not None:
-            if self.path is None:
-                self.determine_new_path(graph, to, frm)
-            else:
-                path_broken = False
-                closest = float('inf')
-                for node in self.path:
-                    x, y = node.pos
-                    if abs(x - frm[0]) + abs(y - frm[1]) < closest:
-                        closest = abs(x - frm[0]) + abs(y - frm[1])
-                    if graph[y][x] == 1:
-                        path_broken = True
-                        break
-                ####################
-                closest = False
-                #####################
-                if path_broken or closest > 0:
-                    self.determine_new_path(graph, to, frm)
-        else:
-            self.path = None
+    def find_path(self, graph, to, frm_dec):
+        global insts
+        if frm_dec[0] is not None:
+            if path is None:
+                self.determine_new_path(graph, to, tuple([round(i) for i in frm_dec]))
 
     # Unwarp all 4 cameras and merge them into a single image in real time
 
     def live_unwarp(self):
+        global goal_pos
+        global search_graph
+        goal_pos = (24, 9)
         cam = cv2.VideoCapture(0)
         set_res(cam, 1920, 1080)
         i = 1
-        counter = 0
-        last_robot_pos_sent = (0, 0)
-        shift_amount = 6
-        cell_length = 6
+        visible = 0
         global square_length
-        square_length = min([shift_amount, cell_length])
-        while True & counter < 100:
+        square_length = shift_amount
+        while True:
             _, img = cam.read()
             if i > 20:
                 unwarp_img = self.unwarp_image(img)
@@ -264,12 +299,14 @@ class Unwarper:
                                                                  visualize=True)
                     search_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                  cell_length=cell_length)
-                    robot_pos = self.robot_finder.find_robot(merged_img)
-                    global global_robot_pos
-                    global_robot_pos = robot_pos
-                    self.check_robot_at_target(robot_pos)
-                    if robot_pos[0] is not None:
-                        robot_pos = tuple([i / 6 for i in robot_pos])
+                    robot_pos_dec = self.robot_finder.find_robot(merged_img)
+                    if robot_pos_dec[0] is not None and robot_pos_dec[1] is not None:
+                        global global_robot_pos
+                        global_robot_pos = robot_pos_dec
+                        visible += 1
+                    self.check_robot_at_target(robot_pos_dec)
+                    if robot_pos_dec[0] is not None:
+                        robot_pos_dec = tuple([i / cell_length for i in robot_pos_dec])
                         '''
                         if abs(robot_pos[0] - last_robot_pos_sent[0]) > 0.1 or abs(
                                 robot_pos[1] - last_robot_pos_sent[1]) > 0.1:
@@ -277,22 +314,30 @@ class Unwarper:
                             last_robot_pos_sent = robot_pos
                             print("sending robot position: (%f,%f)" % (robot_pos))
                         '''
-                        robot_pos = tuple([int(i) for i in robot_pos])
+                        robot_pos = tuple([round(i) for i in robot_pos_dec])
                         object_graph[robot_pos[1] - 2:robot_pos[1] + 2, robot_pos[0] - 2:robot_pos[0] + 2] = np.array(
                             [0, 0, 255], dtype=np.uint8)
                         for j in range(robot_pos[1] - 2, robot_pos[1] + 3):
                             for k in range(robot_pos[0] - 2, robot_pos[0] + 3):
                                 search_graph[j][k] = 0
                     # cv2.imshow("search graph", np.array(search_graph, dtype=np.uint8) * np.uint8(255))
-                    self.find_path(search_graph, (24, 9), robot_pos)
-                    if self.path is not None:
-                        for node in self.path:
+                    self.find_path(search_graph, goal_pos, robot_pos_dec)
+                    # print(path)
+                    # print(insts)
+                    # time.sleep(100000)
+                    if path is not None:
+                        for node in path:
                             x, y = node.pos
                             object_graph[y][x] = np.array([255, 0, 0], dtype=np.uint8)
-                    # cv2.imshow('6. object graph', cv2.resize(object_graph, (0, 0), fx=6, fy=6))
-                    # cv2.waitKey(1)
-                    time.sleep(0.1)
+                        if len(path) != 0:
+                            object_graph[y][x] = np.array([0, 255, 0], dtype=np.uint8)
+                    cv2.imshow('6. object graph', cv2.resize(object_graph, (0, 0), fx=6, fy=6))
+                    cv2.waitKey(1)
+                    # time.sleep(0.1)
             i += 1
+            if i % 20 == 0:
+                pass
+                # print("Visible %s out of %s frames" % (visible, i))
 
     def static_unwarp(self, photo_path="Vision/Calibrated Pictures/*.jpg"):
         images = glob.glob(photo_path)
