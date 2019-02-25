@@ -19,6 +19,42 @@ template = cv2.imread(args["template"])
 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
+count2 = 0
+
+def color_detection(img):
+    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    # lower mask (0-10)
+    lower_red = np.array([0, 50, 50])
+    upper_red = np.array([10, 255, 255])
+    mask0 = cv2.inRange(img_hsv, lower_red, upper_red)
+
+    # upper mask (170-180)
+    lower_red = np.array([170, 50, 50])
+    upper_red = np.array([180, 255, 255])
+    mask1 = cv2.inRange(img_hsv, lower_red, upper_red)
+
+    # join my masks
+    maskR = mask0 + mask1
+
+    if len(maskR[maskR>0]) == 0:
+        return False
+
+    lower_blue = np.array([75, 50, 50])
+    upper_blue = np.array([130, 255, 255])
+    maskB = cv2.inRange(img_hsv, lower_blue, upper_blue)
+    if len(maskB[maskB>0]) == 0:
+        return False
+
+
+    lower_yellow = np.array([22, 50, 50])
+    upper_yellow = np.array([38, 255, 255])
+    maskY = cv2.inRange(img_hsv, lower_yellow, upper_yellow)
+    if len(maskY[maskY>0]) == 0:
+        return False
+    return True
+
+
 
 # loop over the images to find the template in
 for imagePath in glob.glob(args["images"] + "/*.jpg"):
@@ -47,7 +83,7 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
         result = cv2.matchTemplate(edged, template, cv2.TM_CCOEFF)
 
         (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
-        threshold = 0.72*maxVal
+        threshold = 0.40*maxVal
         loc = np.where(result >= threshold)
 
         # update it if one portion get the maximal probability
@@ -57,7 +93,7 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
             clone = np.dstack([edged, edged, edged])
             cv2.rectangle(clone, (maxLoc[0], maxLoc[1]),
                           (maxLoc[0] + tW, maxLoc[1] + tH), (0, 0, 255), 2)
-            cv2.imshow("Visualize", clone)
+            # cv2.imshow("Visualize", clone)
             cv2.waitKey(1000)
 
         # if we have found a new maximum correlation value, then update
@@ -85,61 +121,91 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
 
     total = len(all_found[0])
     counter = 0
+    # cv2.imshow("template", final_result)
 
-    cv2.imshow("template", final_result)
-    cv2.waitKey(0)
+    image2 = image.copy()
+    print("Now pic {} has {}".format(count2, len(all_found[0])))
 
-
+    print("shape {}".format(final_result.shape))
     for pt in zip(*all_found[::-1]):
+        print("pt in final {}".format(pt))
+
         counter = counter + 1
         (startX, startY) = (int(pt[0] * r), int(pt[1] * r))
         (endX, endY) = (int((pt[0] + tW) * r), int((pt[1] + tH) * r))
-        print(startX)
-        print(startY)
 
-        if (total == 1):
-            cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
-            print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
+        if color_detection(image2[startY:endY, startX: endX]):
+            cv2.rectangle(image2, (startX, startY), (endX, endY), (0, 0, 255), 2)
+        # at corner
+
+        # print("X {} Y {}".format(startX, startY))
+        if (pt[0] <= 1 or pt[0] >= final_result.shape[1] - 1) or (pt[1] <= 1 or pt[1] >= final_result.shape[0] - 1):
+            print("edge discard")
             continue
-        img = final_result[startY-5: startY+5 , startX-5: startX+5]
-        cv2.imshow("sub", img)
-        cv2.waitKey(0)
+
+        # only one
+        if (total == 1):
+            if color_detection(image[startY:endY, startX: endX]):
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+            print("The very location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
+            continue
+
+        # get local infomation
+        img = final_result[pt[1]-1: pt[1]+ 1, pt[0]- 1: pt[0]+ 1]
 
         if previous is None:
+            print("previous got")
             previous = np.argmax(img)
             (ps_X, ps_Y) = (startX, startY)
             (pe_X, pe_Y) = (endX, endY)
             continue
+
         if (startX >= ps_X - 5 and startX <= ps_X + 5):
             if (counter < total):
+                print("too close discard again")
                 continue
             else:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
-                print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
+                if color_detection(image[startY:endY, startX: endX]):
+                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                print("last found")
+                # print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
                 continue
         if ( startX >= ps_X - int(tW) * r and startX <= ps_X + int(tW) * r ):
             print("overlapped")
             current = np.argmax(img)
-            print("previous {} current {}".format(previous, current))
+            # print("previous {} current {}".format(previous, current))
 
             if current < previous:
+                if counter == total:
+                    if color_detection(image[ps_Y:pe_Y, ps_X: pe_X]):
+                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
                 continue
             else:
+                if counter == total:
+                    if color_detection(image[startY:endY, startX: endX]):
+                        cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                    continue
                 previous = np.argmax(img)
                 (ps_X, ps_Y) = (int(pt[0] * r), int(pt[1] * r))
                 (pe_X, pe_Y) = (int((pt[0] + tW) * r), int((pt[1] + tH) * r))
                 continue
         # draw a bounding box around the detected result and display the image
-        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
-        print("The location of this rec is {} {} {} {}".format(ps_X, ps_Y, ps_X, pe_Y))
+        if color_detection(image[ps_Y:pe_Y, ps_X: pe_X]):
+            cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
+        print("certain")
+        # print("The location of this rec is {} {} {} {}".format(ps_X, ps_Y, ps_X, pe_Y))
         previous = np.argmax(img)
         (ps_X, ps_Y) = (startX, startY)
         (pe_X, pe_Y) = (endX, endY)
         if (counter == total):
-            cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
-            print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
+            if color_detection(image[startY:endY, startX: endX]):
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+            # print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
 
 
 
-    cv2.imshow("Image", image)
-    cv2.waitKey(0)
+    # cv2.imshow("Image", image)
+    cv2.imwrite("image/fram%d.jpg" % count2, image)  # save frame as JPEG file
+    # cv2.imwrite("image/framx%d.jpg" % count2, image2)  # save frame as JPEG file
+    count2 = count2 + 1
+    # cv2.waitKey(0)
