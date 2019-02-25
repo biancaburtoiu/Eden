@@ -48,7 +48,7 @@ public class RobotFragment extends Fragment{
 
                 // 8 - 2.5 = 5.5
                 double calculatedPercentage = Math.round((status.getVoltage()+2.5/5.5*100)*100.0/100.0);
-                batteryStatus.setText("Current battery is: "+ calculatedPercentage + " %");
+                batteryStatus.setText(calculatedPercentage + "%");
             }
         });
     }
