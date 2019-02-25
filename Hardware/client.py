@@ -12,18 +12,24 @@ angle=0
 instructions_to_follow = []
 client=mqtt.Client("ev3")
 initial=None
-
+instrucions_to_follow=None
 
 
 def forward(x):
-    movement.forward_t(x/speed)
+    print("moving forward "+str(x) +" squares over" + str(x/speed))
+    movement.forward_t(x*1000/speed)
 
 def face(x):
     global angle
+    print("turning to" + str(x) +"from"+str(angle))
+    
+    print(str(x-angle) + "degree turn")
     movement.turn(300, x-angle)
+    
     angle=x
 
 def relativeTurn(x):
+    global angle
     movement.turn(300,x)
     angle+=x
 
@@ -41,11 +47,14 @@ def onMessage(client,userdata,msg):
         global waiting
         global calibrated
         global initial
+        global instructions_to_follow
         print("Received message with payload:%s "%(msg.payload.decode()))
-        if (msg.topic=="instructions"):
+        if  msg.topic=="instructions":
             print("instruction message!")
-            instructions_to_follow= msg.payload.decode().split(";")
-            follow_insts_in_list(instructions_to_follow)
+            instructions_to_follow= msg.payload.decode().split(";")[:-1]
+            print(instructions_to_follow)
+            if calibrated:
+                follow_insts_in_list(instructions_to_follow)
 
         if msg.topic=="pos":
              print("positional input")
@@ -67,13 +76,18 @@ def onMessage(client,userdata,msg):
                  difference=[position[0]-initial[0], position[1]-initial[1]]
                  print("2")
                  print(math.atan(difference[0]/difference[1]))
-                 angle=math.atan(difference[0]/difference[1])
+                 angle=math.degrees(math.atan(difference[0]/difference[1]))
                  print(3)
                  speed=math.sqrt(difference[0]**2+difference[1]**2)
                  print(4)
                  calibrated=True
                  print("calibrated")
                  print("speed is %f"% speed)
+                 print("angle is %f" % angle)
+
+                 if instructions_to_follow:
+                     follow_insts_in_list(instructions_to_follow)
+
     except:
         print("Error")
         print(sys.exc_info()[0])
@@ -82,10 +96,14 @@ def onMessage(client,userdata,msg):
 
 def follow_insts_in_list(instructions_to_follow):
     print("starting to follow instructions")
+    print(instructions_to_follow)
+    if not instructions_to_follow:
+        print("no instructions to follow")
+        raise
     while len(instructions_to_follow)>0:
         # instruction type t and value v - i.e. ('m',5)
-        inst = instructions_to_follow.remove(0)
-        print("following instruction:" + inst)
+        inst = instructions_to_follow.pop(0)
+        print("following instruction:" , inst)
         if inst in ['u','d','l','r']:
         # used to synch robot's direction to match relative instructions
             print("facing %s"%inst)
@@ -100,8 +118,11 @@ def follow_insts_in_list(instructions_to_follow):
             print("done")
         else:
             # (type,value) format
-            (t,v) = inst
+            print("DEBUG 1")
+            (t,v) = tuple(inst.split(","))
+            print("DEBUG 2")
             v=int(v)
+            print("DEBUG 3")
             if t=='m':
                 print("moved %i squares"%v)
                 forward(v)
