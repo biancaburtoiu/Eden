@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import glob
 
+import copy
+
 import cv2
 import imutils
 import numpy as np
@@ -52,7 +54,6 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("battery-update")
 
 
-
 def check_on_path(graph, to, frm_dec):
     print(1)
     try:
@@ -85,7 +86,7 @@ def on_message(client, userdata, msg):
                 path_broken = False
                 closest = float('inf')
                 print(path)
-                grid_robot_pos = tuple([i / shift_amount for i in global_robot_pos])
+                grid_robot_pos = tuple([(i - (cell_length / 2)) / shift_amount for i in global_robot_pos])
                 print("SHAPE: (%s, %s)" % (len(search_graph), len(search_graph[0])))
                 for node in path:
                     x, y = node.pos
@@ -136,13 +137,14 @@ def on_message(client, userdata, msg):
         print(e)
         raise
         sys.exit()
-    if (msg.topic=="battery-update"):
+    if (msg.topic == "battery-update"):
         print("sending battery update to firebase")
         # decode status and send it to db using fbi method
         new_battery_status = msg.payload.decode()
         fbi.update_battery_status_in_db(new_battery_status)
-print("ON MESSAGE FINISHED")
 
+
+print("ON MESSAGE FINISHED")
 
 
 class Unwarper:
@@ -278,9 +280,21 @@ class Unwarper:
 
     def find_path(self, graph, to, frm_dec):
         global insts
+        global path
+        global search_graph
+        global global_robot_pos
         if frm_dec[0] is not None:
             if path is None:
                 self.determine_new_path(graph, to, tuple([round(i) for i in frm_dec]))
+            else:
+                path_broken = False
+                for node in path:
+                    x, y = node.pos
+                    if search_graph[y][x] == 1:
+                        path_broken = True
+                        break
+                if path_broken:
+                    self.determine_new_path(graph, to, tuple([round(i) for i in frm_dec]))
 
     # Unwarp all 4 cameras and merge them into a single image in real time
 
@@ -304,22 +318,23 @@ class Unwarper:
                 if merged_img is not None:
                     # cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
                     # cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
-                    # cv2.imshow('3. merged', merged_img)
+                    cv2.imshow('3. merged', merged_img)
                     # cv2.imshow('4. thresholded', thresh_merged_img)
+                    robot_pos_dec = self.robot_finder.find_robot(merged_img)
+                    # thresh_merged_img[robot_pos_dec[0] - 10:robot_pos_dec[0] + 10,
+                    # robot_pos_dec[1] - 10:robot_pos_dec[1] + 10] = np
                     object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
-
                                                                  cell_length=cell_length,
                                                                  visualize=True)
                     search_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                  cell_length=cell_length)
-                    robot_pos_dec = self.robot_finder.find_robot(merged_img)
                     if robot_pos_dec[0] is not None and robot_pos_dec[1] is not None:
                         global global_robot_pos
                         global_robot_pos = robot_pos_dec
                         visible += 1
                     self.check_robot_at_target(robot_pos_dec)
                     if robot_pos_dec[0] is not None:
-                        robot_pos_dec = tuple([i / shift_amount for i in robot_pos_dec])
+                        robot_pos_dec = tuple([(i - (cell_length / 2)) / shift_amount for i in robot_pos_dec])
                         '''
                         if abs(robot_pos[0] - last_robot_pos_sent[0]) > 0.1 or abs(
                                 robot_pos[1] - last_robot_pos_sent[1]) > 0.1:
@@ -329,25 +344,28 @@ class Unwarper:
                         '''
                         robot_pos = tuple([round(i) for i in robot_pos_dec])
 
-                        object_graph[robot_pos[1] - 3:robot_pos[1] + 3, robot_pos[0] - 3:robot_pos[0] + 3] = np.array(
+                        object_graph[robot_pos[1] - 4:robot_pos[1] + 4, robot_pos[0] - 4:robot_pos[0] + 4] = np.array(
                             [0, 0, 255], dtype=np.uint8)
-                        for j in range(robot_pos[1] - 3, robot_pos[1] + 4):
-                            for k in range(robot_pos[0] - 3, robot_pos[0] + 4):
+                        for j in range(robot_pos[1] - 4, robot_pos[1] + 5):
+                            for k in range(robot_pos[0] - 4, robot_pos[0] + 5):
                                 if k >= 0 and j >= 0 and j < len(search_graph) and k < len(search_graph[0]):
                                     search_graph[j][k] = 0
+                        search_graph[robot_pos[1]][robot_pos[0]] = 0
 
                     # cv2.imshow("search graph", np.array(search_graph, dtype=np.uint8) * np.uint8(255))
+                    search_graph_copy = copy.deepcopy(search_graph)
                     self.find_path(search_graph, goal_pos, robot_pos_dec)
                     # print(path)
                     # print(insts)
                     # time.sleep(100000)
+                    cv2.imshow("search graph", np.array(search_graph_copy, dtype=np.uint8) * 255)
                     if path is not None:
                         for node in path:
                             x, y = node.pos
                             object_graph[y][x] = np.array([255, 0, 0], dtype=np.uint8)
                         if len(path) != 0:
                             object_graph[y][x] = np.array([0, 255, 0], dtype=np.uint8)
-                    cv2.imshow('6. object graph', cv2.resize(object_graph, (0, 0), fx=6, fy=6))
+                    cv2.imshow('6. object graph', object_graph)  # cv2.resize(object_graph, (0, 0), fx=6, fy=6))
                     cv2.waitKey(1)
                     # time.sleep(0.1)
             i += 1
