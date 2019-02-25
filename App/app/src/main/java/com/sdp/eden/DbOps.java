@@ -276,6 +276,22 @@ public class DbOps {
                 });
     }
 
+    void getBatteryStatus(OnGetBatteryStatusFinishedListener listener) {
+        db.collection("battery-info-collection")
+                .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                Log.d(TAG, "Is robot task empty? "+task.getResult().isEmpty());
+                if (!task.getResult().isEmpty()) {
+                    List<BatteryStatus> batteryStatuses = task.getResult().toObjects(BatteryStatus.class);
+                    Log.d(TAG, "Retrieved battery status list size: "+batteryStatuses.size());
+                    listener.onGetBatteryStatusFinished(batteryStatuses);
+                }
+                else listener.onGetBatteryStatusFinished(null);
+            }
+        });
+    }
+
     interface onAddPlantFinishedListener {
         void onUpdateFinished(boolean success);
     }
@@ -302,6 +318,10 @@ public class DbOps {
 
     interface onEditPlantFinishedListener {
         void onEditPlantFinished(boolean success);
+    }
+
+    interface OnGetBatteryStatusFinishedListener {
+        void onGetBatteryStatusFinished(List<BatteryStatus> statuses);
     }
 
 
