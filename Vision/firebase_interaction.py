@@ -28,9 +28,10 @@ def init_fb():
     ###############################################################################
     # #### you must get a key, put in the directory of this file, and write the name below! ########
     ###############################################################################
+    
     try:
-       # cred = fba.credentials.Certificate("Vision/eden-34f6a-firebase-adminsdk-yigr5-83fe6dc575.json")
-        cred = fba.credentials.Certificate("eden-34f6a-firebase-adminsdk-yigr5-83fe6dc575.json")
+        # cred = fba.credentials.Certificate("Vision/eden-34f6a-firebase-adminsdk-yigr5-83fe6dc575.json")
+        cred = fba.credentials.Certificate("Vision/eden-34f6a-firebase-adminsdk-yigr5-13fdb03cd2.json")
         fba.initialize_app(cred,{
             'storageBucket': "eden-34f6a.appspot.com"
         })
@@ -42,6 +43,7 @@ def init_fb():
     except:
         print("Firebase_interaction: You don't have a key !!!")
         return None,None
+
 
 def on_doc_update(doc_snap,changes,read_time):
     if len(doc_snap)>0:
@@ -82,6 +84,7 @@ def update_battery_status_in_db(new_status):
     if db is not None:
         new_status_dict = {'battery-status':str(new_status)}
         db.collection(u"battery-info-collection").document(u"battery-info-document").set(new_status_dict)
+        print("firebase_interaction: update sent")
     else:
         print("could not update battery status - database was None!")
 

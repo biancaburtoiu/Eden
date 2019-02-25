@@ -49,6 +49,7 @@ def set_res(cap, x, y):
 def on_connect(client, userdata, flags, rc):
     print("connected")
     client.subscribe("finish-instruction")
+    client.subscribe("battery-update")
 
 
 def check_on_path(graph, to, frm_dec):
@@ -132,6 +133,7 @@ def on_message(client, userdata, msg):
         raise
         sys.exit()
     if (msg.topic=="battery-update"):
+        print("sending battery update to firebase")
         # decode status and send it to db using fbi method
         new_battery_status = msg.payload.decode()
         fbi.update_battery_status_in_db(new_battery_status)

@@ -87,8 +87,14 @@ def ask_for_next_inst(current_angle):
 
 def read_battery_status(client):
     # this file contains the current battery voltage
-    voltage_level = open("/sys/class/power_supply/legoev3-battery/voltage_now","r").readline()
-    client.publish("battery-update",str(voltage_level))
+    voltage_file = open("/sys/class/power_supply/legoev3-battery/voltage_now","r")
+    # convert reading into string of decimal number
+    voltage_level = str(int(voltage_file.readline())/1000000)
+    voltage_file.close()
+    client.publish("battery-update",voltage_level,qos=2)
+    print("sent battery update")
+    # starts a threading.Timer object which calls this method again in 300 seconds
+    Timer(300,read_battery_status,[client]).start()
 
 # set up client & client functions
 client=mqtt.Client("ev3")
@@ -103,7 +109,7 @@ movement_controller = movement_monitored_ver.Movement(0)
 
 #connect client and make it wait for inputs
 client.connect("129.215.202.200")
-voltage_reader = Timer(5,read_battery_status,client)
+read_battery_status(client) # battery reading thread is started here
 client.loop_forever()
 
 ################
