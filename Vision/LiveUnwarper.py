@@ -49,6 +49,8 @@ def set_res(cap, x, y):
 def on_connect(client, userdata, flags, rc):
     print("connected")
     client.subscribe("finish-instruction")
+    client.subscribe("battery-update")
+
 
 
 def check_on_path(graph, to, frm_dec):
@@ -90,6 +92,7 @@ def on_message(client, userdata, msg):
                     # Add 0.5 as we want robot to be in centre of each square
                     if math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2) < closest:
                         closest = abs(x - grid_robot_pos[0]) + abs(y - grid_robot_pos[1])
+
                     print("QUERYING: (%s, %s)" % (y, x))
                     if search_graph[y][x] == 1:
                         path_broken = True
@@ -133,7 +136,13 @@ def on_message(client, userdata, msg):
         print(e)
         raise
         sys.exit()
-    print("ON MESSAGE FINISHED")
+    if (msg.topic=="battery-update"):
+        print("sending battery update to firebase")
+        # decode status and send it to db using fbi method
+        new_battery_status = msg.payload.decode()
+        fbi.update_battery_status_in_db(new_battery_status)
+print("ON MESSAGE FINISHED")
+
 
 
 class Unwarper:
@@ -298,6 +307,7 @@ class Unwarper:
                     # cv2.imshow('3. merged', merged_img)
                     # cv2.imshow('4. thresholded', thresh_merged_img)
                     object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
+
                                                                  cell_length=cell_length,
                                                                  visualize=True)
                     search_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
@@ -318,12 +328,14 @@ class Unwarper:
                             print("sending robot position: (%f,%f)" % (robot_pos))
                         '''
                         robot_pos = tuple([round(i) for i in robot_pos_dec])
+
                         object_graph[robot_pos[1] - 3:robot_pos[1] + 3, robot_pos[0] - 3:robot_pos[0] + 3] = np.array(
                             [0, 0, 255], dtype=np.uint8)
                         for j in range(robot_pos[1] - 3, robot_pos[1] + 4):
                             for k in range(robot_pos[0] - 3, robot_pos[0] + 4):
                                 if k >= 0 and j >= 0 and j < len(search_graph) and k < len(search_graph[0]):
                                     search_graph[j][k] = 0
+
                     # cv2.imshow("search graph", np.array(search_graph, dtype=np.uint8) * np.uint8(255))
                     self.find_path(search_graph, goal_pos, robot_pos_dec)
                     # print(path)
