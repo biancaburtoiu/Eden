@@ -7,7 +7,7 @@ import cv2
 import imutils
 import numpy as np
 import paho.mqtt.client as mqtt
-import time
+import random
 import math
 
 import Vision.CamerasUnwarper
@@ -37,9 +37,15 @@ search_graph = None
 global path
 path = None
 global cell_length
-cell_length = 30
+cell_length = 40
 global shift_amount
 shift_amount = 6
+
+# QA vars
+global start_pos
+start_pos = None
+global original_goal
+original_goal = None
 
 
 def set_res(cap, x, y):
@@ -66,6 +72,17 @@ def check_on_path(graph, to, frm_dec):
         raise
 
 
+def count_diff_target(start_pos, robot_pos, robot_target):
+    f = open("Vision/QAResults/diff_target.txt", "a")
+    try:
+        f.write(
+            "%s %s %s (%s,%s)\n" % (
+                start_pos, robot_pos, robot_target, robot_pos[0] - robot_target[0], robot_pos[1] - robot_target[1]))
+        f.close()
+    except:
+        f.close()
+
+
 def on_message(client, userdata, msg):
     global robot_moving
     global robot_rotating
@@ -76,6 +93,8 @@ def on_message(client, userdata, msg):
     global goal_pos
     global path
     global insts
+    global start_pos
+    global original_goal
     print("HEARD DONE")
     try:
         if msg.topic == "finish-instruction":
@@ -83,6 +102,7 @@ def on_message(client, userdata, msg):
             robot_moving = False
             robot_rotating = False
             if robot_was_moving:
+                count_diff_target(start_pos, global_robot_pos, original_goal)
                 path_broken = False
                 closest = float('inf')
                 print(path)
@@ -131,6 +151,8 @@ def on_message(client, userdata, msg):
                         robot_moving = True
                     if next_inst[0] == "r":
                         robot_rotating = True
+                    start_pos = global_robot_pos
+                    original_goal = robot_target
                     client.publish("start-instruction", "%s,%s" % next_inst, qos=2)
                 print("TOLD TO DO %s" % str(next_inst))
     except Exception as e:
@@ -172,6 +194,9 @@ class Unwarper:
         self.overhead_image = None
         fbi.start_script(self)
         self.overlap_area = None
+
+        # TESTING VARIABLES
+        self.visibility = []
 
     def get_overhead_image(self):
         return self.overhead_image
@@ -274,9 +299,36 @@ class Unwarper:
             # left
             elif robot_direction == 3:
                 dist_to_target = robot_pos[0] - robot_target[0]
-            if dist_to_target < 12:
+            if dist_to_target < 16:
                 self.mqtt.publish("start-instruction", "s", qos=2)
                 print("TOLD TO STOP")
+                if len(insts) == 0:
+                    self.set_random_target(robot_pos)
+
+    def set_random_target(self, robot_pos):
+        global goal_pos
+        possible_goals = [(x, y) for x in range(20, 39) for y in range(6, 18)] + [(x, y) for x in range(5, 39) for y in
+                                                                                  range(17, 30)] + [(x, y) for x in
+                                                                                                    range(38, 44) for y
+                                                                                                    in range(10, 30)]
+        goal_pos = random.choice(possible_goals)
+        self.determine_new_path(search_graph, goal_pos, tuple([round(i) for i in robot_pos]))
+
+    def count_visibility(self, visible):
+        if visible:
+            self.visibility.append(1)
+        else:
+            self.visibility.append(0)
+        if len(self.visibility) == 100:
+            count = sum(self.visibility)
+            # Writes out of the last 100 frames the number of times how many of them the spot was visible
+            f = open("Vision/QAResults/spot_visibility_count_out_of_100.txt", "a")
+            try:
+                f.write("%s\n" % count)
+                f.close()
+            except:
+                f.close()
+            self.visibility = []
 
     def find_path(self, graph, to, frm_dec):
         global insts
@@ -287,6 +339,7 @@ class Unwarper:
             if path is None:
                 self.determine_new_path(graph, to, tuple([round(i) for i in frm_dec]))
             else:
+                '''
                 path_broken = False
                 for node in path:
                     x, y = node.pos
@@ -295,13 +348,23 @@ class Unwarper:
                         break
                 if path_broken:
                     self.determine_new_path(graph, to, tuple([round(i) for i in frm_dec]))
+                '''
 
     # Unwarp all 4 cameras and merge them into a single image in real time
 
     def live_unwarp(self):
         global goal_pos
         global search_graph
-        goal_pos = (24, 9)
+        global global_robot_pos
+        '''
+        possible_goals = [(x, y) for x in range(20, 39) for y in range(6, 18)] + [(x, y) for x in range(5, 39) for y in
+                                                                                  range(17, 30)] + [(x, y) for x in
+                                                                                                    range(38, 44) for y
+                                                                                                    in range(10, 30)]
+        goal_pos = random.choice(possible_goals)
+        '''
+        # (23, 6)
+        goal_pos = (9, 28)
         cam = cv2.VideoCapture(0)
         set_res(cam, 1920, 1080)
         i = 1
@@ -316,22 +379,24 @@ class Unwarper:
                 self.overhead_image = merged_img
                 thresh_merged_img = self.stitch_one_two_three_and_four(img, thresh=True)
                 if merged_img is not None:
-                    # cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
-                    # cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
+                    cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
+                    cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
                     cv2.imshow('3. merged', merged_img)
-                    # cv2.imshow('4. thresholded', thresh_merged_img)
                     robot_pos_dec = self.robot_finder.find_robot(merged_img)
-                    # thresh_merged_img[robot_pos_dec[0] - 10:robot_pos_dec[0] + 10,
-                    # robot_pos_dec[1] - 10:robot_pos_dec[1] + 10] = np
+                    if global_robot_pos is not None:
+                        thresh_merged_img[round(global_robot_pos[1] - 20):round(global_robot_pos[1] + 20),
+                        round(global_robot_pos[0] - 20):round(global_robot_pos[0] + 20), :] = np.zeros((40, 40, 3),
+                                                                                                 dtype=np.uint8)
+                    cv2.imshow('4. thresholded', thresh_merged_img)
                     object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                  cell_length=cell_length,
                                                                  visualize=True)
                     search_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                  cell_length=cell_length)
+                    search_graph_copy = copy.deepcopy(search_graph)
                     if robot_pos_dec[0] is not None and robot_pos_dec[1] is not None:
-                        global global_robot_pos
                         global_robot_pos = robot_pos_dec
-                        visible += 1
+                    self.count_visibility(robot_pos_dec[0] is not None)
                     self.check_robot_at_target(robot_pos_dec)
                     if robot_pos_dec[0] is not None:
                         robot_pos_dec = tuple([(i - (cell_length / 2)) / shift_amount for i in robot_pos_dec])
@@ -344,17 +409,18 @@ class Unwarper:
                         '''
                         robot_pos = tuple([round(i) for i in robot_pos_dec])
 
-                        object_graph[robot_pos[1] - 4:robot_pos[1] + 4, robot_pos[0] - 4:robot_pos[0] + 4] = np.array(
+                        object_graph[robot_pos[1] - 3:robot_pos[1] + 3, robot_pos[0] - 3:robot_pos[0] + 3] = np.array(
                             [0, 0, 255], dtype=np.uint8)
-                        for j in range(robot_pos[1] - 4, robot_pos[1] + 5):
-                            for k in range(robot_pos[0] - 4, robot_pos[0] + 5):
-                                if k >= 0 and j >= 0 and j < len(search_graph) and k < len(search_graph[0]):
-                                    search_graph[j][k] = 0
-                        search_graph[robot_pos[1]][robot_pos[0]] = 0
+                        object_graph[robot_pos[1], robot_pos[0]] = np.array([0, 0, 0], dtype=np.uint8)
+                        # for j in range(robot_pos[1] - 4, robot_pos[1] + 5):
+                        #    for k in range(robot_pos[0] - 4, robot_pos[0] + 5):
+                        #        if k >= 0 and j >= 0 and j < len(search_graph) and k < len(search_graph[0]):
+                        #            pass
+                        #            # search_graph[j][k] = 0
+                        # search_graph[robot_pos[1]][robot_pos[0]] = 0
+                        self.find_path(search_graph, goal_pos, robot_pos_dec)
 
                     # cv2.imshow("search graph", np.array(search_graph, dtype=np.uint8) * np.uint8(255))
-                    search_graph_copy = copy.deepcopy(search_graph)
-                    self.find_path(search_graph, goal_pos, robot_pos_dec)
                     # print(path)
                     # print(insts)
                     # time.sleep(100000)
@@ -369,9 +435,6 @@ class Unwarper:
                     cv2.waitKey(1)
                     # time.sleep(0.1)
             i += 1
-            if i % 20 == 0:
-                pass
-                # print("Visible %s out of %s frames" % (visible, i))
 
     def static_unwarp(self, photo_path="Vision/Calibrated Pictures/*.jpg"):
         images = glob.glob(photo_path)
