@@ -15,6 +15,12 @@
         <item name="android:windowBackground">@drawable/gradient</item>
         <item name="windowNoTitle">true</item>
 
+        <!-- To change the popup menu and app text color  -->
+        <item name="android:textColor">@color/black</item>
+
+        <!-- To change the background of options menu-->
+        <item name="android:itemBackground">@color/white</item>
+
     </style>
 
     <style name="SplashTheme" parent="Theme.AppCompat.NoActionBar">
@@ -22,10 +28,29 @@
         <item name="android:statusBarColor">#45B649</item>
 
     </style>
+    <style name="NegativeButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/colorPrimary</item>
+    </style>
+
+    <style name="PositiveButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/colorPrimary</item>
+    </style>
 
     <style name="Dialog" parent="Theme.AppCompat.Light.Dialog.Alert">
         <item name="android:textColorPrimary">#000</item>
         <item name="android:textColorAlertDialogListItem">#000</item>
+        <item name="android:background">#fff</item>
+        <item name="buttonBarNegativeButtonStyle">@style/NegativeButtonStyle</item>
+        <item name="buttonBarPositiveButtonStyle">@style/PositiveButtonStyle</item>
+        <item name="buttonBarNeutralButtonStyle">@style/PositiveButtonStyle</item>
     </style>
+
+    <style name="popupMenu" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:textColor">@android:color/black</item>
+        <item name="android:itemBackground">@android:color/white</item>
+        <item name="android:popupBackground"> @color/colorPrimary</item>
+    </style>
+
+
 
 </resources>

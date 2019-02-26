@@ -6,4 +6,5 @@
     android:text="less"
     android:padding="12dp"
     android:textSize="18sp"
+    android:textColor="@color/black"
     xmlns:android="http://schemas.android.com/apk/res/android" />
