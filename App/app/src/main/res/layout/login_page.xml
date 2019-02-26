@@ -36,6 +36,7 @@
         android:layout_marginBottom="8dp"
         android:background="@null"
         android:text="don't have an account? register here!"
+        android:textColor="@color/white"
         android:fontFamily="@font/opensanzregular"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

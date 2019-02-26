@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -20,6 +21,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Base64;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -80,8 +82,8 @@ public class Plant_Cards_Fragment extends Fragment {
         addPlantButton.setOnClickListener(v -> {
             Log.d(TAG, "User input: click on Add");
 
-            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
-            builder.setTitle("Add a new plant!");
+            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+            //builder.setTitle("Add a new plant!");
 
             View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant, (ViewGroup) getView(), false);
 
@@ -119,6 +121,9 @@ public class Plant_Cards_Fragment extends Fragment {
                 Log.d(TAG, "Plant name: " + plantName.getText().toString());
                 Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString()); // extracts the plant data from user input
 
+                if(plantSpecies.getSelectedItem().toString().equals("Select Species")){
+                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Select a Species", Snackbar.LENGTH_SHORT).show();
+                }
                 // Checks for empty plant name
                 if (plantName.getText().toString().trim().length() == 0) {
                     Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
@@ -255,7 +260,58 @@ public class Plant_Cards_Fragment extends Fragment {
             recyclerViewHolder.plantImage.setImageResource(plantsList.get(i).getPhoto());
 
             //snackbar location
-            recyclerViewHolder.mCardView.setOnClickListener(v -> Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name: " + plantsList.get(i).getName(), Snackbar.LENGTH_SHORT).show());
+            //recyclerViewHolder.mCardView.setOnClickListener(v -> Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name: " + plantsList.get(i).getName(), Snackbar.LENGTH_SHORT).show());
+            recyclerViewHolder.mCardView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Plant curPlant = plantsList.get(i);
+                    AlertDialog.Builder viewbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                    View scheduleViewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.individual_schedule_view, (ViewGroup) getView(), false);
+
+                    ListView scheduleList = scheduleViewInflated.findViewById(R.id.individualScheduleList);
+                    TextView name = scheduleViewInflated.findViewById(R.id.plantName);
+                    TextView spec = scheduleViewInflated.findViewById(R.id.species);
+                    ImageView plantpic = scheduleViewInflated.findViewById(R.id.plantPic);
+                    name.setText(curPlant.getName());
+                    spec.setText(curPlant.getSpecies());
+                    plantpic.bringToFront();
+
+
+                    DbOps.instance.getScheduleEntriesForPlant(curPlant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
+                        @Override
+                        public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
+                            if (scheduleEntries==null) {
+                                String[] values = new String[] {"No schedule entries to display."};
+                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Objects.requireNonNull(getContext()),
+                                        R.layout.individual_schedule_view_item, R.id.schedule, values);
+                                scheduleList.setAdapter(adapter);
+                            }
+                            else {
+                                List<String> values = new ArrayList<String>();
+
+                                for (ScheduleEntry entry : scheduleEntries) {
+                                    // Simple approach - could be done differently
+                                    String entryText = entry.getDay()+"s at "+entry.getTime()+" with quantity: "+entry.getQuantity()+"ml";
+                                    values.add(entryText);
+                                }
+
+                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Objects.requireNonNull(getContext()),
+                                        R.layout.individual_schedule_view_item, R.id.schedule, values);
+                                scheduleList.setAdapter(adapter);
+                            }
+                        }
+                    });
+                    viewbuilder.setView(scheduleViewInflated);
+
+                    viewbuilder.setPositiveButton("Add Schedule", (dialog, which) -> {
+                        
+                    });
+
+                    AlertDialog viewdialog = viewbuilder.create();
+                    viewdialog.show();
+                }
+            });
+
             //calls method to display menu
             mImageButton.setOnClickListener(v -> showPopupMenu(mImageButton, i));
 
@@ -264,7 +320,8 @@ public class Plant_Cards_Fragment extends Fragment {
 
         private void showPopupMenu(View view,int position) {
             // inflate menu
-            PopupMenu popup = new PopupMenu(view.getContext(),view );
+            Context wrapper = new ContextThemeWrapper(getContext(), R.style.popupMenu);
+            PopupMenu popup = new PopupMenu(wrapper,view );
             MenuInflater inflater = popup.getMenuInflater();
             inflater.inflate(R.menu.card_menu, popup.getMenu());
             popup.setOnMenuItemClickListener(new MyMenuItemClickListener(position));
@@ -299,21 +356,17 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     Plant currentPlant = plants.get(position);
 
-                    AlertDialog.Builder editbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
-                    editbuilder.setTitle("Edit plant name");
+                    AlertDialog.Builder editbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                    //editbuilder.setTitle("Edit plant name");
 
                     View editviewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_edit_plant,
                             (ViewGroup) getView(), false);
 
-                    TextView currentPlantName = editviewInflated.findViewById(R.id.currentPlantName);
-                    TextView currentPlantSpecies = editviewInflated.findViewById(R.id.currentPlantSpecies);
-
-                    currentPlantName.setText(currentPlant.getName());
-                    currentPlantSpecies.setText(currentPlant.getSpecies());
-
-                    final EditText newPlantName = editviewInflated.findViewById(R.id.newPlantName);
+                    final EditText newPlantName = editviewInflated.findViewById(R.id.plantName);
+                    newPlantName.setHint(currentPlant.getName());
 
                     final Spinner newPlantSpecies = editviewInflated.findViewById(R.id.plantSpecies);
+                    newPlantSpecies.setPrompt(currentPlant.getSpecies());
                     // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
                     String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
                     ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
@@ -356,14 +409,15 @@ public class Plant_Cards_Fragment extends Fragment {
                     return true;
 
                 case R.id.card_addSchedule: // Schedule watering is selected
-                    AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
-                    builder.setTitle("Add schedule for plant");
+                    AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                    //builder.setTitle("Add schedule for plant");
 
                     View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant_schedule,
                             (ViewGroup) getView(), false);
 
                     final TimePicker timePicker = viewInflated.findViewById(R.id.timePicker);
                     timePicker.setIs24HourView(true);
+
 
                     CheckBox checkBox_Monday = viewInflated.findViewById(R.id.checkbox_Monday);
                     CheckBox checkBox_Tuesday = viewInflated.findViewById(R.id.checkbox_Tuesday);
@@ -470,49 +524,9 @@ public class Plant_Cards_Fragment extends Fragment {
                     AlertDialog dialog = builder.create();
                     dialog.show();
                     return true;
-
-                case R.id.card_viewSchedule:
-                    Plant curPlant = plants.get(position);
-
-                    AlertDialog.Builder viewbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
-                    viewbuilder.setTitle("View scheduled waterings of plant");
-
-                    View scheduleViewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.individual_schedule_view,
-                            (ViewGroup) getView(), false);
-
-                    ListView scheduleList = scheduleViewInflated.findViewById(R.id.individualScheduleList);
-
-                    DbOps.instance.getScheduleEntriesForPlant(curPlant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
-                        @Override
-                        public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
-                            if (scheduleEntries==null) {
-                                String[] values = new String[] {"No schedule entries to display."};
-                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Objects.requireNonNull(getContext()),
-                                        R.layout.individual_schedule_view_item, R.id.schedule, values);
-                                scheduleList.setAdapter(adapter);
-                            }
-                            else {
-                                List<String> values = new ArrayList<String>();
-
-                                for (ScheduleEntry entry : scheduleEntries) {
-                                    // Simple approach - could be done differently
-                                    String entryText = entry.getDay()+"s at "+entry.getTime()+" with quantity: "+entry.getQuantity()+"ml";
-                                    values.add(entryText);
-                                }
-
-                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Objects.requireNonNull(getContext()),
-                                        R.layout.individual_schedule_view_item, R.id.schedule, values);
-                                scheduleList.setAdapter(adapter);
-                            }
-                        }
-                    });
-                    viewbuilder.setView(scheduleViewInflated);
-
-                    AlertDialog viewdialog = viewbuilder.create();
-                    viewdialog.show();
-                    return true;
             }
             return false;
         }
+
     }
 }

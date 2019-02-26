@@ -17,6 +17,7 @@
         android:text="It's nice to\nmeet you!"
         android:textColor="@color/white"
         android:textSize="50sp"
+        android:fontFamily="@font/opensanzlight"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.25"
