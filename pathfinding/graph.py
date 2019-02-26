@@ -41,7 +41,11 @@ class Graph:
 
                 for (neighbour, dirToNeighbour) in current.getNeighbours():
                     if current in parent.keys() and parent[current].neighbourToDir(current) !=dirToNeighbour:
-                            cost_of_move= 20
+                        cost_of_move= 40
+                    elif len(neighbour.getNeighbours())==3:
+                        cost_of_move = 50
+                    elif len(neighbour.getNeighbours())==2:
+                        cost_of_move = 100
                     else:
                         cost_of_move = 1
                     cost = cost_so_far[current] + cost_of_move
