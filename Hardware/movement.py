@@ -9,6 +9,7 @@ class Movement:
         self.gyro.mode="GYRO-ANG"
         self.motors = setupMotors()
         self.time_per_square = 650
+        self.start_arm_pos=self.motors[2].position
 
     def relative_turn(self,degrees):
         # we will measure difference in gyro angle from start to finish
@@ -63,7 +64,8 @@ class Movement:
         self.motors[0].wait_while("running")
         
         print("finished moving!")
-
+    def arm_to_pos(self, degrees):
+        self.motors[2].run_to_rel_pos(position_sp=-degrees,speed_sp=50)
 # =============helpers=================================================== # 
 
 # registers motors - must be plugged in to A and B !
@@ -71,6 +73,7 @@ def setupMotors():
     motors = []
     motors.append(ev3.LargeMotor('outA'))
     motors.append(ev3.LargeMotor('outB'))
+    motors.append(ev3.LargeMotor('outC'))
     return motors
 
 # derive a relative turn from absolute current and target angles

@@ -8,6 +8,7 @@ class Movement:
         self.gyro = gyro=ev3.GyroSensor('in1')
         self.gyro.mode="GYRO-ANG"
         self.motors = setupMotors()
+        self.start_arm_pos=self.motors[2].position
 
     def relative_turn(self,degrees):
         # we will measure difference in gyro angle from start to finish
@@ -17,7 +18,7 @@ class Movement:
         print("facing: %s,   turning to: %s"%(current_gyro_angle,target_gyro_angle))
         # ##
         # i=0
-        # print("c: %s \t t: %s"%(current_gyro_angle,target_gyro_angle)) 
+        # print("c: %s \t t: %s"%(current_gyro_angle,target_gyro_angle))
         # ##
         if degrees>=0:
             # turn right
@@ -44,7 +45,7 @@ class Movement:
         # update the internal measure of angle
         self.angle+=degrees
         print("finished turn, facing: %s"%(self.angle))
-    
+
     def absolute_turn(self,degrees):
         # ###
         # print("degrees: %s"%degrees)
@@ -63,20 +64,24 @@ class Movement:
         self.motors[0].run_timed(speed_sp=0,time_sp=0)
         self.motors[1].run_timed(speed_sp=0,time_sp=0)
 
-# =============helpers=================================================== # 
+    def arm_to_pos(self, degrees):
+        self.motors[2].run_to_abs_pos(position_sp=self.start_arm_pos-degrees,speed_sp=50)
+
+# =============helpers=================================================== #
 
 # registers motors - must be plugged in to A and B !
 def setupMotors():
     motors = []
     motors.append(ev3.LargeMotor('outA'))
     motors.append(ev3.LargeMotor('outB'))
+    motors.append(ev3.LargeMotor('outC'))
     return motors
 
 # derive a relative turn from absolute current and target angles
 def rel_from_abs_turn(target_angle,current_angle):
     #rel turn from absolute formula
     rel_angle = (target_angle-current_angle) % 360
-    
+
     if rel_angle<=180:
         # rel angle in [0,180]
         return rel_angle
@@ -84,3 +89,4 @@ def rel_from_abs_turn(target_angle,current_angle):
         # rel angle in (180,360)
         # faster to turn the other way
         return rel_angle - 360
+``

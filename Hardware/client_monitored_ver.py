@@ -12,6 +12,7 @@ global movement_controller
 def onConnect(client,userdata,flags,rc):
     print("connected with result code %i" % rc)
     client.subscribe("start-instruction")
+    client.subscribe("arm")
 
     ###garbage###
     ev3.Sound.speak("EDEN")
@@ -24,6 +25,8 @@ def onMessage(client,userdata,msg):
             # - face direction, start moving, stop moving, or rotate
             instruction_to_follow = msg.payload.decode().strip()
             follow_one_instruction(instruction_to_follow)
+        if msg.topic=="arm":
+            movement_controller.arm_to_pos(float(msg.payload.decode()))
     except:
         # catch any errors to stop alertless crashing
         print("Error")
@@ -34,7 +37,7 @@ def onMessage(client,userdata,msg):
 def follow_one_instruction(instruction_as_string):
     print("about to follow instruction: %s"%instruction_as_string)
     global currently_moving
-    
+
     if currently_moving:
         # stop (moving) instruction
         if instruction_as_string=='s':
@@ -63,7 +66,7 @@ def follow_one_instruction(instruction_as_string):
             # received a stop when we're already stopped!
             print("ignoring useless s instruction")
         else:
-            # tuple received is either 'u','d','l','r', or 
+            # tuple received is either 'u','d','l','r', or
             # in form (r,[degrees]), or (m,[squares])
             # note the number of squares is unused for the main navigation
             (inst_type,inst_val) = tuple(instruction_as_string.split(","))
@@ -113,7 +116,7 @@ read_battery_status(client) # battery reading thread is started here
 client.loop_forever()
 
 ################
-# robot has three states: 
+# robot has three states:
 # -- moving - waiting to be told to stop
 # -- rotating - using gyro to track whether it's finished
 # -- waiting - ready to receive a fresh instruction
