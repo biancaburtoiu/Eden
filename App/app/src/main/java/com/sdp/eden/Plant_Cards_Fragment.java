@@ -6,10 +6,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.provider.SyncStateContract;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
@@ -28,7 +28,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -41,13 +40,14 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.common.primitives.Bytes;
+import com.google.common.primitives.Ints;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -132,13 +132,25 @@ public class Plant_Cards_Fragment extends Fragment {
                 else {
                     Log.d(TAG, "Plant name format correct.");
 
-                    // For now any new plant would be added with this default drawable.
-                    // To implement actual photo functionality later.
+                    ProgressDialog mProgress;
+                    mProgress = new ProgressDialog(getContext());
+                    mProgress.setMessage("Creating the plant ...");
+                    mProgress.show();
+
                     Plant plant = new Plant(plantName.getText().toString(),
                             plantSpecies.getSelectedItem().toString(),
-                            R.drawable.plant1);
-                    DbOps.instance.addPlant(plant, success -> getLatestPlantList());
-                    completePlantCreation(); // completes the new plant
+                            bitmapToIntegerList(imageBitmap));
+
+                    DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
+                        @Override
+                        public void onUpdateFinished(boolean success) {
+                            completePlantCreation(); // completes the new plant
+                            getLatestPlantList();
+
+                            mProgress.dismiss();
+                        }
+                    });
+                    // completePlantCreation(); // completes the new plant --- moved from here
                 }
             });
             AlertDialog dialog = builder.create();
@@ -146,23 +158,68 @@ public class Plant_Cards_Fragment extends Fragment {
         });
     }
 
+
+    // https://stackoverflow.com/a/40886397
+    public String bitmapToString(Bitmap bmp) {
+
+        ByteArrayOutputStream bao = new ByteArrayOutputStream();
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, bao);
+        bmp.recycle();
+        byte[] byteArray = bao.toByteArray();
+        String result = Base64.encodeToString(byteArray, Base64.DEFAULT);
+
+        Log.d(TAG, "Result of bitmapToString is: "+result);
+        return result;
+    }
+
+    // https://stackoverflow.com/a/40886397
+    public List<Integer> bitmapToIntegerList(Bitmap bmp) {
+
+        ByteArrayOutputStream bao = new ByteArrayOutputStream();
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, bao); // bmp is bitmap from user image file
+        bmp.recycle();
+        byte[] byteArray = bao.toByteArray();
+
+        List<Byte> byteList = Bytes.asList(byteArray);
+        List<Integer> integerList = Ints.asList(Ints.toArray(byteList));
+
+        Log.d(TAG, "Result of bitmapToIntegerList is: "+integerList);
+        return integerList;
+    }
+
+
+    // http://ramsandroid4all.blogspot.com/2014/09/converting-byte-array-to-bitmap-in.html
+    public Bitmap byteArrayToBitmap(byte[] byteArray)
+    {
+        ByteArrayInputStream arrayInputStream = new ByteArrayInputStream(byteArray);
+        Bitmap bitmap = BitmapFactory.decodeStream(arrayInputStream);
+
+        Log.d(TAG, "Result of byteArrayToBitmap is: "+bitmap);
+        return bitmap;
+    }
+
+
+    Bitmap imageBitmap;
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data){ // retrieves the camera image
         super.onActivityResult(requestCode,resultCode,data);
 
         if (requestCode == 111 && resultCode == RESULT_OK){
             Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
+
+            //Changed here!
+            //Bitmap imageBitmap = (Bitmap) extras.get("data");
+            imageBitmap = (Bitmap) extras.get("data");
+
             plantPic.setImageBitmap(imageBitmap);
             takenImage = getImageUri(getContext(), imageBitmap);
             System.out.println("taken image is " + takenImage);
             System.out.println("Plant name is " + enteredPlantName);
-
-
         }
     }
 
-    public Uri getImageUri(Context inContext, Bitmap inImage) { // converts the BitMap to Uri
+    // converts the BitMap to Uri
+    public Uri getImageUri(Context inContext, Bitmap inImage) {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         inImage.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
         String path = MediaStore.Images.Media.insertImage(inContext.getContentResolver(), inImage, "Title", null);
@@ -177,9 +234,7 @@ public class Plant_Cards_Fragment extends Fragment {
         StorageReference filepath = mStorage.child("PlantPhotos").child(FirebaseAuth.getInstance().getCurrentUser().getEmail().toString()).child(enteredPlantName);
         filepath.putFile(takenImage).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                mProgress.dismiss();
-            }
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) { mProgress.dismiss(); }
         });
 
     }
@@ -204,6 +259,10 @@ public class Plant_Cards_Fragment extends Fragment {
 
     // Queries the database to get the most recent list of plants
     public void getLatestPlantList() {
+        ProgressDialog mProgress;
+        mProgress = new ProgressDialog(getContext());
+        mProgress.setMessage("Getting the plants ...");
+        mProgress.show();
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
                     if (plantsFromDB==null) return;
@@ -213,6 +272,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     // Refreshes the recyclerview:
                     plants = new ArrayList<>(plantsFromDB);
                     populateRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
+                    mProgress.dismiss();
                 });
     }
 
@@ -257,7 +317,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
             recyclerViewHolder.plantName.setText(plantsList.get(i).getName()); // populating the cards with the object details
             recyclerViewHolder.plantDetail.setText(plantsList.get(i).getSpecies());
-            recyclerViewHolder.plantImage.setImageResource(plantsList.get(i).getPhoto());
+            recyclerViewHolder.plantImage.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
 
             //snackbar location
             //recyclerViewHolder.mCardView.setOnClickListener(v -> Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name: " + plantsList.get(i).getName(), Snackbar.LENGTH_SHORT).show());
@@ -314,7 +374,6 @@ public class Plant_Cards_Fragment extends Fragment {
 
             //calls method to display menu
             mImageButton.setOnClickListener(v -> showPopupMenu(mImageButton, i));
-
         }
 
 

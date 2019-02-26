@@ -1,16 +1,18 @@
 package com.sdp.eden;
 
+import java.util.List;
+
 public class Plant {
     private String Name;
     private String Species;
-    private int Photo;
+    private List<Integer> Photo;
 
 
     public Plant(){
 
     }
 
-    public Plant(String name, String species, int photo){
+    public Plant(String name, String species, List<Integer> photo){
         Name=name;
         Species=species;
         Photo=photo;
@@ -24,15 +26,11 @@ public class Plant {
         return Species;
     }
 
-    public int getPhoto() {
-        return Photo;
-    }
+    public List<Integer> getPhoto() { return Photo; }
 
     public void setName(String name) { Name = name; }
 
     public void setSpecies(String species) { Species = species; }
 
-    public void setPhoto(int photo) {
-        Photo = photo;
-    }
+    public void setPhoto(List<Integer> photo) { Photo = photo; }
 }

@@ -1,16 +1,16 @@
 package com.sdp.eden;
 
 public class BatteryStatus {
-    private Double Voltage;
+    private String Voltage;
 
     public BatteryStatus(){
 
     }
 
-    public BatteryStatus(Double voltage) {
+    public BatteryStatus(String voltage) {
         Voltage=voltage;
     }
 
-    public Double getVoltage() { return Voltage; }
-    public void setVoltage(Double voltage) { Voltage = voltage; }
+    public String getVoltage() { return Voltage; }
+    public void setVoltage(String voltage) { Voltage = voltage; }
 }

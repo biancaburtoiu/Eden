@@ -44,10 +44,11 @@ public class RobotFragment extends Fragment{
                 }
 
                 BatteryStatus status = statuses.get(0);
-                Log.d(TAG, "Current voltage: "+status.getVoltage());
+                double voltage = Double.parseDouble(status.getVoltage());
+                Log.d(TAG, "Current voltage: "+voltage);
 
                 // 8 - 2.5 = 5.5
-                double calculatedPercentage = Math.round((status.getVoltage()+2.5/5.5*100)*100.0/100.0);
+                double calculatedPercentage = Math.round((voltage+2.5/5.5*100)*100.0/100.0);
                 batteryStatus.setText(calculatedPercentage + "%");
             }
         });
