@@ -334,6 +334,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     ImageView plantpic = scheduleViewInflated.findViewById(R.id.plantPic);
                     name.setText(curPlant.getName());
                     spec.setText(curPlant.getSpecies());
+                    plantpic.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
                     plantpic.bringToFront();
 
 
