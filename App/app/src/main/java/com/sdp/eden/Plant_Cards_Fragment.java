@@ -127,14 +127,25 @@ public class Plant_Cards_Fragment extends Fragment {
                 else {
                     Log.d(TAG, "Plant name format correct.");
 
+                    ProgressDialog mProgress;
+                    mProgress = new ProgressDialog(getContext());
+                    mProgress.setMessage("Creating the plant ...");
+                    mProgress.show();
 
                     Plant plant = new Plant(plantName.getText().toString(),
                             plantSpecies.getSelectedItem().toString(),
-                            //imageBitmap,
-                            byteListToIntegerList(bitmapToByteList(imageBitmap)));
+                            bitmapToIntegerList(imageBitmap));
 
-                    DbOps.instance.addPlant(plant, success -> getLatestPlantList());
-                    completePlantCreation(); // completes the new plant
+                    DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
+                        @Override
+                        public void onUpdateFinished(boolean success) {
+                            completePlantCreation(); // completes the new plant
+                            getLatestPlantList();
+
+                            mProgress.dismiss();
+                        }
+                    });
+                    // completePlantCreation(); // completes the new plant --- moved from here
                 }
             });
             AlertDialog dialog = builder.create();
@@ -147,7 +158,7 @@ public class Plant_Cards_Fragment extends Fragment {
     public String bitmapToString(Bitmap bmp) {
 
         ByteArrayOutputStream bao = new ByteArrayOutputStream();
-        bmp.compress(Bitmap.CompressFormat.PNG, 100, bao); // bmp is bitmap from user image file
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, bao);
         bmp.recycle();
         byte[] byteArray = bao.toByteArray();
         String result = Base64.encodeToString(byteArray, Base64.DEFAULT);
@@ -157,25 +168,20 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
     // https://stackoverflow.com/a/40886397
-    public List<Byte> bitmapToByteList(Bitmap bmp) {
+    public List<Integer> bitmapToIntegerList(Bitmap bmp) {
 
         ByteArrayOutputStream bao = new ByteArrayOutputStream();
         bmp.compress(Bitmap.CompressFormat.PNG, 100, bao); // bmp is bitmap from user image file
         bmp.recycle();
         byte[] byteArray = bao.toByteArray();
-        //String result = Base64.encodeToString(byteArray, Base64.DEFAULT);
-
-        Log.d(TAG, "Result of bitmapToString is: "+byteArray);
 
         List<Byte> byteList = Bytes.asList(byteArray);
-        return byteList;
+        List<Integer> integerList = Ints.asList(Ints.toArray(byteList));
+
+        Log.d(TAG, "Result of bitmapToIntegerList is: "+integerList);
+        return integerList;
     }
 
-    // https://stackoverflow.com/a/20077794
-    public List<Integer> byteListToIntegerList(List<Byte> byteList) {
-        List<Integer> integers = Ints.asList(Ints.toArray(byteList));
-        return integers;
-    }
 
     // http://ramsandroid4all.blogspot.com/2014/09/converting-byte-array-to-bitmap-in.html
     public Bitmap byteArrayToBitmap(byte[] byteArray)
@@ -248,6 +254,10 @@ public class Plant_Cards_Fragment extends Fragment {
 
     // Queries the database to get the most recent list of plants
     public void getLatestPlantList() {
+        ProgressDialog mProgress;
+        mProgress = new ProgressDialog(getContext());
+        mProgress.setMessage("Getting the plants ...");
+        mProgress.show();
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
                     if (plantsFromDB==null) return;
@@ -257,6 +267,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     // Refreshes the recyclerview:
                     plants = new ArrayList<>(plantsFromDB);
                     populateRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
+                    mProgress.dismiss();
                 });
     }
 
@@ -301,11 +312,6 @@ public class Plant_Cards_Fragment extends Fragment {
 
             recyclerViewHolder.plantName.setText(plantsList.get(i).getName()); // populating the cards with the object details
             recyclerViewHolder.plantDetail.setText(plantsList.get(i).getSpecies());
-            //recyclerViewHolder.plantImage.setImageResource(plantsList.get(i).getPhoto());
-
-            //changed here from setImageResource
-            //recyclerViewHolder.plantImage.setImageURI(plantsList.get(i).getPhoto());
-            //recyclerViewHolder.plantImage.setImageBitmap(plantsList.get(i).getPhotoBitmap());
             recyclerViewHolder.plantImage.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
 
             //snackbar location
