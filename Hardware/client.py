@@ -135,6 +135,9 @@ def follow_insts_in_list(instructions_to_follow):
                 print("Invalid instruction!: (%s,%i)"%(t,v))
                 ##error
 
+def read_battery_for_updates():
+    
+
 client.on_connect=onConnect
 client.on_message=onMessage
 client.connect("129.215.202.200")
