@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -50,6 +51,7 @@ import com.google.firebase.storage.UploadTask;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -259,7 +261,7 @@ public class Plant_Cards_Fragment extends Fragment {
         return new Plant_Cards_Fragment(); // new instance of the fragment
     }
 
-    private void populateRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
+    private void populateRecyclerView(HashMap<Plant, byte[]> plants){ // Bianca - changed this to accept a list parameter
         RecyclerViewAdapter adapter = new RecyclerViewAdapter(plants);
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
@@ -280,8 +282,14 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     // Refreshes the recyclerview:
                     plants = new ArrayList<>(plantsFromDB);
-                    populateRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
-                    mProgress.dismiss();
+                    DbOps.instance.getImagesFromStorage(new DbOps.OnGetImagesFromStorageFinishedListener() {
+                        @Override
+                        public void onGetImagesFromStorageFinished(HashMap<Plant, byte[]> statuses) {
+                            populateRecyclerView(statuses); // calling method to display the list
+                            mProgress.dismiss();
+                        }
+                    },FirebaseAuth.getInstance().getCurrentUser().getEmail(), plants);
+
                 });
     }
 
@@ -307,10 +315,12 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewHolder>{
 
-        ArrayList<Plant> plantsList; // plants list
+        HashMap<Plant, byte[]> plantMap; // plants list
+        Plant[] plantsList = plantMap.keySet().toArray(new Plant[plantMap.size()]);
 
-        RecyclerViewAdapter(ArrayList<Plant> list){
-            this.plantsList = list;
+        RecyclerViewAdapter(HashMap<Plant, byte[]> list){
+            this.plantMap = list;
+
         } // Adapter for the recycler view
 
         @NonNull
@@ -324,20 +334,16 @@ public class Plant_Cards_Fragment extends Fragment {
         public void onBindViewHolder(@NonNull RecyclerViewHolder recyclerViewHolder, int i) {
             ImageButton mImageButton = recyclerViewHolder.mCardView.findViewById(R.id.popup_menu); // creates the drop down menu in each card
 
-            recyclerViewHolder.plantName.setText(plantsList.get(i).getName()); // populating the cards with the object details
-            recyclerViewHolder.plantDetail.setText(plantsList.get(i).getSpecies());
-            //recyclerViewHolder.plantImage.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
-
-            //TODO: Change this to library
-            //recyclerViewHolder.plantImage.setImageURI(Uri.parse(plantsList.get(i).getUrl()));
-            recyclerViewHolder.plantImage.setImageURI(Uri.parse("bla"));
+            recyclerViewHolder.plantName.setText(plantsList[i].getName()); // populating the cards with the object details
+            recyclerViewHolder.plantDetail.setText(plantsList[i].getSpecies());
+            recyclerViewHolder.plantImage.setImageBitmap(byteArrayToBitmap((plantMap.get(plantsList[i]))));
 
             //snackbar location
             //recyclerViewHolder.mCardView.setOnClickListener(v -> Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name: " + plantsList.get(i).getName(), Snackbar.LENGTH_SHORT).show());
             recyclerViewHolder.mCardView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Plant curPlant = plantsList.get(i);
+                    Plant curPlant = (plantsList[i]);
                     AlertDialog.Builder viewbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                     View scheduleViewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.individual_schedule_view, (ViewGroup) getView(), false);
 
@@ -347,12 +353,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     ImageView plantpic = scheduleViewInflated.findViewById(R.id.plantPic);
                     name.setText(curPlant.getName());
                     spec.setText(curPlant.getSpecies());
-
-                    //plantpic.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
-                    //TODO: Change this to library
-                    //plantpic.setImageURI(Uri.parse(plantsList.get(i).getUrl()));
-                    plantpic.setImageURI(Uri.parse("bla"));
-
+                    plantpic.setImageBitmap(byteArrayToBitmap((plantMap.get(plantsList[i]))));
                     plantpic.bringToFront();
 
 
@@ -383,7 +384,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     viewbuilder.setView(scheduleViewInflated);
 
                     viewbuilder.setPositiveButton("Add Schedule", (dialog, which) -> {
-                        
+
                     });
 
                     AlertDialog viewdialog = viewbuilder.create();
@@ -409,7 +410,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
         @Override
         public int getItemCount() {
-            return plantsList.size();
+            return plantsList.length;
         }
     }
 

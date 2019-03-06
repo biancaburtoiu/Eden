@@ -1,6 +1,7 @@
 package com.sdp.eden;
 
 import android.graphics.Bitmap;
+import android.content.Context;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -22,10 +23,21 @@ import com.google.firebase.storage.StorageReference;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class DbOps {
     private static final String TAG = "DbOps";
+
+    Context context;
+
+    public DbOps(){
+
+    }
+
+    public DbOps(Context context) {
+        this.context = context;
+    }
 
 
     FirebaseFirestore db = FirebaseFirestore.getInstance();
