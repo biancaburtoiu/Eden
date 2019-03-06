@@ -1,5 +1,9 @@
 package com.sdp.eden;
 
+import android.content.Context;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -13,15 +17,29 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class DbOps {
     private static final String TAG = "DbOps";
 
+    Context context;
+
+    public DbOps(){
+
+    }
+
+    public DbOps(Context context) {
+        this.context = context;
+    }
+
 
     FirebaseFirestore db = FirebaseFirestore.getInstance();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     public static final DbOps instance = new DbOps();
 
@@ -200,7 +218,7 @@ public class DbOps {
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
                 .document(newName);
-        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto()));
+        batch.set(creator, new Plant(newName, oldPlant.getSpecies()));
 
         // Remove current plant document
         DocumentReference remover = db.collection("Users")
@@ -292,6 +310,42 @@ public class DbOps {
         });
     }
 
+    // TODO pull images from storage and create a hashmap  with the plant object
+
+
+    void getImagesFromStorage(OnGetImagesFromStorageFinishedListener listener, String email, ArrayList<Plant> plants){
+        Log.d(TAG, "getting images");
+        HashMap<Plant, byte[]> map = new HashMap<>();
+        map.put(new Plant("test", ""),new byte[] {1, 0} );
+        StorageReference storageRef = storage.getReference();
+        for (Plant p: plants){
+            StorageReference pathReference = storageRef.child("PlantPhotos/" + email + "/" +p.getName() );
+            Log.d(TAG, "PlantPhotos/" + email + "/" +p.getName());
+
+            final long ONE_MEGABYTE = 1024 * 1024;
+            pathReference.getBytes(ONE_MEGABYTE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+                @Override
+                public void onSuccess(byte[] bytes) {
+                    // Data for "images/island.jpg" is returns, use this as needed
+                    Drawable image = new BitmapDrawable(BitmapFactory.decodeByteArray(bytes, 0, bytes.length));
+                    map.put(p, bytes);
+                    Log.d(TAG, "Added image and plant to map");
+                    //Drawable image = new BitmapDrawable(getResources(),BitmapFactory.decodeByteArray(bytes, 0, bytes.length));
+
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception exception) {
+                    // Handle any errors
+                    Log.d(TAG, "Failed getting image " + p.getName() + " "  + exception);
+                }
+            });
+
+        }
+        listener.onGetImagesFromStorageFinished(map);
+
+    }
+
     interface onAddPlantFinishedListener {
         void onUpdateFinished(boolean success);
     }
@@ -322,6 +376,10 @@ public class DbOps {
 
     interface OnGetBatteryStatusFinishedListener {
         void onGetBatteryStatusFinished(List<BatteryStatus> statuses);
+    }
+
+    interface OnGetImagesFromStorageFinishedListener {
+        void onGetImagesFromStorageFinished(HashMap<Plant, byte[]> statuses);
     }
 
 
