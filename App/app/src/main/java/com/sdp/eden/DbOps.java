@@ -1,5 +1,9 @@
 package com.sdp.eden;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
@@ -13,7 +17,10 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +29,7 @@ public class DbOps {
 
 
     FirebaseFirestore db = FirebaseFirestore.getInstance();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     public static final DbOps instance = new DbOps();
 
@@ -200,7 +208,7 @@ public class DbOps {
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
                 .document(newName);
-        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto()));
+        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getDrawable()));
 
         // Remove current plant document
         DocumentReference remover = db.collection("Users")
@@ -292,6 +300,30 @@ public class DbOps {
         });
     }
 
+    void getPlantDrawable(Plant plant, OnGetPlantImageFinishedListener listener) {
+        StorageReference storageRef = storage.getReference();
+        StorageReference plantRef = storageRef.child("PlantPhotos/"+plant.getName()+".jpeg");
+
+        final long ONE_MEGABYTE = 1024 * 1024;
+        plantRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+            @Override
+            public void onSuccess(byte[] bytes) {
+                Drawable image = new BitmapDrawable(BitmapFactory.decodeByteArray(bytes, 0, bytes.length));
+
+                Log.d(TAG, "Result of byteArrayToDrawable is: "+image);
+                listener.onGetPlantImageFinished(image);
+                Log.d(TAG, "Successfully sent plant drawable");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                // Handle any errors
+                Log.d(TAG, "Could not get plant drawable");
+                listener.onGetPlantImageFinished(null);
+            }
+        });
+    }
+
     interface onAddPlantFinishedListener {
         void onUpdateFinished(boolean success);
     }
@@ -322,6 +354,10 @@ public class DbOps {
 
     interface OnGetBatteryStatusFinishedListener {
         void onGetBatteryStatusFinished(List<BatteryStatus> statuses);
+    }
+
+    interface OnGetPlantImageFinishedListener {
+        void onGetPlantImageFinished(Drawable image);
     }
 
 

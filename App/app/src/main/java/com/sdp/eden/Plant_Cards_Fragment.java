@@ -139,18 +139,21 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     Plant plant = new Plant(plantName.getText().toString(),
                             plantSpecies.getSelectedItem().toString(),
-                            bitmapToIntegerList(imageBitmap));
+                            // Default thing
+                            getResources().getDrawable(R.drawable.ic_launcher_background));
 
                     DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
                         @Override
                         public void onUpdateFinished(boolean success) {
-                            completePlantCreation(); // completes the new plant
+                            // Plant with blank path added to database
+                            // Plant image added to Firebase Storage
+                            completePlantCreation();
+
                             getLatestPlantList();
 
                             mProgress.dismiss();
                         }
                     });
-                    // completePlantCreation(); // completes the new plant --- moved from here
                 }
             });
             AlertDialog dialog = builder.create();
@@ -199,7 +202,7 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
 
-    Bitmap imageBitmap;
+//    Bitmap imageBitmap;
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data){ // retrieves the camera image
         super.onActivityResult(requestCode,resultCode,data);
@@ -208,11 +211,14 @@ public class Plant_Cards_Fragment extends Fragment {
             Bundle extras = data.getExtras();
 
             //Changed here!
-            //Bitmap imageBitmap = (Bitmap) extras.get("data");
-            imageBitmap = (Bitmap) extras.get("data");
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            //imageBitmap = (Bitmap) extras.get("data");
 
             plantPic.setImageBitmap(imageBitmap);
             takenImage = getImageUri(getContext(), imageBitmap);
+
+            Log.d(TAG, "Taken image is: "+takenImage);
+
             System.out.println("taken image is " + takenImage);
             System.out.println("Plant name is " + enteredPlantName);
         }
@@ -231,10 +237,13 @@ public class Plant_Cards_Fragment extends Fragment {
         mProgress = new ProgressDialog(getContext());
         mProgress.setMessage("Creating Plant ...");
         mProgress.show();
-        StorageReference filepath = mStorage.child("PlantPhotos").child(FirebaseAuth.getInstance().getCurrentUser().getEmail().toString()).child(enteredPlantName);
+        StorageReference filepath = mStorage.child("PlantPhotos").child(FirebaseAuth.getInstance().getCurrentUser().getEmail()).child(enteredPlantName);
         filepath.putFile(takenImage).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) { mProgress.dismiss(); }
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Log.d(TAG, "Successfully uploaded photo with name: "+enteredPlantName);
+                mProgress.dismiss();
+            }
         });
 
     }
@@ -317,7 +326,11 @@ public class Plant_Cards_Fragment extends Fragment {
 
             recyclerViewHolder.plantName.setText(plantsList.get(i).getName()); // populating the cards with the object details
             recyclerViewHolder.plantDetail.setText(plantsList.get(i).getSpecies());
-            recyclerViewHolder.plantImage.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
+            //recyclerViewHolder.plantImage.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
+
+            //TODO: Change this to library
+            //recyclerViewHolder.plantImage.setImageURI(Uri.parse(plantsList.get(i).getUrl()));
+            recyclerViewHolder.plantImage.setImageURI(Uri.parse("bla"));
 
             //snackbar location
             //recyclerViewHolder.mCardView.setOnClickListener(v -> Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name: " + plantsList.get(i).getName(), Snackbar.LENGTH_SHORT).show());
@@ -334,7 +347,12 @@ public class Plant_Cards_Fragment extends Fragment {
                     ImageView plantpic = scheduleViewInflated.findViewById(R.id.plantPic);
                     name.setText(curPlant.getName());
                     spec.setText(curPlant.getSpecies());
-                    plantpic.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
+
+                    //plantpic.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
+                    //TODO: Change this to library
+                    //plantpic.setImageURI(Uri.parse(plantsList.get(i).getUrl()));
+                    plantpic.setImageURI(Uri.parse("bla"));
+
                     plantpic.bringToFront();
 
 
