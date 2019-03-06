@@ -61,6 +61,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private static final String TAG = "Plant_Cards_Fragment";
     private ArrayList<Plant> plants; // list of plants pulled from firebase
+    private ArrayList<Plant> newPlants;
     private RecyclerView recyclerView;
     private ImageView plantPic;
     private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
@@ -94,7 +95,7 @@ public class Plant_Cards_Fragment extends Fragment {
             plantPic = viewInflated.findViewById(R.id.plantPic);
             builder.setView(viewInflated);
 
-            // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
+            // TODO: perhaps changing species to a short description of the plant (E.G. location or characteristic)
             String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
             ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
             plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
@@ -141,14 +142,16 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     Plant plant = new Plant(plantName.getText().toString(),
                             plantSpecies.getSelectedItem().toString(),
-                            // Default thing
+                            // Creating plant with default drawable. Firebase ignores it anyway
                             getResources().getDrawable(R.drawable.ic_launcher_background));
 
                     DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
                         @Override
                         public void onUpdateFinished(boolean success) {
+                            Log.d(TAG, "Successfully added plant to database!");
                             // Plant with blank path added to database
-                            // Plant image added to Firebase Storage
+
+                            // Now adding plant image to Firebase Storage:
                             completePlantCreation();
 
                             getLatestPlantList();
@@ -243,7 +246,7 @@ public class Plant_Cards_Fragment extends Fragment {
         filepath.putFile(takenImage).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                Log.d(TAG, "Successfully uploaded photo with name: "+enteredPlantName);
+                Log.d(TAG, "Successfully uploaded photo with name: "+enteredPlantName+" to database!");
                 mProgress.dismiss();
             }
         });
@@ -261,7 +264,7 @@ public class Plant_Cards_Fragment extends Fragment {
         return new Plant_Cards_Fragment(); // new instance of the fragment
     }
 
-    private void populateRecyclerView(HashMap<Plant, byte[]> plants){ // Bianca - changed this to accept a list parameter
+    private void populateRecyclerView(ArrayList<Plant> plants){
         RecyclerViewAdapter adapter = new RecyclerViewAdapter(plants);
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
@@ -270,6 +273,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
     // Queries the database to get the most recent list of plants
     public void getLatestPlantList() {
+        Log.d(TAG, "Entered getLatestPlantList!");
         ProgressDialog mProgress;
         mProgress = new ProgressDialog(getContext());
         mProgress.setMessage("Getting the plants ...");
@@ -282,13 +286,23 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     // Refreshes the recyclerview:
                     plants = new ArrayList<>(plantsFromDB);
-                    DbOps.instance.getImagesFromStorage(new DbOps.OnGetImagesFromStorageFinishedListener() {
-                        @Override
-                        public void onGetImagesFromStorageFinished(HashMap<Plant, byte[]> statuses) {
-                            populateRecyclerView(statuses); // calling method to display the list
-                            mProgress.dismiss();
-                        }
-                    },FirebaseAuth.getInstance().getCurrentUser().getEmail(), plants);
+
+                    newPlants = new ArrayList<>();
+
+                    // TODO: Fix listening to all plants in list
+                    for (Plant plant : plants) {
+                        DbOps.instance.getPlantDrawable(plant, new DbOps.OnGetPlantImageFinishedListener() {
+                            @Override
+                            public void onGetPlantImageFinished(Drawable image) {
+                                Log.d(TAG, "Drawable for plant is: "+image);
+
+                                Plant newPlant = new Plant(plant.getName(), plant.getSpecies(), image);
+                                newPlants.add(newPlant);
+                                populateRecyclerView(newPlants);
+                            }
+                        });
+                    }
+                    mProgress.dismiss();
 
                 });
     }
@@ -313,14 +327,13 @@ public class Plant_Cards_Fragment extends Fragment {
         }
     }
 
+
     private class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewHolder>{
 
-        HashMap<Plant, byte[]> plantMap; // plants list
-        Plant[] plantsList = plantMap.keySet().toArray(new Plant[plantMap.size()]);
+        ArrayList<Plant> plantsList; // plants list
 
-        RecyclerViewAdapter(HashMap<Plant, byte[]> list){
-            this.plantMap = list;
-
+        RecyclerViewAdapter(ArrayList<Plant> list){
+            this.plantsList = list;
         } // Adapter for the recycler view
 
         @NonNull
@@ -334,16 +347,16 @@ public class Plant_Cards_Fragment extends Fragment {
         public void onBindViewHolder(@NonNull RecyclerViewHolder recyclerViewHolder, int i) {
             ImageButton mImageButton = recyclerViewHolder.mCardView.findViewById(R.id.popup_menu); // creates the drop down menu in each card
 
-            recyclerViewHolder.plantName.setText(plantsList[i].getName()); // populating the cards with the object details
-            recyclerViewHolder.plantDetail.setText(plantsList[i].getSpecies());
-            recyclerViewHolder.plantImage.setImageBitmap(byteArrayToBitmap((plantMap.get(plantsList[i]))));
+            recyclerViewHolder.plantName.setText(plantsList.get(i).getName()); // populating the cards with the object details
+            recyclerViewHolder.plantDetail.setText(plantsList.get(i).getSpecies());
+            recyclerViewHolder.plantImage.setImageDrawable(plantsList.get(i).getDrawable());
 
             //snackbar location
             //recyclerViewHolder.mCardView.setOnClickListener(v -> Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name: " + plantsList.get(i).getName(), Snackbar.LENGTH_SHORT).show());
             recyclerViewHolder.mCardView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Plant curPlant = (plantsList[i]);
+                    Plant curPlant = plantsList.get(i);
                     AlertDialog.Builder viewbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                     View scheduleViewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.individual_schedule_view, (ViewGroup) getView(), false);
 
@@ -351,9 +364,10 @@ public class Plant_Cards_Fragment extends Fragment {
                     TextView name = scheduleViewInflated.findViewById(R.id.plantName);
                     TextView spec = scheduleViewInflated.findViewById(R.id.species);
                     ImageView plantpic = scheduleViewInflated.findViewById(R.id.plantPic);
+
                     name.setText(curPlant.getName());
                     spec.setText(curPlant.getSpecies());
-                    plantpic.setImageBitmap(byteArrayToBitmap((plantMap.get(plantsList[i]))));
+                    plantpic.setImageDrawable(plantsList.get(i).getDrawable());
                     plantpic.bringToFront();
 
 
@@ -383,10 +397,6 @@ public class Plant_Cards_Fragment extends Fragment {
                     });
                     viewbuilder.setView(scheduleViewInflated);
 
-                    viewbuilder.setPositiveButton("Add Schedule", (dialog, which) -> {
-
-                    });
-
                     AlertDialog viewdialog = viewbuilder.create();
                     viewdialog.show();
                 }
@@ -410,7 +420,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
         @Override
         public int getItemCount() {
-            return plantsList.length;
+            return plantsList.size();
         }
     }
 

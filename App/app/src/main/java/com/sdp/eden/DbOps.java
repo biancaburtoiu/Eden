@@ -314,7 +314,8 @@ public class DbOps {
 
     void getPlantDrawable(Plant plant, OnGetPlantImageFinishedListener listener) {
         StorageReference storageRef = storage.getReference();
-        StorageReference plantRef = storageRef.child("PlantPhotos/"+plant.getName()+".jpeg");
+        StorageReference plantRef = storageRef.child("PlantPhotos/"
+                +FirebaseAuth.getInstance().getCurrentUser().getEmail()+"/"+plant.getName());
 
         final long ONE_MEGABYTE = 1024 * 1024;
         plantRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
@@ -324,7 +325,6 @@ public class DbOps {
 
                 Log.d(TAG, "Result of byteArrayToDrawable is: "+image);
                 listener.onGetPlantImageFinished(image);
-                Log.d(TAG, "Successfully sent plant drawable");
             }
         }).addOnFailureListener(new OnFailureListener() {
             @Override
