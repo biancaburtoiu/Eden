@@ -82,7 +82,7 @@ def get_image_from_vision():
 def update_battery_status_in_db(new_status):
     # possibly convert to % here?
     if db is not None:
-        new_status_dict = {'battery-status':str(new_status)}
+        new_status_dict = {'voltage':str(new_status)}
         db.collection(u"battery-info-collection").document(u"battery-info-document").set(new_status_dict)
         print("firebase_interaction: update sent")
     else:
