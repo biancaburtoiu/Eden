@@ -5,6 +5,8 @@ import ev3dev.ev3 as ev3
 import math
 import time
 from threading import Timer
+import ips
+import traceback
 global currently_moving
 global client
 global movement_controller
@@ -18,6 +20,12 @@ def onConnect(client,userdata,flags,rc):
     ev3.Sound.speak("EDEN")
     #############
 
+def on_disconnect(client,userdata,rc):
+    print("DISCONNECTED FROM MQTT")
+    ev3.sound.speak("disconnected")
+    # we've disconnected so tell the robot to stop
+    follow_one_instruction("s")
+
 def onMessage(client,userdata,msg):
     try:
         if msg.topic=="start-instruction":
@@ -30,9 +38,9 @@ def onMessage(client,userdata,msg):
     except:
         # catch any errors to stop alertless crashing
         print("Error")
-        print(sys.exc_info()[0])
+        traceback.print_exc()
         sys.exit()
-        raise
+        
 
 def follow_one_instruction(instruction_as_string):
     print("about to follow instruction: %s"%instruction_as_string)
@@ -111,7 +119,7 @@ currently_moving = False
 movement_controller = movement_monitored_ver.Movement(0)
 
 #connect client and make it wait for inputs
-client.connect("129.215.202.200")
+client.connect(ips.ip)
 read_battery_status(client) # battery reading thread is started here
 client.loop_forever()
 
