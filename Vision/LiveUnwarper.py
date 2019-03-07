@@ -22,10 +22,14 @@ global robot_rotating
 robot_rotating = False
 global global_robot_pos
 global_robot_pos = None
+global robot_angle
+robot_angle = None
 global robot_direction
 robot_direction = None
 global robot_target
 robot_target = None
+global expected_end_angle
+expected_end_angle = None
 global insts
 insts = []
 global square_length
@@ -37,9 +41,9 @@ search_graph = None
 global path
 path = None
 global cell_length
-cell_length = 40
+cell_length = 30
 global shift_amount
-shift_amount = 6
+shift_amount = 4
 
 # QA vars
 global start_pos
@@ -82,10 +86,26 @@ def count_diff_target(start_pos, robot_pos, robot_target):
     except:
         f.close()
 
+def convert_orientation_inst_to_rotation(next_inst):
+    if next_inst == "u":
+        expected_end_angle = 0
+    elif next_inst == "r":
+        expected_end_angle = 90
+    elif next_inst == "d":
+        expected_end_angle = 180
+    elif next_inst == "l":
+        expected_end_angle = 270
+    angle_to_turn = (expected_end_angle - robot_angle) % 360
+    if angle_to_turn > 180:
+        angle_to_turn -= 360
+    next_inst = "r,%s" % round(angle_to_turn)
+    return next_inst
 
 def on_message(client, userdata, msg):
     global robot_moving
     global robot_rotating
+    global robot_angle
+    global expected_end_angle
     global robot_direction
     global robot_target
     global global_robot_pos
@@ -99,6 +119,7 @@ def on_message(client, userdata, msg):
     try:
         if msg.topic == "finish-instruction":
             robot_was_moving = robot_moving
+            robot_was_rotating = robot_rotating
             robot_moving = False
             robot_rotating = False
             if robot_was_moving:
@@ -124,12 +145,21 @@ def on_message(client, userdata, msg):
                     frm = tuple([round(i) for i in grid_robot_pos])
                     _, path, _, insts = getInstructionsFromGrid(search_graph, target=goal_pos, start=frm,
                                                                 upside_down=True)
+            if robot_was_rotating:
+                if abs(robot_angle - expected_end_angle) > 5:
+                    robot_rotating = True
+                    angle_to_turn = (expected_end_angle - robot_angle) % 360
+                    if angle_to_turn > 180:
+                        angle_to_turn -= 360
+                    client.publish("start-instruction", "%s,%s" % ("r", round(angle_to_turn)), qos=2)
+                    return
             # robot_direction = 0 if facing south, 1 if facing west, 2 if facing north, 3 if facing east
-            robot_direction = round((int(msg.payload.decode()) % 360) / 90)
+            robot_direction = round((int(robot_angle) % 360) / 90)
             if len(insts) != 0:
                 next_inst = insts.pop(0)
                 if type(next_inst) is not tuple:
-                    client.publish("start-instruction", next_inst, qos=2)
+                    robot_rotating = True
+                    client.publish("start-instruction", convert_orientation_inst_to_rotation(next_inst), qos=2)
                 else:
                     if next_inst[0] == "m":
                         print("pos: %s, square_length: %s" % (str(global_robot_pos), str(square_length)))
@@ -189,7 +219,7 @@ class Unwarper:
         self.mqtt = mqtt.Client("PathCommunicator")
         self.mqtt.on_connect = on_connect
         self.mqtt.on_message = on_message
-        self.mqtt.connect("129.215.202.200")
+        self.mqtt.connect("129.215.3.65")
         self.mqtt.loop_start()
         self.overhead_image = None
         fbi.start_script(self)
@@ -273,11 +303,14 @@ class Unwarper:
     def determine_new_path(self, graph, to, frm):
         global insts
         global path
+        global robot_rotating
         _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True)
         print(str(insts))
         if not robot_rotating and not robot_moving and insts != []:
             next_inst = insts.pop(0)
+            next_inst = convert_orientation_inst_to_rotation(next_inst)
             self.mqtt.publish("start-instruction", next_inst, qos=2)
+            robot_rotating = True
             print("TOLD TO DO %s" % str(next_inst))
 
     def check_robot_at_target(self, robot_pos):
@@ -303,7 +336,8 @@ class Unwarper:
                 self.mqtt.publish("start-instruction", "s", qos=2)
                 print("TOLD TO STOP")
                 if len(insts) == 0:
-                    self.set_random_target(robot_pos)
+                    pass
+                    # self.set_random_target(robot_pos)
 
     def set_random_target(self, robot_pos):
         global goal_pos
@@ -356,6 +390,7 @@ class Unwarper:
         global goal_pos
         global search_graph
         global global_robot_pos
+        global robot_angle
         '''
         possible_goals = [(x, y) for x in range(20, 39) for y in range(6, 18)] + [(x, y) for x in range(5, 39) for y in
                                                                                   range(17, 30)] + [(x, y) for x in
@@ -363,8 +398,10 @@ class Unwarper:
                                                                                                     in range(10, 30)]
         goal_pos = random.choice(possible_goals)
         '''
+        count = 6
         # (23, 6)
-        goal_pos = (9, 28)
+        # goal_pos = (9, 28)
+        goal_pos = (30, 10)
         cam = cv2.VideoCapture(0)
         set_res(cam, 1920, 1080)
         i = 1
@@ -382,12 +419,13 @@ class Unwarper:
                     cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
                     cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
                     cv2.imshow('3. merged', merged_img)
-                    robot_pos_dec = self.robot_finder.find_robot(merged_img)
+                    robot_pos_dec, robot_angle = self.robot_finder.find_robot(merged_img)
                     if global_robot_pos is not None:
                         thresh_merged_img[round(global_robot_pos[1] - 20):round(global_robot_pos[1] + 20),
                         round(global_robot_pos[0] - 20):round(global_robot_pos[0] + 20), :] = np.zeros((40, 40, 3),
-                                                                                                 dtype=np.uint8)
-                    cv2.imshow('4. thresholded', thresh_merged_img)
+                                                                                                       dtype=np.uint8)
+                    if robot_angle is not None:
+                        cv2.imshow('4. thresholded', thresh_merged_img)
                     object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                  cell_length=cell_length,
                                                                  visualize=True)
@@ -432,7 +470,9 @@ class Unwarper:
                         if len(path) != 0:
                             object_graph[y][x] = np.array([0, 255, 0], dtype=np.uint8)
                     cv2.imshow('6. object graph', object_graph)  # cv2.resize(object_graph, (0, 0), fx=6, fy=6))
-                    cv2.waitKey(1)
+                    if cv2.waitKey(1) == 48:
+                        cv2.imwrite("Vision/record_output/%s.jpg" % count, merged_img)
+                        count += 1
                     # time.sleep(0.1)
             i += 1
 
