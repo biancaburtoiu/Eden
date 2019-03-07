@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import glob
+import math
 
 
 class RobotFinder:
@@ -90,16 +91,28 @@ class RobotFinder:
             red_pos, thresh_red = self.find_blob(img, red=True, return_image_pos=True)
             blue_pos, thresh_blue = self.find_blob(img, red=False, return_image_pos=True)
             if red_pos[0] is not None and blue_pos[0] is not None:
-                return thresh_red, thresh_blue, np.average([red_pos, blue_pos], axis=1)
+                angle = ((math.degrees(
+                    math.atan2(red_pos[0] - blue_pos[0], (red_pos[1] - blue_pos[1]) * -1))) % 360)
+                return thresh_red, thresh_blue, np.average([red_pos, blue_pos], axis=1), angle
+            elif red_pos[0] is not None:
+                return thresh_red, thresh_blue, red_pos, None
+            elif blue_pos[0] is not None:
+                return thresh_red, thresh_blue, blue_pos, None
             else:
-                return thresh_red, thresh_blue, (None, None)
+                return thresh_red, thresh_blue, (None, None), None
         else:
             red_pos = self.find_blob(img, red=True, return_image_pos=False)
             blue_pos = self.find_blob(img, red=False, return_image_pos=False)
             if red_pos[0] is not None and blue_pos[0] is not None:
-                return np.average([red_pos, blue_pos], axis=1)
+                angle = ((math.degrees(
+                    math.atan2(red_pos[0] - blue_pos[0], (red_pos[1] - blue_pos[1]) * -1))) % 360)
+                return np.average([red_pos, blue_pos], axis=1), angle
+            elif red_pos[0] is not None:
+                return red_pos, None
+            elif blue_pos[0] is not None:
+                return blue_pos, None
             else:
-                return (None, None)
+                return (None, None), None
 
     # Given a set of images, find the robot in them and display the result
 
@@ -118,8 +131,9 @@ images = glob.glob("Red and Blue/*.jpg")
 rf = RobotFinder()
 for fname in images:
     img = cv2.imread(fname)
-    thresh_red, thresh_blue, robot_pos = rf.find_robot(img, return_image_pos=True)
+    thresh_red, thresh_blue, robot_pos, angle = rf.find_robot(img, return_image_pos=True)
     cv2.imshow("Original", img)
     cv2.imshow("Red", thresh_red)
     cv2.imshow("Blue", thresh_blue)
+    print("%s\nANGLE IS %s" % ("------------------\n" * 1000, angle))
     cv2.waitKey()
