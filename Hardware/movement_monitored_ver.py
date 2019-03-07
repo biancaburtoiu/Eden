@@ -1,4 +1,5 @@
 import ev3dev.ev3 as ev3
+import time
 
 # =============== class for controlling ev3 movement =================== #
 class Movement:
@@ -37,6 +38,8 @@ class Movement:
             # i+=1
             # ###
             current_gyro_angle = self.gyro.angle
+            time.sleep(0.00001)
+
 
         # stop the motors
         self.motors[0].run_timed(speed_sp=0,time_sp=0)
@@ -89,4 +92,3 @@ def rel_from_abs_turn(target_angle,current_angle):
         # rel angle in (180,360)
         # faster to turn the other way
         return rel_angle - 360
-``

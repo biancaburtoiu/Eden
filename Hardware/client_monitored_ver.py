@@ -20,6 +20,12 @@ def onConnect(client,userdata,flags,rc):
     ev3.Sound.speak("EDEN")
     #############
 
+def on_disconnect(client,userdata,rc):
+    print("DISCONNECTED FROM MQTT")
+    ev3.sound.speak("disconnected")
+    # we've disconnected so tell the robot to stop
+    follow_one_instruction("s")
+
 def onMessage(client,userdata,msg):
     try:
         if msg.topic=="start-instruction":
