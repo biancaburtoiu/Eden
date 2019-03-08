@@ -67,6 +67,7 @@ public class Plant_Cards_Fragment extends Fragment {
     private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
     private String enteredPlantName; // this will hopefully be temp
     private Uri takenImage; // once again hopeful;ly this will be temp!
+    int counter;
 
     public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
@@ -286,24 +287,31 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     // Refreshes the recyclerview:
                     plants = new ArrayList<>(plantsFromDB);
-
-                    newPlants = new ArrayList<>();
+                    Log.d(TAG, "Plants size: "+plants.size());
+                    counter = 0;
 
                     // TODO: Fix listening to all plants in list
                     for (Plant plant : plants) {
                         DbOps.instance.getPlantDrawable(plant, new DbOps.OnGetPlantImageFinishedListener() {
                             @Override
                             public void onGetPlantImageFinished(Drawable image) {
-                                Log.d(TAG, "Drawable for plant is: "+image);
+                                Log.d(TAG, "Drawable for plant " + plant.getName() + " is: "+image);
+                                plant.setDrawable(image);
 
-                                Plant newPlant = new Plant(plant.getName(), plant.getSpecies(), image);
-                                newPlants.add(newPlant);
-                                populateRecyclerView(newPlants);
+                                counter++;
+                                Log.d(TAG, "Counter is now "+counter);
+
+                                if (counter == plants.size()) {
+                                    Log.d(TAG, "newPlants size correct: populating recyclerview");
+                                    populateRecyclerView(plants);
+                                    return;
+                                }
+                                else Log.d(TAG, "newPlants size incorrect. Not populating recyclerview.");
                             }
                         });
                     }
+                    //populateRecyclerView(newPlants);
                     mProgress.dismiss();
-
                 });
     }
 
