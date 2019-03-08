@@ -4,6 +4,7 @@ import argparse
 import imutils
 import glob
 import cv2
+from enum import Enum
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -21,8 +22,20 @@ template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
 count2 = 0
 
+class logo(Enum):
+    no = 0
+    one = 1
+    two = 2
+    three = 3
+    fail = 4
+
+
+# may be not centers?
+
 def color_detection(img):
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+    discard = False
 
     counter = 0
     e = 1
@@ -34,7 +47,7 @@ def color_detection(img):
     upper_blue = np.array([130, 255, 255])
     maskB = cv2.inRange(img_hsv, lower_blue, upper_blue)
     if len(maskB[maskB>0]) == 0:
-        return False
+        return False, logo.no
 
     maskB = cv2.dilate(maskB, kernel=k, iterations=d)
     maskB = cv2.erode(maskB, kernel=k, iterations=e)
@@ -46,13 +59,16 @@ def color_detection(img):
         (contours, _) = cv2.findContours(maskB, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         counter = counter +1
         if counter > 10:
-            return False
+            return False, logo.no
     counter = 0
 
-    for contour in contours:
-        (x, y, w, h) = cv2.boundingRect(contour)
-        print("B corners are x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
-
+    # for contour in contours:
+    #     M = cv2.moments(contour)
+    #     if(M["m00"] == 0):
+    #         discard = True
+    #     cX = int(M["m10"] / M["m00"])
+    #     cY = int(M["m01"] / M["m00"])
+    #     print("B center is {} {}".format(cX, cY))
     cv2.imshow("m2", maskB)
 
 
@@ -60,7 +76,7 @@ def color_detection(img):
     upper_yellow = np.array([38, 255, 255])
     maskY = cv2.inRange(img_hsv, lower_yellow, upper_yellow)
     if len(maskY[maskY>0]) == 0:
-        return False
+        return False, logo.no
 
     maskY = cv2.dilate(maskY, kernel=k, iterations=d)
     maskY = cv2.erode(maskY, kernel=k, iterations=e)
@@ -72,12 +88,20 @@ def color_detection(img):
         (contours, _) = cv2.findContours(maskY, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         counter = counter +1
         if counter > 10:
-            return False
+            return False, logo.no
     counter = 0
 
+    Y = []
+
     for contour in contours:
-        (x, y, w, h) = cv2.boundingRect(contour)
-        print("Y corners are x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
+        M = cv2.moments(contour)
+        if (M["m00"] == 0):
+            discard = True
+            break
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        Y.append([cX, cY])
+        print("Y center is {} {}".format(cX, cY))
     cv2.imshow("m3", maskY)
 
 
@@ -92,27 +116,61 @@ def color_detection(img):
 
     maskR = mask1 + mask2
     if len(maskR[maskR>0]) == 0:
-        return False
+        return False, logo.no
 
     maskR = cv2.dilate(maskR, kernel=k, iterations=d)
     maskR = cv2.erode(maskR, kernel=k, iterations=e)
 
     (contours, _) = cv2.findContours(maskR, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
 
+    R = []
+
     while (len(contours) != 2):
         maskR = cv2.erode(maskR, kernel=k, iterations=e)
         (contours, _) = cv2.findContours(maskR, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         counter = counter +1
         if counter > 10:
-            return False
+            return False, logo.no
 
     for contour in contours:
-        (x, y, w, h) = cv2.boundingRect(contour)
-        print("R corners are x: {}, y: {}, w: {}, h: {}".format(x, y, w, h))
-
+        M = cv2.moments(contour)
+        if (M["m00"] == 0):
+            discard = True
+            break
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        R.append([cX, cY])
+        print("center is {} {}".format(cX, cY))
     cv2.imshow("m1", maskR)
 
     cv2.imshow("img", img)
+
+    if (discard):
+        return True, logo.fail
+
+    UL = False
+    UR = False
+    DL = False
+    DR = False
+    yellow = Y[0]
+    for red in R:
+        result = [red[0]-yellow[0], red[1]-yellow[1]]
+        if (result[0] > 0 & result < 0):
+            UR = True
+            continue
+        if (result[0] > 0 & result > 0):
+            DR = True
+            continue
+        if (result[0] < 0 & result > 0):
+            DL = True
+            continue
+        else:
+            UL = True
+            continue
+    if UL & DL:
+        return True, logo.three
+    if DR & (UL or UR):
+        return True. logo.two
 
     # cv2.waitKey(0)
     return True
@@ -236,8 +294,8 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
                 print("too close discard again")
                 continue
             else:
-                if color_detection(image3[startY:endY, startX: endX]):
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                if color_detection(image3[ps_Y:pe_Y, ps_X: pe_X]):
+                    cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
                     cv2.imshow("changed", image)
                 print("last found")
                 # print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
