@@ -3,8 +3,7 @@ import time
 
 # =============== class for controlling ev3 movement =================== #
 class Movement:
-    def __init__(self,initial_angle):
-        self.angle = initial_angle
+    def __init__(self):
         # note gyro angle is NOT representitive of robot's real angle
         self.gyro = gyro=ev3.GyroSensor('in1')
         self.gyro.mode="GYRO-ANG"
@@ -23,12 +22,12 @@ class Movement:
         # ##
         if degrees>=0:
             # turn right
-            self.motors[0].run_forever(speed_sp=-300)
-            self.motors[1].run_forever(speed_sp=300)
-        else:
-            # turn left
             self.motors[0].run_forever(speed_sp=300)
             self.motors[1].run_forever(speed_sp=-300)
+        else:
+            # turn left
+            self.motors[0].run_forever(speed_sp=-300)
+            self.motors[1].run_forever(speed_sp=300)
 
         # wait until gyro has changed by target amount
         while abs(current_gyro_angle-target_gyro_angle)>2:
@@ -46,9 +45,11 @@ class Movement:
         self.motors[1].run_timed(speed_sp=0,time_sp=0)
 
         # update the internal measure of angle
-        self.angle+=degrees
-        print("finished turn, facing: %s"%(self.angle))
+        print("finished turn")
 
+    '''
+    # Not needed anymore, since robot's direction is tracked by vision
+    # system so only relevant instructions will be received
     def absolute_turn(self,degrees):
         # ###
         # print("degrees: %s"%degrees)
@@ -56,6 +57,7 @@ class Movement:
         # ###
         rel_angle = rel_from_abs_turn(degrees,self.angle)
         self.relative_turn(rel_angle)
+    '''
 
     def forward_forever(self):
         print("beginning to move forever")
