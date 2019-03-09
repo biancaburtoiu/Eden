@@ -291,7 +291,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     counter = 0;
 
                     // TODO: Fix listening to all plants in list
-                    for (Plant plant : plants) {
+                    for (Plant plant: plants) {
                         DbOps.instance.getPlantDrawable(plant, new DbOps.OnGetPlantImageFinishedListener() {
                             @Override
                             public void onGetPlantImageFinished(Drawable image) {
