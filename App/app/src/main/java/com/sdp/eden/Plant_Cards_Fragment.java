@@ -364,8 +364,29 @@ public class Plant_Cards_Fragment extends Fragment {
                     });
                     viewbuilder.setView(scheduleViewInflated);
 
-                    viewbuilder.setPositiveButton("Add Schedule", (dialog, which) -> {
-                        
+                    // Sets document value to true in Users(col)/user(doc)/Triggers(col)/Trigger(doc)
+                    // - has boolean field: Value
+                    viewbuilder.setPositiveButton("Water now!", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                            builder.setTitle("Water "+curPlant.getName()+" now!");
+                            builder.setMessage("This will trigger Eden to water "+curPlant.getName()+" now. Continue?");
+                            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    DbOps.instance.setWaterNowTrigger(new DbOps.onSetWaterNowFinishedListener() {
+                                        @Override
+                                        public void onSetWaterFinished(boolean success) {
+                                            if (success) Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Eden will water "+curPlant.getName()+" now!", Snackbar.LENGTH_SHORT).show();
+                                            else Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Database error. Try again!", Snackbar.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+                            });
+                            AlertDialog viewdialog = builder.create();
+                            viewdialog.show();
+                        }
                     });
 
                     AlertDialog viewdialog = viewbuilder.create();
