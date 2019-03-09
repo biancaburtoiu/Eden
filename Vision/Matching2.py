@@ -259,7 +259,6 @@ def most_left(image, counter2):
             cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
             pixel_X = (ps_X + pe_X) / 2
             break
-        # print("The location of this rec is {} {} {} {}".format(ps_X, ps_Y, ps_X, pe_Y))
         previous = np.argmax(img)
         (ps_X, ps_Y) = (startX, startY)
         (pe_X, pe_Y) = (endX, endY)
@@ -268,7 +267,6 @@ def most_left(image, counter2):
                 cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
                 pixel_X = (startX + endX) / 2
                 break
-            # print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
     cv2.imwrite("image/fram%d.jpg" % counter2, image)  # save frame as JPEG file
     return pixel_X
 

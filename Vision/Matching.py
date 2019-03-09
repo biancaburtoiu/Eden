@@ -22,6 +22,7 @@ template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
 count2 = 0
 
+
 class logo(Enum):
     no = 0
     one = 1
@@ -155,25 +156,27 @@ def color_detection(img):
     yellow = Y[0]
     for red in R:
         result = [red[0]-yellow[0], red[1]-yellow[1]]
-        if (result[0] > 0 & result < 0):
+        print(result)
+        if (result[0] > 0 and result[1] < 0):
             UR = True
             continue
-        if (result[0] > 0 & result > 0):
+        if (result[0] > 0 and result[1] > 0):
             DR = True
             continue
-        if (result[0] < 0 & result > 0):
+        if (result[0] < 0 and result[1] > 0):
             DL = True
             continue
         else:
             UL = True
             continue
-    if UL & DL:
+    if UL and DL:
         return True, logo.three
-    if DR & (UL or UR):
-        return True. logo.two
-
+    if DR and (UL or UR):
+        return True, logo.two
+    if UR or UL:
+        return True, logo.one
     # cv2.waitKey(0)
-    return True
+    return True, logo.fail
 
 
 
@@ -233,6 +236,7 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
     ps_Y = None
     pe_X = None
     pe_Y = None
+    p_logo = None
 
     (_, maxLoc, r) = found
     Y, X = all_found
@@ -251,14 +255,13 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
 
     print("shape {}".format(final_result.shape))
     for pt in zip(*all_found[::-1]):
-        print("pt in final {}".format(pt))
-
         counter = counter + 1
         (startX, startY) = (int(pt[0] * r), int(pt[1] * r))
         (endX, endY) = (int((pt[0] + tW) * r), int((pt[1] + tH) * r))
+        print("previous label:{} StartX: {}".format(p_logo, startX))
 
-        # if color_detection(image3[startY:endY, startX: endX]):
-        #     cv2.rectangle(image2, (startX, startY), (endX, endY), (0, 0, 255), 2)
+        if color_detection(image3[startY:endY, startX: endX])[0]:
+            cv2.rectangle(image2, (startX, startY), (endX, endY), (0, 0, 255), 2)
         # at corner
 
         # print("X {} Y {}".format(startX, startY))
@@ -268,8 +271,18 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
 
         # only one
         if (total == 1):
-            if color_detection(image3[startY:endY, startX: endX]):
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+            detected, Logo = color_detection(image3[startY:endY, startX: endX])
+            print(Logo)
+            if detected:
+                if Logo == logo.one:
+                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                if Logo == logo.two:
+                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
+                if Logo == logo.three:
+                    cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2)
+                if Logo == logo.fail:
+                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 0), 2)
+                # cv2.waitKey(0)
                 cv2.imshow("changed", image)
                 print("The very location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
             else:
@@ -280,22 +293,35 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
         img = final_result[pt[1]-1: pt[1]+ 1, pt[0]- 1: pt[0]+ 1]
 
         if previous is None:
-            if color_detection(image3[startY:endY, startX: endX]):
+            detected, Logo = color_detection(image3[startY:endY, startX: endX])
+            print(Logo)
+            if detected:
                 print("previous got")
                 previous = np.argmax(img)
                 (ps_X, ps_Y) = (startX, startY)
                 (pe_X, pe_Y) = (endX, endY)
+                p_logo = Logo
                 continue
             print("previous not got")
             continue
 
-        if (startX >= ps_X - 5 and startX <= ps_X + 5):
+        if (startX >= ps_X - 2 and startX <= ps_X + 2):
             if (counter < total):
                 print("too close discard again")
                 continue
             else:
-                if color_detection(image3[ps_Y:pe_Y, ps_X: pe_X]):
-                    cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
+                detected, Logo = color_detection(image3[ps_Y:pe_Y, ps_X: pe_X])
+                print(Logo)
+                if detected:
+                    if Logo == logo.one:
+                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
+                    if Logo == logo.two:
+                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 255, 0), 2)
+                    if Logo == logo.three:
+                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (255, 0, 0), 2)
+                    if Logo == logo.fail:
+                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 0), 2)
+                    # cv2.waitKey(0)
                     cv2.imshow("changed", image)
                 print("last found")
                 # print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
@@ -310,34 +336,72 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
                 print("not replace")
                 if counter == total:
                     print("last one")
-                    cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
+                    if p_logo == logo.one:
+                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
+                    if p_logo == logo.two:
+                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 255, 0), 2)
+                    if p_logo == logo.three:
+                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (255, 0, 0), 2)
+                    if p_logo == logo.fail:
+                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 0), 2)
+                    # cv2.waitKey(0)
                     cv2.imshow("changed", image)
                 continue
-
             else:
-                if color_detection(image3[startY:endY, startX: endX]):
+                detected, Logo = color_detection(image3[startY:endY, startX: endX])
+                print(Logo)
+                if detected:
                     print("replace")
                     if counter == total:
-                        print("last one")
-                        cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
-                        cv2.imshow("changed", image)
+                        if Logo == logo.one:
+                            cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                        if Logo == logo.two:
+                            cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
+                        if Logo == logo.three:
+                            cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2)
+                        if Logo == logo.fail:
+                            cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 0), 2)
+                        # cv2.waitKey(0)
                         continue
                     else:
                         previous = np.argmax(img)
                         (ps_X, ps_Y) = (startX, startY)
                         (pe_X, pe_Y) = (endX, endY)
+                        p_logo = Logo
+                        continue
+                else:
+                    if counter == total:
+                        print("last one ")
+                        detected, Logo = color_detection(image3[ps_Y:pe_Y, ps_X: pe_X])
+                        print(Logo)
+                        if detected:
+                            if Logo == logo.one:
+                                cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
+                            if Logo == logo.two:
+                                cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 255, 0), 2)
+                            if Logo == logo.three:
+                                cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (255, 0, 0), 2)
+                            if Logo == logo.fail:
+                                cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 0), 2)
+                            # cv2.waitKey(0)
+                            cv2.imshow("changed", image)
+                    else:
                         continue
 
-                if counter == total:
-                    print("last one ")
-                    if color_detection(image3[ps_Y:pe_Y, ps_X: pe_X]):
-                        cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
-                continue
-
         # draw a bounding box around the detected result and display the image
-        if color_detection(image3[ps_Y:pe_Y, ps_X: pe_X]):
-           cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
-           cv2.imshow("changed", image)
+        detected, Logo = color_detection(image3[ps_Y:pe_Y, ps_X: pe_X])
+        print(Logo)
+        if detected:
+            if Logo == logo.one:
+                cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 255), 2)
+            if Logo == logo.two:
+                cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 255, 0), 2)
+            if Logo == logo.three:
+                cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (255, 0, 0), 2)
+            if Logo == logo.fail:
+                cv2.rectangle(image, (ps_X, ps_Y), (pe_X, pe_Y), (0, 0, 0), 2)
+            # cv2.waitKey(0)
+            cv2.imshow("changed", image)
         print("certain")
         # print("The location of this rec is {} {} {} {}".format(ps_X, ps_Y, ps_X, pe_Y))
         previous = np.argmax(img)
@@ -345,9 +409,18 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
         (pe_X, pe_Y) = (endX, endY)
         if (counter == total):
             print("last one")
-            if color_detection(image3[startY:endY, startX: endX]):
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
-                cv2.imshow("changed", image)
+            detected, Logo = color_detection(image3[startY:endY, startX: endX])
+            print(Logo)
+            if detected:
+                if Logo == logo.one:
+                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                if Logo == logo.two:
+                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
+                if Logo == logo.three:
+                    cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2)
+                if Logo == logo.fail:
+                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 0), 2)
+                # cv2.waitKey(0)
             # print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
 
 
