@@ -137,14 +137,25 @@ public class Plant_Cards_Fragment extends Fragment {
                     mProgress.setMessage("Creating the plant ...");
                     mProgress.show();
 
-                    Plant plant = new Plant(plantName.getText().toString(),
-                            plantSpecies.getSelectedItem().toString(),
-                            bitmapToIntegerList(imageBitmap));
+                    // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
+
+                    // TODO: Need to adapt this if we save pictures to bucket!
+                    Plant plant;
+                    if (imageBitmap == null) {
+                        plant = new Plant(plantName.getText().toString(),
+                                plantSpecies.getSelectedItem().toString(),
+                                new ArrayList<>());
+                    }
+                    else {
+                        plant = new Plant(plantName.getText().toString(),
+                                plantSpecies.getSelectedItem().toString(),
+                                bitmapToIntegerList(imageBitmap));
+                    }
 
                     DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
                         @Override
                         public void onUpdateFinished(boolean success) {
-                            completePlantCreation(); // completes the new plant
+                            //completePlantCreation(); // completes the new plant
                             getLatestPlantList();
 
                             mProgress.dismiss();
