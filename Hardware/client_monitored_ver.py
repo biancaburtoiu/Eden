@@ -15,6 +15,7 @@ def onConnect(client,userdata,flags,rc):
     print("connected with result code %i" % rc)
     client.subscribe("start-instruction")
     client.subscribe("arm")
+    client.subscribe("ping-pong")
 
     ###garbage###
     ev3.Sound.speak("EDEN")
@@ -35,6 +36,19 @@ def onMessage(client,userdata,msg):
             follow_one_instruction(instruction_to_follow)
         if msg.topic=="arm":
             movement_controller.arm_to_pos(float(msg.payload.decode()))
+        if msg.topic=="ping-pong":
+            pl = msg.payload.decode()
+            if pl=="pong":
+                global received_pong
+                print("pong")
+                # update global var received_pong for check_for_pong()
+                received_pong = True
+            elif pl=="ping":
+                #our own message
+                pass
+            else:
+                print("useless pong: %s"%pl)
+
     except:
         # catch any errors to stop alertless crashing
         print("Error")
@@ -45,55 +59,85 @@ def onMessage(client,userdata,msg):
 def follow_one_instruction(instruction_as_string):
     print("about to follow instruction: %s"%instruction_as_string)
     global currently_moving
+    global currently_pinging
 
     if currently_moving:
         # stop (moving) instruction
         if instruction_as_string=='s':
+            # not moving or pinging anymore
             currently_moving = False
+            currently_pinging = -1
             movement_controller.stop()
-            ask_for_next_inst(movement_controller.angle)
+            #request next instruction in path
+            ask_for_next_inst()
         else:
             print("useless instruction: %s"%instruction_as_string)
     else:
-        # fresh instruction / not a stop instruction
+        # fresh instructions
 
-        # absolute turn instructions ( first inst received)
-        if instruction_as_string in ['u','d','l','r']:
-            currently_moving=True
-            if instruction_as_string=='u':
-                movement_controller.absolute_turn(0)
-            elif instruction_as_string=='r':
-                movement_controller.absolute_turn(90)
-            elif instruction_as_string=='d':
-                movement_controller.absolute_turn(180)
-            elif instruction_as_string=='l':
-                movement_controller.absolute_turn(270)
-            ask_for_next_inst(movement_controller.angle)
-        # movement / relative turn instructions (subsequent insts)
-        elif instruction_as_string == 's':
+        if instruction_as_string == 's':
             # received a stop when we're already stopped!
             print("ignoring useless s instruction")
+
+        # movement / relative turn instructions (subsequent insts)
         else:
-            # tuple received is either 'u','d','l','r', or
-            # in form (r,[degrees]), or (m,[squares])
+            # in form (r,[degrees],[target dir]), or (m,[squares])
             # note the number of squares is unused for the main navigation
-            (inst_type,inst_val) = tuple(instruction_as_string.split(","))
-            inst_val = int(inst_val)
+            inst = instruction_as_string.split(",")
+            inst_type = inst[0]
             if inst_type=='m':
                 currently_moving=True
+                # 0 represents active pinging with 0 pings missed so far
+                currently_pinging = 0
                 movement_controller.forward_forever()
+                # send first ping to start playing
+                send_ping()
             elif inst_type=='r':
                 currently_moving=True
-                movement_controller.relative_turn(inst_val)
-                ask_for_next_inst(movement_controller.angle)
+                movement_controller.relative_turn(int(inst[1]))
+                ask_for_next_inst()
             else:
                 print("received a malformed instruction!: %s"%instruction_as_string)
 
-def ask_for_next_inst(current_angle):
+def check_for_pong():
+    global received_pong
+    global currently_pinging
+    # if this is -1, pinging is not active anymore, due to a stop instruction being sent
+    # it must have been sent by vision since when we send one we don't initiate another ping
+    # i.e. this means we successfully stopped under normal operation
+    if currently_pinging=>0:
+        if received_pong:
+            #reset missed ping count, and send the next ping
+            currently_pinging = 0
+            received_pong = False
+            send_ping()
+        elif:
+            #a pong has not been sent in time!
+            currently_pinging+=1
+
+            if currently_pinging==3:
+                # stop the robot due to x missed pongs.
+                # pings will now stop, and currently_pinging will be set to -1
+                print("stopping!")
+                follow_one_instruction("s")
+            else:
+                # we've acknowledged the missed pong, but keep trying 
+                print("%s missed pongs"%currently_pinging)
+                received_pong=False
+                send_ping()
+
+def send_ping():
+    global publishing_lock
+    print("ping")
+    client.publish("ping-pong","ping",qos=2)
+    #in 3 seconds check for the pong
+    Timer(3,check_for_pong,[]).start()
+
+def ask_for_next_inst():
     global currently_moving
     currently_moving = False
-    print("about to send finish-instruction ",current_angle)
-    client.publish("finish-instruction",str(current_angle),qos=2)
+    print("about to send finish-instruction")
+    client.publish("finish-instruction","",qos=2)
     print("instruction sent!")
 
 def read_battery_status(client):
@@ -113,10 +157,15 @@ client.on_connect=onConnect
 client.on_message=onMessage
 
 # if this is true, robot is either turning or moving forever
-currently_moving = False
+currently_moving = 0
+
+# tracks whether vision system has responded to the current ping
+received_pong=False
+# -1 means pinging is not active, [0..) means pinging is active, and counts num missed pings in a row
+currently_pinging = -1
 
 # movement object, with initial angle of 0
-movement_controller = movement_monitored_ver.Movement(0)
+movement_controller = movement_monitored_ver.Movement()
 
 #connect client and make it wait for inputs
 client.connect(ips.ip)
@@ -128,4 +177,8 @@ client.loop_forever()
 # -- moving - waiting to be told to stop
 # -- rotating - using gyro to track whether it's finished
 # -- waiting - ready to receive a fresh instruction
+
+# During moving, the robot sends pings every three seconds, listening for pongs from vision
+# If x are missed in a row, the robot stops, and asks for the next instruction. This is to
+# prevent the robot crashing if the vision system stops working
 ################
