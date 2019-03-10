@@ -50,6 +50,10 @@ global alive
 alive = False
 global reached_goal
 reached_goal = False
+global up_left_down_right
+up_left_down_right = [None, None, None, None]
+global current_goal_number
+current_goal_number = 0
 
 # QA vars
 global start_pos
@@ -138,9 +142,14 @@ def on_message(client, userdata, msg):
             if math.sqrt((goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2) < 10:
                 insts = []
                 path = None
-                #possible_goals = [(136, 44), (166, 209), (45, 179), (286, 75), (277, 194), (209, 158), (41, 109)]
-                #goal_pos = random.choice(possible_goals)
-                reached_goal = True
+                # possible_goals = [(136, 44), (166, 209), (45, 179), (286, 75), (277, 194), (209, 158), (41, 109)]
+                # goal_pos = random.choice(possible_goals)
+                while up_left_down_right[current_goal_number + 1] is None and current_goal_number < 4:
+                    current_goal_number += 1
+                if current_goal_number == 4:
+                    reached_goal = True
+                else:
+                    goal_pos = up_left_down_right[current_goal_number]
                 return
             if robot_was_moving:
                 count_diff_target(start_pos, global_robot_pos, original_goal)
@@ -399,7 +408,7 @@ class Unwarper:
         global search_graph
         global global_robot_pos
         if frm_dec[0] is not None:
-            if path is None and robot_angle is not None:
+            if path is None and robot_angle is not None and not reached_goal:
                 self.determine_new_path(graph, to, tuple([round(i) for i in frm_dec]))
             '''
             elif path is not None:
@@ -413,6 +422,47 @@ class Unwarper:
                     self.determine_new_path(graph, to, tuple([round(i) for i in frm_dec]))
             '''
 
+    def find_nearest_free_cells(self, search_graphs, robot_pos):
+        global up_left_down_right
+        global current_goal_number
+        global goal_pos
+        global reached_goal
+        delta = [[0, -1], [-1, 0], [0, 1], [1, 0]]
+        up_left_down_right = [list(goal_pos) for x in range(4)]
+        found = [False, False, False, False]
+        while not all(found):
+            for i in range(len(found)):
+                if not found[i]:
+                    up_left_down_right[i][0] += delta[i][0]
+                    up_left_down_right[i][1] += delta[i][1]
+                    # If out of bounds there is no empty square to the left/right/up/down of the goal
+                    if up_left_down_right[i][1] < 0 or up_left_down_right[i][1] > len(search_graph) or \
+                            up_left_down_right[i][0] < 0 or up_left_down_right[i][1] > len(search_graph[0]):
+                        up_left_down_right[i] = None
+                        found[i] = True
+                    else:
+                        local_goal = tuple(up_left_down_right[i])
+                        # If the cell is empty then this is the closest we can reach to the left/right/up/down of the goal
+                        if search_graph[local_goal[1]][local_goal[0]] == 0:
+                            _, path, _, _ = getInstructionsFromGrid(search_graphs[i], target=local_goal,
+                                                                    start=robot_pos,
+                                                                    upside_down=True)
+                            if path is not None:
+                                up_left_down_right[i] = tuple(up_left_down_right[i])
+                                found[i] = True
+                            else:
+                                up_left_down_right[i] = None
+                                found[i] = True
+        current_goal_number = 0
+        goal_pos = None
+        for i in range(len(up_left_down_right)):
+            if up_left_down_right[i] is not None:
+                current_goal_number = i
+                goal_pos = up_left_down_right[i]
+                break
+        if goal_pos is None:
+            reached_goal = True
+
     # Unwarp all 4 cameras and merge them into a single image in real time
 
     def live_unwarp(self):
@@ -424,14 +474,16 @@ class Unwarper:
             global alive
             alive = True
             count = 6
-            goal_pos = (268, 193)
+            goal_pos = (246, 167)
+            new_goal = True
             cam = cv2.VideoCapture(0)
             set_res(cam, 1920, 1080)
             i = 1
             visible = 0
             global square_length
             square_length = shift_amount
-            while not reached_goal:
+            first_iteration = True
+            while True:  # not reached_goal:
                 _, img = cam.read()
                 if i > 20:
                     unwarp_img = self.unwarp_image(img)
@@ -463,10 +515,17 @@ class Unwarper:
                                                                           cell_length=cell_length)
                         if robot_pos_dec[0] is not None and robot_pos_dec[1] is not None:
                             global_robot_pos = robot_pos_dec
+                            if new_goal and not first_iteration:
+                                search_graphs = [
+                                    Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
+                                                                  cell_length=cell_length) for x in range(4)]
+                                self.find_nearest_free_cells(search_graphs,
+                                                            tuple([round(i / shift_amount) for i in robot_pos_dec]))
+                                new_goal = False
                         self.count_visibility(robot_pos_dec[0] is not None)
                         self.check_robot_at_target(robot_pos_dec)
                         if robot_pos_dec[0] is not None:
-                            print("ROBOT IS AT %s"%(str(robot_pos_dec)))
+                            print("ROBOT IS AT %s" % (str(robot_pos_dec)))
                             robot_pos_dec = tuple([i / shift_amount for i in robot_pos_dec])
                             '''
                             if abs(robot_pos[0] - last_robot_pos_sent[0]) > 0.1 or abs(
@@ -506,6 +565,8 @@ class Unwarper:
                             cv2.imwrite("Vision/record_output/%s.jpg" % count, merged_img)
                             count += 1
                         # time.sleep(0.1)
+                        if first_iteration:
+                            first_iteration = False
                 i += 1
         except:
             alive = False
