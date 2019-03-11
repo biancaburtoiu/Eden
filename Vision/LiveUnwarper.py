@@ -149,7 +149,8 @@ def on_message(client, userdata, msg):
                 initial_dist_to_target = None
                 # possible_goals = [(136, 44), (166, 209), (45, 179), (286, 75), (277, 194), (209, 158), (41, 109)]
                 # goal_pos = random.choice(possible_goals)
-                while current_goal_number < 3 and up_left_down_right[current_goal_number + 1] is None:
+                current_goal_number += 1
+                while current_goal_number < 3 and up_left_down_right[current_goal_number] is None:
                     current_goal_number += 1
                 if current_goal_number == 4:
                     reached_goal = True
@@ -350,13 +351,35 @@ class Unwarper:
         global insts
         global path
         global robot_rotating
+        global robot_moving
+        global robot_target
         _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True)
         print(str(insts))
         if not robot_rotating and not robot_moving and insts != []:
             next_inst = insts.pop(0)
             next_inst = convert_orientation_inst_to_rotation(next_inst)
-            self.mqtt.publish("start-instruction", next_inst, qos=2)
-            robot_rotating = True
+            if abs(int(next_inst.split(",")[1])) > 5:
+                self.mqtt.publish("start-instruction", next_inst, qos=2)
+                robot_rotating = True
+            else:
+                next_inst = insts.pop(0)
+                distance = next_inst[1] * square_length
+                robot_target = list(global_robot_pos)
+                # up
+                if robot_direction == 0:
+                    robot_target[1] -= distance
+                # right
+                if robot_direction == 1:
+                    robot_target[0] += distance
+                # down
+                if robot_direction == 2:
+                    robot_target[1] += distance
+                # left
+                if robot_direction == 3:
+                    robot_target[0] -= distance
+                robot_target = tuple(robot_target)
+                robot_moving = True
+                self.mqtt.publish("start-instruction", "%s,%s" % next_inst, qos=2)
             print("TOLD TO DO %s" % str(next_inst))
 
     def check_robot_at_target(self, robot_pos):

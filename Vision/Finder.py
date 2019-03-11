@@ -34,11 +34,11 @@ class RobotFinder:
         # Threshold the image to the specified BGR range
 
         if red:
-            lower_bound = np.array([0, 0, 160])
+            lower_bound = np.array([0, 0, 175])
             upper_bound = np.array([210, 210, 255])
             blob_color = (0, 0, 255)
         else:
-            lower_bound = np.array([155, 0, 0])
+            lower_bound = np.array([175, 0, 0])
             upper_bound = np.array([255, 230, 230])
             blob_color = (255, 0, 0)
 
@@ -96,7 +96,7 @@ class RobotFinder:
             for i in range(len(red_poses)):
                 for j in range(len(blue_poses)):
                     temp_red_pos = red_poses[i].pt
-                    temp_blue_pos = blue_poses[i].pt
+                    temp_blue_pos = blue_poses[j].pt
                     this_dist = math.sqrt(
                         (temp_red_pos[0] - temp_blue_pos[0]) ** 2 + (temp_red_pos[1] - temp_blue_pos[1]) ** 2)
                     if this_dist < dist:
@@ -122,7 +122,7 @@ class RobotFinder:
             for i in range(len(red_poses)):
                 for j in range(len(blue_poses)):
                     temp_red_pos = red_poses[i].pt
-                    temp_blue_pos = blue_poses[i].pt
+                    temp_blue_pos = blue_poses[j].pt
                     this_dist = math.sqrt(
                         (temp_red_pos[0] - temp_blue_pos[0]) ** 2 + (temp_red_pos[1] - temp_blue_pos[1]) ** 2)
                     if this_dist < dist:
