@@ -39,21 +39,23 @@ class logo(Enum):
 
 def color_detection(img):
     img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    X = img.shape[0]
+    Y = img.shape[1]
     B = None
     R = None
-    e = 1
+    e = 5
     d = 1
     k = None
     lower_blue = np.array([75, 50, 50])
     upper_blue = np.array([130, 255, 255])
     maskB = cv2.inRange(img_hsv, lower_blue, upper_blue)
-    if len(maskB[maskB>0]) == 0:
-        return False, logo.no
+
     maskB = cv2.dilate(maskB, kernel=k, iterations=d)
     maskB = cv2.erode(maskB, kernel=k, iterations=e)
 
     (contours, _) = cv2.findContours(maskB, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     B = len(contours)
+    print("B {}".format(len(contours)))
     cv2.imshow("m2", maskB)
 
     lower_yellow = np.array([22, 50, 50])
@@ -67,7 +69,18 @@ def color_detection(img):
     (contours, _) = cv2.findContours(maskY, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     if (len(contours) != 1):
         return False, logo.no
-
+    cX = None
+    cY = None
+    for c in contours:
+        # compute the center of the contour
+        M = cv2.moments(c)
+        if (M["m00"] == 0):
+            return False, logo.no
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+    x_r, y_r = cX / X, cY / Y
+    if (x_r <= 0.28 or x_r >= 0.72 or y_r >= 0.72 or y_r <= 0.28):
+        return False, logo.no
     # upper mask (170-180)
     lower_red = np.array([170, 50, 50])
     upper_red = np.array([180, 255, 255])
@@ -86,10 +99,11 @@ def color_detection(img):
     cv2.imshow("img", img)
 
     R = len(contours)
+    print("R {}".format(len(contours)))
 
+    cv2.waitKey(0)
     if (R + B) != 6:
         return False, logo.no
-
     if (len(contours) == 1):
         return True, logo.one
     if (len(contours) == 2):
@@ -104,9 +118,7 @@ def color_detection(img):
         return True, logo.six
     if (len(contours) == 0):
         return True, logo.seven
-
-    # cv2.waitKey(0)
-    return True, logo.fail
+    return False, logo.no
 
 def mark_logo(image, Logo, startX, startY, endX, endY):
     if Logo == logo.one:
@@ -123,8 +135,6 @@ def mark_logo(image, Logo, startX, startY, endX, endY):
         cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 255), 2) # yellow
     if Logo == logo.seven:
         cv2.rectangle(image, (startX, startY), (endX, endY), (255, 255, 255), 2) # white
-    if Logo == logo.fail:
-        cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 0), 2) # black
 
 
 # loop over the images to find the template in
