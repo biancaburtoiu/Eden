@@ -43,7 +43,7 @@ search_graph = None
 global path
 path = None
 global cell_length
-cell_length = 30
+cell_length = 33
 global shift_amount
 shift_amount = 1
 global alive
@@ -54,6 +54,8 @@ global up_left_down_right
 up_left_down_right = [None, None, None, None]
 global current_goal_number
 current_goal_number = 0
+global initial_dist_to_target
+initial_dist_to_target = None
 
 # QA vars
 global start_pos
@@ -131,6 +133,8 @@ def on_message(client, userdata, msg):
     global original_goal
     global alive
     global reached_goal
+    global current_goal_number
+    global initial_dist_to_target
     try:
         if msg.topic == "finish-instruction":
             robot_was_moving = robot_moving
@@ -139,16 +143,18 @@ def on_message(client, userdata, msg):
             robot_rotating = False
             print("DISTANCE TO GOAL IS %s" % math.sqrt(
                 (goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2))
-            if math.sqrt((goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2) < 10:
+            if math.sqrt((goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2) < 20:
                 insts = []
                 path = None
+                initial_dist_to_target = None
                 # possible_goals = [(136, 44), (166, 209), (45, 179), (286, 75), (277, 194), (209, 158), (41, 109)]
                 # goal_pos = random.choice(possible_goals)
-                while up_left_down_right[current_goal_number + 1] is None and current_goal_number < 4:
+                while current_goal_number < 3 and up_left_down_right[current_goal_number + 1] is None:
                     current_goal_number += 1
                 if current_goal_number == 4:
                     reached_goal = True
                 else:
+                    print("SET GOAL TO %s" % current_goal_number)
                     goal_pos = up_left_down_right[current_goal_number]
                 return
             if robot_was_moving:
@@ -177,8 +183,9 @@ def on_message(client, userdata, msg):
                 angle_to_turn = (expected_end_angle - robot_angle) % 360
                 if angle_to_turn > 180:
                     angle_to_turn -= 360
-                if abs(angle_to_turn) > 5:
+                if abs(round(angle_to_turn)) > 5:
                     robot_rotating = True
+                    print("TOLD TO TURN %s" % round(angle_to_turn))
                     client.publish("start-instruction", "%s,%s" % ("r", round(angle_to_turn)), qos=2)
                     return
             # robot_direction = 0 if facing south, 1 if facing west, 2 if facing north, 3 if facing east
@@ -186,8 +193,10 @@ def on_message(client, userdata, msg):
             if len(insts) != 0:
                 next_inst = insts.pop(0)
                 if type(next_inst) is not tuple:
-                    robot_rotating = True
-                    client.publish("start-instruction", convert_orientation_inst_to_rotation(next_inst), qos=2)
+                    next_inst = convert_orientation_inst_to_rotation(next_inst)
+                    if abs(int(next_inst.split(",")[1])) > 5:
+                        robot_rotating = True
+                        client.publish("start-instruction", next_inst, qos=2)
                 else:
                     if next_inst[0] == "m":
                         print("pos: %s, square_length: %s" % (str(global_robot_pos), str(square_length)))
@@ -356,6 +365,7 @@ class Unwarper:
         global robot_direction
         global square_length
         global insts
+        global initial_dist_to_target
         if robot_moving and robot_pos[0] is not None and robot_pos[1] is not None and robot_direction is not None:
             dist_to_target = None
             # up
@@ -370,13 +380,16 @@ class Unwarper:
             # left
             elif robot_direction == 3:
                 dist_to_target = robot_pos[0] - robot_target[0]
+            if initial_dist_to_target is None:
+                initial_dist_to_target = dist_to_target
             print("DIST TO TARGET IS %s" % dist_to_target)
-            if dist_to_target < 16:
+            if dist_to_target < 16 or (initial_dist_to_target < 16 and dist_to_target < (initial_dist_to_target / 2)):
                 self.mqtt.publish("start-instruction", "s", qos=2)
                 print("TOLD TO STOP")
-                while len(insts) == 0:
-                    self.set_random_target(robot_pos)
-                    print("NEW GOAL IS %s" % str(goal_pos))
+                initial_dist_to_target = None
+                # while len(insts) == 0:
+                #    self.set_random_target(robot_pos)
+                #    print("NEW GOAL IS %s" % str(goal_pos))
 
     def set_random_target(self, robot_pos):
         global goal_pos
@@ -454,13 +467,15 @@ class Unwarper:
                                 up_left_down_right[i] = None
                                 found[i] = True
         current_goal_number = 0
-        goal_pos = None
+        new_goal_pos = None
         for i in range(len(up_left_down_right)):
+            current_goal_number = i
             if up_left_down_right[i] is not None:
-                current_goal_number = i
-                goal_pos = up_left_down_right[i]
+                new_goal_pos = up_left_down_right[i]
                 break
-        if goal_pos is None:
+        if new_goal_pos is not None:
+            goal_pos = new_goal_pos
+        if goal_pos is None and current_goal_number == 3:
             reached_goal = True
 
     # Unwarp all 4 cameras and merge them into a single image in real time
@@ -474,7 +489,7 @@ class Unwarper:
             global alive
             alive = True
             count = 6
-            goal_pos = (246, 167)
+            goal_pos = (265, 178)
             new_goal = True
             cam = cv2.VideoCapture(0)
             set_res(cam, 1920, 1080)
@@ -497,15 +512,16 @@ class Unwarper:
                         robot_pos_dec, local_robot_angle = self.robot_finder.find_robot(merged_img)
                         if local_robot_angle is not None:
                             robot_angle = local_robot_angle
+                        if robot_pos_dec[0] is not None and robot_pos_dec[1] is not None:
+                            global_robot_pos = robot_pos_dec
                         if global_robot_pos is not None:
-                            lower_i = round(global_robot_pos[1] - 22)
-                            upper_i = round(global_robot_pos[1] + 22)
-                            lower_j = round(global_robot_pos[0] - 22)
-                            upper_j = round(global_robot_pos[0] + 22)
+                            lower_i = max(round(global_robot_pos[1] - 24), 0)
+                            upper_i = round(global_robot_pos[1] + 24)
+                            lower_j = max(round(global_robot_pos[0] - 24), 0)
+                            upper_j = round(global_robot_pos[0] + 24)
                             thresh_merged_img[lower_i:upper_i, lower_j:upper_j, :] = np.zeros(
                                 thresh_merged_img[lower_i:upper_i, lower_j:upper_j, :].shape, dtype=np.uint8)
-                        if robot_angle is not None:
-                            cv2.imshow('4. thresholded', thresh_merged_img)
+                        cv2.imshow('4. thresholded', thresh_merged_img)
                         object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                      cell_length=cell_length,
                                                                      visualize=True)
@@ -514,14 +530,14 @@ class Unwarper:
                         search_graph_copy = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                           cell_length=cell_length)
                         if robot_pos_dec[0] is not None and robot_pos_dec[1] is not None:
-                            global_robot_pos = robot_pos_dec
                             if new_goal and not first_iteration:
                                 search_graphs = [
                                     Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                   cell_length=cell_length) for x in range(4)]
                                 self.find_nearest_free_cells(search_graphs,
-                                                            tuple([round(i / shift_amount) for i in robot_pos_dec]))
-                                new_goal = False
+                                                             tuple([round(i / shift_amount) for i in robot_pos_dec]))
+                                if up_left_down_right[current_goal_number] is not None:
+                                    new_goal = False
                         self.count_visibility(robot_pos_dec[0] is not None)
                         self.check_robot_at_target(robot_pos_dec)
                         if robot_pos_dec[0] is not None:
