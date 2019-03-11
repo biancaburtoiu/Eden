@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class DbOps {
     private static final String TAG = "DbOps";
@@ -334,6 +335,27 @@ public class DbOps {
                 listener.onGetPlantImageFinished(null);
             }
         });
+    void setWaterNowTrigger(onSetWaterNowFinishedListener listener) {
+        Map<String, Boolean> trigger = new HashMap<>();
+        trigger.put("Value", true);
+
+        db.collection("Users")
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .collection("Trigger")
+                .document("Trigger").set(trigger)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            listener.onSetWaterFinished(true);
+                            Log.d(TAG, "Trigger set to True");
+                        }
+                        else {
+                            listener.onSetWaterFinished(false);
+                            Log.d(TAG, "Trigger set to False");
+                        }
+                    }
+                });
     }
 
     interface onAddPlantFinishedListener {
@@ -372,5 +394,8 @@ public class DbOps {
         void onGetPlantImageFinished(Drawable image);
     }
 
+    interface onSetWaterNowFinishedListener {
+        void onSetWaterFinished(boolean success);
+    }
 
 }

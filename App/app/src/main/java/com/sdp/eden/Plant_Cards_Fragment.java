@@ -141,10 +141,20 @@ public class Plant_Cards_Fragment extends Fragment {
                     mProgress.setMessage("Creating the plant ...");
                     mProgress.show();
 
-                    Plant plant = new Plant(plantName.getText().toString(),
-                            plantSpecies.getSelectedItem().toString(),
-                            // Creating plant with default drawable. Firebase ignores it anyway
-                            getResources().getDrawable(R.drawable.ic_launcher_background));
+                    // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
+
+                    // TODO: Need to adapt this if we save pictures to bucket!
+                    Plant plant;
+                    if (imageBitmap == null) {
+                        plant = new Plant(plantName.getText().toString(),
+                                plantSpecies.getSelectedItem().toString(),
+                                new ArrayList<>());
+                    }
+                    else {
+                        plant = new Plant(plantName.getText().toString(),
+                                plantSpecies.getSelectedItem().toString(),
+                                bitmapToIntegerList(imageBitmap));
+                    }
 
                     DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
                         @Override
@@ -155,6 +165,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             // Now adding plant image to Firebase Storage:
                             completePlantCreation();
 
+                            //completePlantCreation(); // completes the new plant
                             getLatestPlantList();
 
                             mProgress.dismiss();
@@ -404,6 +415,31 @@ public class Plant_Cards_Fragment extends Fragment {
                         }
                     });
                     viewbuilder.setView(scheduleViewInflated);
+
+                    // Sets document value to true in Users(col)/user(doc)/Triggers(col)/Trigger(doc)
+                    // - has boolean field: Value
+                    viewbuilder.setPositiveButton("Water now!", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                            builder.setTitle("Water "+curPlant.getName()+" now!");
+                            builder.setMessage("This will trigger Eden to water "+curPlant.getName()+" now. Continue?");
+                            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    DbOps.instance.setWaterNowTrigger(new DbOps.onSetWaterNowFinishedListener() {
+                                        @Override
+                                        public void onSetWaterFinished(boolean success) {
+                                            if (success) Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Eden will water "+curPlant.getName()+" now!", Snackbar.LENGTH_SHORT).show();
+                                            else Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Database error. Try again!", Snackbar.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+                            });
+                            AlertDialog viewdialog = builder.create();
+                            viewdialog.show();
+                        }
+                    });
 
                     AlertDialog viewdialog = viewbuilder.create();
                     viewdialog.show();
