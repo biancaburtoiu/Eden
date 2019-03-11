@@ -34,11 +34,11 @@ class RobotFinder:
         # Threshold the image to the specified BGR range
 
         if red:
-            lower_bound = np.array([0, 0, 200])
+            lower_bound = np.array([0, 0, 175])
             upper_bound = np.array([210, 210, 255])
             blob_color = (0, 0, 255)
         else:
-            lower_bound = np.array([200, 0, 0])
+            lower_bound = np.array([175, 0, 0])
             upper_bound = np.array([255, 230, 230])
             blob_color = (255, 0, 0)
 
@@ -61,7 +61,7 @@ class RobotFinder:
 
             if len(keypoints) > 1:
                 None
-                print("ROBOT FINDER FOUND MORE THAN ONE POSSIBLE POSITION FOR THE ROBOT, USING FIRST FOUND")
+                # print("ROBOT FINDER FOUND MORE THAN ONE POSSIBLE POSITION FOR THE ROBOT, USING FIRST FOUND")
 
             # We assume there will only ever be one blob, as the simple blob detector filters the blobs based on their
             # circularity and area. So we can say the robot is at the centre of the first blob
@@ -72,28 +72,41 @@ class RobotFinder:
                 # Draw the blob onto the thresholded image to make it easier to understand where it is
                 thresh_robot = cv2.drawKeypoints(inverted_thresh_img, keypoints, np.array([]), blob_color,
                                                  cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-                return robot_pos, thresh_robot
+                return keypoints, thresh_robot
             else:
-                return robot_pos
+                return keypoints
 
         elif len(keypoints) == 0:
-            print("ROBOT FINDER COULD NOT FIND THE ROBOT, RETURNING POSITION AS NONE")
+            # print("ROBOT FINDER COULD NOT FIND THE ROBOT, RETURNING POSITION AS NONE")
 
             robot_pos = (None, None)
 
             if return_image_pos:
-                return robot_pos, inverted_thresh_img
+                return keypoints, inverted_thresh_img
             else:
-                return robot_pos
+                return keypoints
 
     def find_robot(self, img, return_image_pos=False):
         if return_image_pos:
-            red_pos, thresh_red = self.find_blob(img, red=True, return_image_pos=True)
-            blue_pos, thresh_blue = self.find_blob(img, red=False, return_image_pos=True)
+            red_poses, thresh_red = self.find_blob(img, red=True, return_image_pos=True)
+            blue_poses, thresh_blue = self.find_blob(img, red=False, return_image_pos=True)
+            red_pos = (None, None)
+            blue_pos = (None, None)
+            dist = float('inf')
+            for i in range(len(red_poses)):
+                for j in range(len(blue_poses)):
+                    temp_red_pos = red_poses[i].pt
+                    temp_blue_pos = blue_poses[j].pt
+                    this_dist = math.sqrt(
+                        (temp_red_pos[0] - temp_blue_pos[0]) ** 2 + (temp_red_pos[1] - temp_blue_pos[1]) ** 2)
+                    if this_dist < dist:
+                        red_pos = temp_red_pos
+                        blue_pos = temp_blue_pos
+                        dist = this_dist
             if red_pos[0] is not None and blue_pos[0] is not None:
                 angle = ((math.degrees(
                     math.atan2(red_pos[0] - blue_pos[0], (red_pos[1] - blue_pos[1]) * -1))) % 360)
-                return thresh_red, thresh_blue, np.average([red_pos, blue_pos], axis=1), angle
+                return thresh_red, thresh_blue, [float(c) for c in np.average([red_pos, blue_pos], axis=1)], angle
             elif red_pos[0] is not None:
                 return thresh_red, thresh_blue, red_pos, None
             elif blue_pos[0] is not None:
@@ -101,12 +114,25 @@ class RobotFinder:
             else:
                 return thresh_red, thresh_blue, (None, None), None
         else:
-            red_pos = self.find_blob(img, red=True, return_image_pos=False)
-            blue_pos = self.find_blob(img, red=False, return_image_pos=False)
+            red_poses = self.find_blob(img, red=True, return_image_pos=False)
+            blue_poses = self.find_blob(img, red=False, return_image_pos=False)
+            red_pos = (None, None)
+            blue_pos = (None, None)
+            dist = float('inf')
+            for i in range(len(red_poses)):
+                for j in range(len(blue_poses)):
+                    temp_red_pos = red_poses[i].pt
+                    temp_blue_pos = blue_poses[j].pt
+                    this_dist = math.sqrt(
+                        (temp_red_pos[0] - temp_blue_pos[0]) ** 2 + (temp_red_pos[1] - temp_blue_pos[1]) ** 2)
+                    if this_dist < dist:
+                        red_pos = temp_red_pos
+                        blue_pos = temp_blue_pos
+                        dist = this_dist
             if red_pos[0] is not None and blue_pos[0] is not None:
                 angle = ((math.degrees(
                     math.atan2(red_pos[0] - blue_pos[0], (red_pos[1] - blue_pos[1]) * -1))) % 360)
-                return np.average([red_pos, blue_pos], axis=1), angle
+                return [float(c) for c in np.average([red_pos, blue_pos], axis=0)], angle
             elif red_pos[0] is not None:
                 return red_pos, None
             elif blue_pos[0] is not None:
