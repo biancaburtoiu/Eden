@@ -163,9 +163,15 @@ public class Plant_Cards_Fragment extends Fragment {
                                 mProgress = new ProgressDialog(getContext());
                                 mProgress.setMessage("Creating the plant ...");
                                 mProgress.show();
-                                
+
                                 Bitmap defaultPlant = getBitmap((VectorDrawable) getResources().getDrawable(R.drawable.default_plant));
                                 Log.d(TAG, "defaultPlant is: "+defaultPlant);
+
+                                PictureTagMain p = new PictureTagMain();
+                                List<Float> coords = p.getPointCoordinatesFromRoom();
+
+                                Log.d(TAG, "XCoordinate from PCF is: "+coords.get(0));
+                                Log.d(TAG, "YCoordinate from PCF is: "+coords.get(1));
 
 
                                 // TODO: Need to adapt this if we save pictures to bucket!
@@ -502,7 +508,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
-                                    DbOps.instance.setWaterNowTrigger(new DbOps.onSetWaterNowFinishedListener() {
+                                    DbOps.instance.setWaterNowTrigger(curPlant,new DbOps.onSetWaterNowFinishedListener() {
                                         @Override
                                         public void onSetWaterFinished(boolean success) {
                                             if (success) Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Eden will water "+curPlant.getName()+" now!", Snackbar.LENGTH_SHORT).show();

@@ -21,6 +21,11 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+
 public class PictureTagMain extends Fragment {
 
     public View img;
@@ -40,17 +45,23 @@ public class PictureTagMain extends Fragment {
     }
 
 
-    public void send_(View view){
-        WindowManager wm = (WindowManager) getActivity().getSystemService(getActivity().WINDOW_SERVICE);
+    public List<Float> getPointCoordinatesFromRoom(){
+        WindowManager wm = (WindowManager) Objects.requireNonNull(getActivity()).getSystemService(getActivity().WINDOW_SERVICE);
         Point size = new Point();
         wm.getDefaultDisplay().getRealSize(size);
         float img_height= (float) (size.x*0.97);
         float img_width=(float) (size.y*0.48);
         float currentX=  PictureTagLayout.returnX();
+        Log.d("testing1", "x  is "+currentX);
+
         float currentY=  PictureTagLayout.returnY();
+        Log.d("testing1", "y  is "+currentY);
+
         float currentXratio=currentX/img_width;
         float currentYratio=currentY/img_height;
-        Log.d("testing1","valueX" +  currentXratio);
-        Log.d("testing1","valueY" +  currentYratio);
+        Log.d("testing1","valueX " +  currentXratio);
+        Log.d("testing1","valueY " +  currentYratio);
+
+        return new ArrayList<Float>(Arrays.asList(currentXratio, currentYratio));
     }
 }

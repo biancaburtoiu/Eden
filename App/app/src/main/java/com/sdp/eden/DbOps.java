@@ -294,13 +294,13 @@ public class DbOps {
         });
     }
 
-    void setWaterNowTrigger(onSetWaterNowFinishedListener listener) {
+    void setWaterNowTrigger(Plant plant, onSetWaterNowFinishedListener listener) {
         Map<String, Boolean> trigger = new HashMap<>();
-        trigger.put("Value", true);
+        trigger.put(plant.getName(), true);
 
         db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
-                .collection("Trigger")
+                .collection("Plants")
                 .document("Trigger").set(trigger)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
