@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -51,7 +50,6 @@ import com.google.firebase.storage.UploadTask;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -61,13 +59,11 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private static final String TAG = "Plant_Cards_Fragment";
     private ArrayList<Plant> plants; // list of plants pulled from firebase
-    private ArrayList<Plant> newPlants;
     private RecyclerView recyclerView;
     private ImageView plantPic;
     private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
     private String enteredPlantName; // this will hopefully be temp
     private Uri takenImage; // once again hopeful;ly this will be temp!
-    int counter;
 
     public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
@@ -141,34 +137,34 @@ public class Plant_Cards_Fragment extends Fragment {
                     mProgress.setMessage("Creating the plant ...");
                     mProgress.show();
 
-                    // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
-
                     // TODO: Need to adapt this if we save pictures to bucket!
                     Plant plant;
                     if (imageBitmap == null) {
                         plant = new Plant(plantName.getText().toString(),
                                 plantSpecies.getSelectedItem().toString(),
-                                new ArrayList<>());
+                                getResources().getDrawable(R.drawable.default_plant));
                     }
                     else {
                         plant = new Plant(plantName.getText().toString(),
                                 plantSpecies.getSelectedItem().toString(),
-                                bitmapToIntegerList(imageBitmap));
+                                getResources().getDrawable(R.drawable.default_plant));
                     }
 
                     DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
                         @Override
                         public void onUpdateFinished(boolean success) {
-                            Log.d(TAG, "Successfully added plant to database!");
-                            // Plant with blank path added to database
+                            if (success) {
+                                Log.d(TAG, "Successfully added plant to database!");
 
-                            // Now adding plant image to Firebase Storage:
-                            completePlantCreation();
-
-                            //completePlantCreation(); // completes the new plant
-                            getLatestPlantList();
-
-                            mProgress.dismiss();
+                                // Now adding plant image to Firebase Storage:
+                                if (imageBitmap!=null) uploadImageToFirebase();
+                                else getLatestPlantList();
+                                mProgress.dismiss();
+                            }
+                            else {
+                                Log.d(TAG, "Could not add plant to database.");
+                                mProgress.dismiss();
+                            }
                         }
                     });
                 }
@@ -219,7 +215,7 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
 
-//    Bitmap imageBitmap;
+    Bitmap imageBitmap;
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data){ // retrieves the camera image
         super.onActivityResult(requestCode,resultCode,data);
@@ -227,15 +223,12 @@ public class Plant_Cards_Fragment extends Fragment {
         if (requestCode == 111 && resultCode == RESULT_OK){
             Bundle extras = data.getExtras();
 
-            //Changed here!
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
-            //imageBitmap = (Bitmap) extras.get("data");
+            imageBitmap = (Bitmap) extras.get("data");
 
             plantPic.setImageBitmap(imageBitmap);
             takenImage = getImageUri(getContext(), imageBitmap);
 
             Log.d(TAG, "Taken image is: "+takenImage);
-
             System.out.println("taken image is " + takenImage);
             System.out.println("Plant name is " + enteredPlantName);
         }
@@ -249,7 +242,7 @@ public class Plant_Cards_Fragment extends Fragment {
         return Uri.parse(path);
     }
 
-    public void completePlantCreation(){ // uploads the image to firebase
+    public void uploadImageToFirebase(){
         ProgressDialog mProgress;
         mProgress = new ProgressDialog(getContext());
         mProgress.setMessage("Creating Plant ...");
@@ -259,6 +252,8 @@ public class Plant_Cards_Fragment extends Fragment {
             @Override
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                 Log.d(TAG, "Successfully uploaded photo with name: "+enteredPlantName+" to database!");
+
+                getLatestPlantList();
                 mProgress.dismiss();
             }
         });
@@ -296,32 +291,34 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
 
-                    // Refreshes the recyclerview:
                     plants = new ArrayList<>(plantsFromDB);
-                    Log.d(TAG, "Plants size: "+plants.size());
-                    counter = 0;
 
                     // TODO: Fix listening to all plants in list
                     for (Plant plant: plants) {
                         DbOps.instance.getPlantDrawable(plant, new DbOps.OnGetPlantImageFinishedListener() {
                             @Override
                             public void onGetPlantImageFinished(Drawable image) {
-                                Log.d(TAG, "Drawable for plant " + plant.getName() + " is: "+image);
-                                plant.setDrawable(image);
-
-                                counter++;
-                                Log.d(TAG, "Counter is now "+counter);
-
-                                if (counter == plants.size()) {
-                                    Log.d(TAG, "newPlants size correct: populating recyclerview");
-                                    populateRecyclerView(plants);
-                                    return;
+                                if (image==null) {
+                                    Log.d(TAG, "Plant "+plant.getName()+" has no image. Setting default drawable.");
+                                    plant.setDrawable(getResources().getDrawable(R.drawable.default_plant));
+                                    Log.d(TAG, "Plant now has drawable: "+plant.getDrawable());
                                 }
-                                else Log.d(TAG, "newPlants size incorrect. Not populating recyclerview.");
+                                else {
+                                    Log.d(TAG, "Drawable for plant " + plant.getName() + " is: "+image);
+                                    plant.setDrawable(image);
+
+                                    boolean condition = plants.stream().allMatch(plant -> plant.getDrawable() != null);
+                                    Log.d(TAG, "Test result: "+condition);
+
+                                    if (condition) {
+                                        Log.d(TAG, "all plants have drawables: populating recyclerview");
+                                        populateRecyclerView(plants);
+                                    }
+                                    else Log.d(TAG, "not all plants have drawables: not populating recyclerview.");
+                                }
                             }
                         });
                     }
-                    //populateRecyclerView(newPlants);
                     mProgress.dismiss();
                 });
     }

@@ -316,7 +316,7 @@ public class DbOps {
     void getPlantDrawable(Plant plant, OnGetPlantImageFinishedListener listener) {
         StorageReference storageRef = storage.getReference();
         StorageReference plantRef = storageRef.child("PlantPhotos/"
-                +FirebaseAuth.getInstance().getCurrentUser().getEmail()+"/"+plant.getName());
+                + FirebaseAuth.getInstance().getCurrentUser().getEmail() + "/" + plant.getName());
 
         final long ONE_MEGABYTE = 1024 * 1024;
         plantRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
@@ -324,7 +324,7 @@ public class DbOps {
             public void onSuccess(byte[] bytes) {
                 Drawable image = new BitmapDrawable(BitmapFactory.decodeByteArray(bytes, 0, bytes.length));
 
-                Log.d(TAG, "Result of byteArrayToDrawable is: "+image);
+                Log.d(TAG, "Result of byteArrayToDrawable is: " + image);
                 listener.onGetPlantImageFinished(image);
             }
         }).addOnFailureListener(new OnFailureListener() {
@@ -335,6 +335,8 @@ public class DbOps {
                 listener.onGetPlantImageFinished(null);
             }
         });
+    }
+
     void setWaterNowTrigger(onSetWaterNowFinishedListener listener) {
         Map<String, Boolean> trigger = new HashMap<>();
         trigger.put("Value", true);
