@@ -13,6 +13,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -46,11 +47,18 @@ public class PictureTagMain extends Fragment {
 
 
     public List<Float> getPointCoordinatesFromRoom(){
-        WindowManager wm = (WindowManager) Objects.requireNonNull(getActivity()).getSystemService(getActivity().WINDOW_SERVICE);
+        //WindowManager wm = (WindowManager) getActivity().getSystemService(getActivity().WINDOW_SERVICE);
         Point size = new Point();
-        wm.getDefaultDisplay().getRealSize(size);
+        //wm.getDefaultDisplay().getRealSize(size);
+
+        DisplayMetrics displaymetrics = new DisplayMetrics();
+        getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+        int height = displaymetrics.heightPixels;
+        int width = displaymetrics.widthPixels;
+
         float img_height= (float) (size.x*0.97);
         float img_width=(float) (size.y*0.48);
+
         float currentX=  PictureTagLayout.returnX();
         Log.d("testing1", "x  is "+currentX);
 

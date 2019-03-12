@@ -300,7 +300,7 @@ public class DbOps {
 
         db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
-                .collection("Plants")
+                .collection("Trigger")
                 .document("Trigger").set(trigger)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
