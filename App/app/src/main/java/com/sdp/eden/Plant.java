@@ -1,12 +1,17 @@
 package com.sdp.eden;
 
+
+import com.google.firebase.firestore.Exclude;
+
 import java.util.List;
 
 public class Plant {
     private String Name;
     private String Species;
     private List<Integer> Photo;
+
     private Float XCoordinate;
+
     private Float YCoordinate;
 
 
@@ -41,9 +46,15 @@ public class Plant {
     public List<Integer> getPhoto() { return Photo; }
     public void setPhoto(List<Integer> photo) { Photo = photo; }
 
+    //@Exclude
     public Float getXCoordinate() { return XCoordinate; }
+
+    //@Exclude
     public void setXCoordinate(float xCoordinate) { XCoordinate = xCoordinate; }
 
+    //@Exclude
     public Float getYCoordinate() { return YCoordinate; }
+
+    //@Exclude
     public void setYCoordinate(float yCoordinate) { YCoordinate = yCoordinate; }
 }

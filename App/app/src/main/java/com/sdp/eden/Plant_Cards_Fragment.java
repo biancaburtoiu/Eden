@@ -167,24 +167,19 @@ public class Plant_Cards_Fragment extends Fragment {
                                 Bitmap defaultPlant = getBitmap((VectorDrawable) getResources().getDrawable(R.drawable.default_plant));
                                 Log.d(TAG, "defaultPlant is: "+defaultPlant);
 
-                                PictureTagMain p = new PictureTagMain();
-                                List<Float> coords = p.getPointCoordinatesFromRoom();
-
-                                Log.d(TAG, "XCoordinate from PCF is: "+coords.get(0));
-                                Log.d(TAG, "YCoordinate from PCF is: "+coords.get(1));
-
-
                                 // TODO: Need to adapt this if we save pictures to bucket!
                                 Plant plant;
                                 if (imageBitmap == null) {
                                     plant = new Plant(plantName.getText().toString(),
                                             plantSpecies.getSelectedItem().toString(),
-                                            bitmapToIntegerList(defaultPlant));
+                                            bitmapToIntegerList(defaultPlant)
+                                    ,Float.valueOf("212.48"), Float.valueOf("594.51"));
                                 }
                                 else {
                                     plant = new Plant(plantName.getText().toString(),
                                             plantSpecies.getSelectedItem().toString(),
-                                            bitmapToIntegerList(imageBitmap));
+                                            bitmapToIntegerList(imageBitmap)
+                                            ,Float.valueOf("212.48"), Float.valueOf("594.51"));
                                 }
 
                                 DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
