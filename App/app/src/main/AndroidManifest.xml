@@ -33,6 +33,7 @@
         <activity android:name=".Create_account" />
         <activity android:name=".Eden_main"
             android:label=""/>
+        <activity android:name=".PictureTagMain" />
     </application>
 
 </manifest>
