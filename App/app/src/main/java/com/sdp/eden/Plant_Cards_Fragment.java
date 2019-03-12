@@ -49,8 +49,10 @@ import com.google.firebase.storage.UploadTask;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import com.github.clans.fab.FloatingActionButton;
 import com.github.clans.fab.FloatingActionMenu;
@@ -184,9 +186,16 @@ public class Plant_Cards_Fragment extends Fragment {
                 final TimePicker timePicker = viewInflated.findViewById(R.id.timePicker);
                 timePicker.setIs24HourView(true);
 
+                final Spinner plantSelect = viewInflated.findViewById(R.id.plantSelect);
+                List<String> plantArray = (plants.stream().map(plant -> plant.getName()).collect(Collectors.toList()));
+                plantArray.add(0, "Select Plant");
+
+                ArrayAdapter<String> plantsAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.spinner_style, plantArray.toArray(new String[]{}));
+                plantSelect.setAdapter(plantsAdapter);
+
                 final Spinner dayOfWeekPicker = viewInflated.findViewById(R.id.dayOfWeek);
-                String[] days = new String[]{"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-                ArrayAdapter<String> daysAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, days);
+                String[] days = new String[]{"Select Day","Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+                ArrayAdapter<String> daysAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.spinner_style, days);
                 dayOfWeekPicker.setAdapter(daysAdapter); // creates the drop down selection
 
                 EditText quantityInput = viewInflated.findViewById(R.id.quantityInput);
@@ -198,7 +207,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     public void onClick(DialogInterface dialog, int which) {
 
                         // TODO: modify this to grab plant somehow!!!
-                        String currentPlant = "plant";
+                        String currentPlant = plantSelect.getSelectedItem().toString();
 
                         // getMinute is in 0-59 interval. The code below adds a 0 ahead of the minutes 0-9
                         // Result: 20:01 instead of 20:1
@@ -342,8 +351,8 @@ public class Plant_Cards_Fragment extends Fragment {
     // Queries the database to get the most recent list of plants
     public void getLatestPlantList() {
         ProgressDialog mProgress;
-        mProgress = new ProgressDialog(getContext());
-        mProgress.setMessage("Getting the plants ...");
+        mProgress = new ProgressDialog(getContext(), R.style.spinner);
+        mProgress.setMessage("Getting your plants ...");
         mProgress.show();
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
