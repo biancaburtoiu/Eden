@@ -6,6 +6,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -14,6 +16,8 @@ import android.support.annotation.Nullable;
 //import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -121,7 +125,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     }
                 });
 
-                builder.setPositiveButton("Add", (dialog, which) -> {
+                builder.setPositiveButton("Next", (dialog, which) -> {
                     Log.d(TAG, "New plant to add to database:");
                     Log.d(TAG, "Plant name: " + plantName.getText().toString());
                     Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString()); // extracts the plant data from user input
@@ -136,37 +140,55 @@ public class Plant_Cards_Fragment extends Fragment {
                     }
                     else {
                         Log.d(TAG, "Plant name format correct.");
+                        Log.d(TAG, "Going to pick coordinates...");
 
-                        ProgressDialog mProgress;
-                        mProgress = new ProgressDialog(getContext());
-                        mProgress.setMessage("Creating the plant ...");
-                        mProgress.show();
 
-                        // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
+                        // TODO: Go to the fragment
+                        AlertDialog.Builder builder1 = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                        View viewInflated1 = LayoutInflater.from(getActivity()).inflate(R.layout.picturetag_main, (ViewGroup) getView(), false);
+                        View img = viewInflated1.findViewById(R.id.overhead_image);
+                        Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.overhead_image);
+                        Drawable d = new BitmapDrawable(getResources(), bmp);
+                        img.setBackground(d);
+                        builder1.setView(viewInflated1);
 
-                        // TODO: Need to adapt this if we save pictures to bucket!
-                        Plant plant;
-                        if (imageBitmap == null) {
-                            plant = new Plant(plantName.getText().toString(),
-                                    plantSpecies.getSelectedItem().toString(),
-                                    new ArrayList<>());
-                        }
-                        else {
-                            plant = new Plant(plantName.getText().toString(),
-                                    plantSpecies.getSelectedItem().toString(),
-                                    bitmapToIntegerList(imageBitmap));
-                        }
-
-                        DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
+                        builder1.setPositiveButton("Create plant", new DialogInterface.OnClickListener() {
                             @Override
-                            public void onUpdateFinished(boolean success) {
-                                //uploadImageToFirebase(); // completes the new plant
-                                getLatestPlantList();
+                            public void onClick(DialogInterface dialog, int which) {
+                                ProgressDialog mProgress;
+                                mProgress = new ProgressDialog(getContext());
+                                mProgress.setMessage("Creating the plant ...");
+                                mProgress.show();
 
-                                mProgress.dismiss();
+                                // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
+
+                                // TODO: Need to adapt this if we save pictures to bucket!
+                                Plant plant;
+                                if (imageBitmap == null) {
+                                    plant = new Plant(plantName.getText().toString(),
+                                            plantSpecies.getSelectedItem().toString(),
+                                            new ArrayList<>());
+                                }
+                                else {
+                                    plant = new Plant(plantName.getText().toString(),
+                                            plantSpecies.getSelectedItem().toString(),
+                                            bitmapToIntegerList(imageBitmap));
+                                }
+
+                                DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
+                                    @Override
+                                    public void onUpdateFinished(boolean success) {
+                                        //uploadImageToFirebase(); // completes the new plant
+                                        getLatestPlantList();
+
+                                        mProgress.dismiss();
+                                    }
+                                });
                             }
                         });
-                        // uploadImageToFirebase(); // completes the new plant --- moved from here
+
+                        AlertDialog dialog1 = builder1.create();
+                        dialog1.show();
                     }
                 });
                 AlertDialog dialog = builder.create();
