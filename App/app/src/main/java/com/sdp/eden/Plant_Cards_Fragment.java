@@ -5,14 +5,13 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
+//import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
@@ -53,6 +52,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
+
 import static android.app.Activity.RESULT_OK;
 
 public class Plant_Cards_Fragment extends Fragment {
@@ -63,94 +65,112 @@ public class Plant_Cards_Fragment extends Fragment {
     private ImageView plantPic;
     private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
     private String enteredPlantName; // this will hopefully be temp
-    private Uri takenImage; // once again hopeful;ly this will be temp!
+    private Uri takenImage; // once again hopefully this will be temp!
+
+    // FAM Chunk
+    FloatingActionMenu materialDesignFAM;
+    FloatingActionButton fab_addPlant, fab_addSchedule;
+    // FAM Chunk End
+
 
     public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
         getLatestPlantList();    // Query the database to get latest list
         recyclerView = view.findViewById(R.id.Plants_Recycler_view);
-        
+
         // FAM Chunk: https://www.viralandroid.com/2016/02/android-floating-action-menu-example.html
         materialDesignFAM = (FloatingActionMenu) view.findViewById(R.id.material_design_android_floating_action_menu);
         fab_addPlant = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
 
-        
-        addPlantButton.setOnClickListener(v -> {
-            Log.d(TAG, "User input: click on Add");
+        fab_addPlant.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Log.d(TAG, "User input: click on Add");
 
-            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
-            //builder.setTitle("Add a new plant!");
+                AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                //builder.setTitle("Add a new plant!");
 
-            View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant, (ViewGroup) getView(), false);
+                View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant, (ViewGroup) getView(), false);
 
-            final EditText plantName = viewInflated.findViewById(R.id.plantName);
-            final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
-            plantPic = viewInflated.findViewById(R.id.plantPic);
-            builder.setView(viewInflated);
+                final EditText plantName = viewInflated.findViewById(R.id.plantName);
+                final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
+                plantPic = viewInflated.findViewById(R.id.plantPic);
+                builder.setView(viewInflated);
 
-            // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
-            String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
-            ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
-            plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
+                // TODO: perhaps changing species to a short description of the plant (E.G. location or characteristic)
+                String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
+                ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
+                plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
 
-            plantPic.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
+                plantPic.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
 
-                    if (plantName.getText().toString().trim().length() == 0){
-                        plantName.setError("Enter a plant name");
-                    }else {
-                        enteredPlantName = plantName.getText().toString().trim();
-                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
-                        // TODO: Kieran - upload to firebase storage and pull for each card (having trouble with this)
-                        if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-                            startActivityForResult(takePictureIntent, 111); // set the request code for the photo to 111
+                        if (plantName.getText().toString().trim().length() == 0){
+                            plantName.setError("Enter a plant name");
+                        }else{
+                            enteredPlantName = plantName.getText().toString().trim();
+                            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
+                            // TODO: Kieran - upload to firebase storage and pull for each card (having trouble with this)
+                            if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                                startActivityForResult(takePictureIntent, 111); // set the request code for the photo to 111
+                            }
                         }
                     }
-                }
-            });
+                });
 
-            builder.setPositiveButton("Add", (dialog, which) -> {
-                Log.d(TAG, "New plant to add to database:");
-                Log.d(TAG, "Plant name: " + plantName.getText().toString());
-                Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString()); // extracts the plant data from user input
+                builder.setPositiveButton("Add", (dialog, which) -> {
+                    Log.d(TAG, "New plant to add to database:");
+                    Log.d(TAG, "Plant name: " + plantName.getText().toString());
+                    Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString()); // extracts the plant data from user input
 
-                if(plantSpecies.getSelectedItem().toString().equals("Select Species")){
-                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Select a Species", Snackbar.LENGTH_SHORT).show();
-                }
-                // Checks for empty plant name
-                if (plantName.getText().toString().trim().length() == 0) {
-                    Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
-                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name your plant!", Snackbar.LENGTH_SHORT).show();
-                }
-                else {
-                    Log.d(TAG, "Plant name format correct.");
-
-                    ProgressDialog mProgress;
-                    mProgress = new ProgressDialog(getContext());
-                    mProgress.setMessage("Creating the plant ...");
-                    mProgress.show();
-
-                    // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
-
-                    // TODO: Need to adapt this if we save pictures to bucket!
-                    Plant plant;
-                    if (imageBitmap == null) {
-                        plant = new Plant(plantName.getText().toString(),
-                                plantSpecies.getSelectedItem().toString(),
-                                new ArrayList<>());
+                    if(plantSpecies.getSelectedItem().toString().equals("Select Species")){
+                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Select a Species", Snackbar.LENGTH_SHORT).show();
+                    }
+                    // Checks for empty plant name
+                    if (plantName.getText().toString().trim().length() == 0) {
+                        Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
+                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name your plant!", Snackbar.LENGTH_SHORT).show();
                     }
                     else {
-                        plant = new Plant(plantName.getText().toString(),
-                                plantSpecies.getSelectedItem().toString(),
-                                bitmapToIntegerList(imageBitmap));
+                        Log.d(TAG, "Plant name format correct.");
+
+                        ProgressDialog mProgress;
+                        mProgress = new ProgressDialog(getContext());
+                        mProgress.setMessage("Creating the plant ...");
+                        mProgress.show();
+
+                        // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
+
+                        // TODO: Need to adapt this if we save pictures to bucket!
+                        Plant plant;
+                        if (imageBitmap == null) {
+                            plant = new Plant(plantName.getText().toString(),
+                                    plantSpecies.getSelectedItem().toString(),
+                                    new ArrayList<>());
+                        }
+                        else {
+                            plant = new Plant(plantName.getText().toString(),
+                                    plantSpecies.getSelectedItem().toString(),
+                                    bitmapToIntegerList(imageBitmap));
+                        }
+
+                        DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
+                            @Override
+                            public void onUpdateFinished(boolean success) {
+                                //uploadImageToFirebase(); // completes the new plant
+                                getLatestPlantList();
+
+                                mProgress.dismiss();
+                            }
+                        });
+                        // uploadImageToFirebase(); // completes the new plant --- moved from here
                     }
                 });
                 AlertDialog dialog = builder.create();
                 dialog.show();
 
-            });
+            }
         });
 
         fab_addSchedule.setOnClickListener(new View.OnClickListener() {
@@ -190,11 +210,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         else
                             time = timePicker.getHour()+":"+timePicker.getMinute();
 
-                    DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
-                        @Override
-                        public void onUpdateFinished(boolean success) {
-                            //completePlantCreation(); // completes the new plant
-                            getLatestPlantList();
+                        int quantity = Integer.parseInt(quantityInput.getText().toString());
 
                         String selectedDay = dayOfWeekPicker.getSelectedItem().toString();
 
@@ -212,8 +228,17 @@ public class Plant_Cards_Fragment extends Fragment {
                 dialog.show();
             }
         });
-    });
+        // FAM Chunk End
 
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
+        return view;
+    }
+
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+    }
 
 
     // https://stackoverflow.com/a/40886397
@@ -283,7 +308,7 @@ public class Plant_Cards_Fragment extends Fragment {
         return Uri.parse(path);
     }
 
-    public void completePlantCreation(){ // uploads the image to firebase
+    public void uploadImageToFirebase(){ // uploads the image to firebase
         ProgressDialog mProgress;
         mProgress = new ProgressDialog(getContext());
         mProgress.setMessage("Creating Plant ...");
@@ -455,7 +480,6 @@ public class Plant_Cards_Fragment extends Fragment {
             mImageButton.setOnClickListener(v -> showPopupMenu(mImageButton, i));
         }
 
-
         private void showPopupMenu(View view,int position) {
             // inflate menu
             Context wrapper = new ContextThemeWrapper(getContext(), R.style.popupMenu);
@@ -465,7 +489,6 @@ public class Plant_Cards_Fragment extends Fragment {
             popup.setOnMenuItemClickListener(new MyMenuItemClickListener(position));
             popup.show();
         }
-
 
         @Override
         public int getItemCount() {
@@ -477,7 +500,6 @@ public class Plant_Cards_Fragment extends Fragment {
     class MyMenuItemClickListener implements PopupMenu.OnMenuItemClickListener { // class for when an item is clicked withing the popup menu
 
         private int position;
-
         MyMenuItemClickListener(int positon) {
             this.position=positon;
         }
@@ -545,126 +567,8 @@ public class Plant_Cards_Fragment extends Fragment {
                     AlertDialog editdialog = editbuilder.create();
                     editdialog.show();
                     return true;
-
-                case R.id.card_addSchedule: // Schedule watering is selected
-                    AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
-                    //builder.setTitle("Add schedule for plant");
-
-                    View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant_schedule,
-                            (ViewGroup) getView(), false);
-
-                    final TimePicker timePicker = viewInflated.findViewById(R.id.timePicker);
-                    timePicker.setIs24HourView(true);
-
-
-                    CheckBox checkBox_Monday = viewInflated.findViewById(R.id.checkbox_Monday);
-                    CheckBox checkBox_Tuesday = viewInflated.findViewById(R.id.checkbox_Tuesday);
-                    CheckBox checkBox_Wednesday = viewInflated.findViewById(R.id.checkbox_Wednesday);
-                    CheckBox checkBox_Thursday = viewInflated.findViewById(R.id.checkbox_Thursday);
-                    CheckBox checkBox_Friday = viewInflated.findViewById(R.id.checkbox_Friday);
-                    CheckBox checkBox_Saturday = viewInflated.findViewById(R.id.checkbox_Saturday);
-                    CheckBox checkBox_Sunday = viewInflated.findViewById(R.id.checkbox_Sunday);
-
-                    EditText quantityInput = viewInflated.findViewById(R.id.quantityInput);
-
-                    builder.setView(viewInflated);
-
-                    builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-
-                            String currentPlant = plants.get(position).getName();
-
-                            // getMinute is in 0-59 interval. The code below adds a 0 ahead of the minutes 0-9
-                            // Result: 20:01 instead of 20:1
-                            // However, hours between 12am and 12pm will have a single digit: e.g. 2:45
-
-                            String time;
-                            if (timePicker.getMinute()<10)
-                                time = timePicker.getHour()+":0"+timePicker.getMinute();
-                            else
-                                time = timePicker.getHour()+":"+timePicker.getMinute();
-
-                            int quantity = Integer.parseInt(quantityInput.getText().toString());
-
-                            if (checkBox_Monday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry("Monday",currentPlant, quantity, time);
-                                DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
-                                    @Override
-                                    public void onAddScheduleEntryFinished(boolean success) {
-                                        Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
-                                                " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                            if (checkBox_Tuesday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry("Tuesday",currentPlant, quantity, time);
-                                DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
-                                    @Override
-                                    public void onAddScheduleEntryFinished(boolean success) {
-                                        Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
-                                                " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                            if (checkBox_Wednesday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry("Wednesday", currentPlant, quantity, time);
-                                DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
-                                    @Override
-                                    public void onAddScheduleEntryFinished(boolean success) {
-                                        Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
-                                                " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                            if (checkBox_Thursday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry("Thursday",currentPlant,quantity, time);
-                                DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
-                                    @Override
-                                    public void onAddScheduleEntryFinished(boolean success) {
-                                        Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
-                                                " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                            if (checkBox_Friday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry("Friday",currentPlant, quantity, time);
-                                DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
-                                    @Override
-                                    public void onAddScheduleEntryFinished(boolean success) {
-                                        Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
-                                                " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                            if (checkBox_Saturday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry("Saturday",currentPlant, quantity, time);
-                                DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
-                                    @Override
-                                    public void onAddScheduleEntryFinished(boolean success) {
-                                        Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
-                                                " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                            if (checkBox_Sunday.isChecked()) {
-                                ScheduleEntry scheduleEntry = new ScheduleEntry("Sunday",currentPlant, quantity, time);
-                                DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
-                                    @Override
-                                    public void onAddScheduleEntryFinished(boolean success) {
-                                        Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
-                                                " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                        }
-                    });
-                    AlertDialog dialog = builder.create();
-                    dialog.show();
-                    return true;
             }
             return false;
         }
-
     }
 }
