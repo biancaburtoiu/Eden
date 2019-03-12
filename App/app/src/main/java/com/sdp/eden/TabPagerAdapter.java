@@ -11,22 +11,25 @@ public class TabPagerAdapter extends FragmentPagerAdapter {
     @Override
     public Fragment getItem(int i) {
         switch(i){
-            case 1: return new RobotFragment();
             default: return new Plant_Cards_Fragment().newInstance();
+            case 1: return new RobotFragment();
+            case 2: return new ScheduleFragment();
         }
     }
 
     @Override
     public int getCount() {
-        return 2;
+        return 3;
     }
 
     public CharSequence getPageTitle(int position) {
         //this determines the titles displayed on each tab
         if(position==0) {
             return "Plants";
-        }else{
+        }else if (position==1){
             return "Robot";
+        } else {
+            return "Schedule";
         }
     }
 }
