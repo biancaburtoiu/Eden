@@ -1,5 +1,6 @@
 package com.sdp.eden;
 
+import android.animation.Animator;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -12,7 +13,7 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
+//import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
@@ -32,6 +33,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.Spinner;
@@ -53,6 +55,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import com.github.clans.fab.FloatingActionButton;
+import com.github.clans.fab.FloatingActionMenu;
+
 import static android.app.Activity.RESULT_OK;
 
 public class Plant_Cards_Fragment extends Fragment {
@@ -65,10 +70,36 @@ public class Plant_Cards_Fragment extends Fragment {
     private String enteredPlantName; // this will hopefully be temp
     private Uri takenImage; // once again hopeful;ly this will be temp!
 
+    // FAM Chunk
+    FloatingActionMenu materialDesignFAM;
+    FloatingActionButton floatingActionButton1, floatingActionButton2;
+    // FAM Chunk End
+
+
     public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
         getLatestPlantList();    // Query the database to get latest list
         recyclerView = view.findViewById(R.id.Plants_Recycler_view);
+
+        // FAM Chunk
+        materialDesignFAM = (FloatingActionMenu) view.findViewById(R.id.material_design_android_floating_action_menu);
+        floatingActionButton1 = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
+        floatingActionButton2 = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
+
+        floatingActionButton1.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                //TODO something when floating action menu first item clicked
+
+            }
+        });
+        floatingActionButton2.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                //TODO something when floating action menu second item clicked
+
+            }
+        });
+        // FAM Chunk End
+
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
         return view;
     }
@@ -78,96 +109,98 @@ public class Plant_Cards_Fragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        FloatingActionButton addPlantButton = view.findViewById(R.id.addPlantButton);
-        addPlantButton.setOnClickListener(v -> {
-            Log.d(TAG, "User input: click on Add");
-
-            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
-            //builder.setTitle("Add a new plant!");
-
-            View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant, (ViewGroup) getView(), false);
-
-            final EditText plantName = viewInflated.findViewById(R.id.plantName);
-            final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
-            plantPic = viewInflated.findViewById(R.id.plantPic);
-            builder.setView(viewInflated);
-
-            // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
-            String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
-            ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
-            plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
-
-            plantPic.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-
-                    if (plantName.getText().toString().trim().length() == 0){
-                        plantName.setError("Enter a plant name");
-                    }else{
-                        enteredPlantName = plantName.getText().toString().trim();
-                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
-                        // TODO: Kieran - upload to firebase storage and pull for each card (having trouble with this)
-                        if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-                            startActivityForResult(takePictureIntent, 111); // set the request code for the photo to 111
-                        }
-                    }
-
-
-                }
-            });
-
-            builder.setPositiveButton("Add", (dialog, which) -> {
-                Log.d(TAG, "New plant to add to database:");
-                Log.d(TAG, "Plant name: " + plantName.getText().toString());
-                Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString()); // extracts the plant data from user input
-
-                if(plantSpecies.getSelectedItem().toString().equals("Select Species")){
-                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Select a Species", Snackbar.LENGTH_SHORT).show();
-                }
-                // Checks for empty plant name
-                if (plantName.getText().toString().trim().length() == 0) {
-                    Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
-                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name your plant!", Snackbar.LENGTH_SHORT).show();
-                }
-                else {
-                    Log.d(TAG, "Plant name format correct.");
-
-                    ProgressDialog mProgress;
-                    mProgress = new ProgressDialog(getContext());
-                    mProgress.setMessage("Creating the plant ...");
-                    mProgress.show();
-
-                    // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
-
-                    // TODO: Need to adapt this if we save pictures to bucket!
-                    Plant plant;
-                    if (imageBitmap == null) {
-                        plant = new Plant(plantName.getText().toString(),
-                                plantSpecies.getSelectedItem().toString(),
-                                new ArrayList<>());
-                    }
-                    else {
-                        plant = new Plant(plantName.getText().toString(),
-                                plantSpecies.getSelectedItem().toString(),
-                                bitmapToIntegerList(imageBitmap));
-                    }
-
-                    DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
-                        @Override
-                        public void onUpdateFinished(boolean success) {
-                            //completePlantCreation(); // completes the new plant
-                            getLatestPlantList();
-
-                            mProgress.dismiss();
-                        }
-                    });
-                    // completePlantCreation(); // completes the new plant --- moved from here
-                }
-            });
-            AlertDialog dialog = builder.create();
-            dialog.show();
-        });
+//        FloatingActionButton addPlantButton = view.findViewById(R.id.addPlantButton);
+//        addPlantButton.setOnClickListener(v -> {
+//            Log.d(TAG, "User input: click on Add");
+//
+//            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+//            //builder.setTitle("Add a new plant!");
+//
+//            View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant, (ViewGroup) getView(), false);
+//
+//            final EditText plantName = viewInflated.findViewById(R.id.plantName);
+//            final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
+//            plantPic = viewInflated.findViewById(R.id.plantPic);
+//            builder.setView(viewInflated);
+//
+//            // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
+//            String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
+//            ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
+//            plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
+//
+//            plantPic.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//
+//                    if (plantName.getText().toString().trim().length() == 0){
+//                        plantName.setError("Enter a plant name");
+//                    }else{
+//                        enteredPlantName = plantName.getText().toString().trim();
+//                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
+//                        // TODO: Kieran - upload to firebase storage and pull for each card (having trouble with this)
+//                        if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+//                            startActivityForResult(takePictureIntent, 111); // set the request code for the photo to 111
+//                        }
+//                    }
+//
+//
+//                }
+//            });
+//
+//            builder.setPositiveButton("Add", (dialog, which) -> {
+//                Log.d(TAG, "New plant to add to database:");
+//                Log.d(TAG, "Plant name: " + plantName.getText().toString());
+//                Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString()); // extracts the plant data from user input
+//
+//                if(plantSpecies.getSelectedItem().toString().equals("Select Species")){
+//                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Select a Species", Snackbar.LENGTH_SHORT).show();
+//                }
+//                // Checks for empty plant name
+//                if (plantName.getText().toString().trim().length() == 0) {
+//                    Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
+//                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name your plant!", Snackbar.LENGTH_SHORT).show();
+//                }
+//                else {
+//                    Log.d(TAG, "Plant name format correct.");
+//
+//                    ProgressDialog mProgress;
+//                    mProgress = new ProgressDialog(getContext());
+//                    mProgress.setMessage("Creating the plant ...");
+//                    mProgress.show();
+//
+//                    // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
+//
+//                    // TODO: Need to adapt this if we save pictures to bucket!
+//                    Plant plant;
+//                    if (imageBitmap == null) {
+//                        plant = new Plant(plantName.getText().toString(),
+//                                plantSpecies.getSelectedItem().toString(),
+//                                new ArrayList<>());
+//                    }
+//                    else {
+//                        plant = new Plant(plantName.getText().toString(),
+//                                plantSpecies.getSelectedItem().toString(),
+//                                bitmapToIntegerList(imageBitmap));
+//                    }
+//
+//                    DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
+//                        @Override
+//                        public void onUpdateFinished(boolean success) {
+//                            //completePlantCreation(); // completes the new plant
+//                            getLatestPlantList();
+//
+//                            mProgress.dismiss();
+//                        }
+//                    });
+//                    // completePlantCreation(); // completes the new plant --- moved from here
+//                }
+//            });
+//            AlertDialog dialog = builder.create();
+//            dialog.show();
+//        });
     }
+
+
 
 
     // https://stackoverflow.com/a/40886397
