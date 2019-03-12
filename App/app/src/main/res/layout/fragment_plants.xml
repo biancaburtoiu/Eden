@@ -65,16 +65,22 @@ android:id="@+id/fragment_plants">
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/default_plant"
-                fab:fab_label="Add plant"
-                fab:fab_size="normal" />
+                fab:fab_size="mini"
+                app:fab_colorNormal="@color/white"
+                app:fab_colorPressed="#99FFFFFF"
+                app:fab_colorRipple="#99FFFFFF"
+                />
 
             <com.github.clans.fab.FloatingActionButton
                 android:id="@+id/material_design_floating_action_menu_item2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_calendar"
-                fab:fab_label="Add schedule"
-                fab:fab_size="normal" />
+                fab:fab_size="mini"
+                app:fab_colorNormal="@color/white"
+                app:fab_colorPressed="#99FFFFFF"
+                app:fab_colorRipple="#99FFFFFF"
+                />
         </com.github.clans.fab.FloatingActionMenu>
     </RelativeLayout>
 
