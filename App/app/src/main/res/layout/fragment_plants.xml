@@ -86,10 +86,6 @@ android:id="@+id/fragment_plants">
         android:layout_gravity="bottom">
 
         <!-- snack bar location -->
-
-
-        <!-- Floating action menu stuff -->
-
         <android.support.design.widget.CoordinatorLayout
             android:id="@+id/viewSnack"
             android:layout_width="match_parent"
@@ -105,25 +101,6 @@ android:id="@+id/fragment_plants">
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="1.0">
         </android.support.design.widget.CoordinatorLayout>
-
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/addPlantButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end|bottom"
-            android:layout_margin="16dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
-            android:backgroundTint="@color/colorPrimary"
-            android:elevation="8dp"
-            android:src="@drawable/ic_add_white_24dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
     </android.support.constraint.ConstraintLayout>
 
 
