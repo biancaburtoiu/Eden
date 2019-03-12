@@ -6,6 +6,9 @@ import glob
 import cv2
 from enum import Enum
 
+# This code is written to be run in commond line
+
+
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-t", "--template", required=True, help="Path to template image")
@@ -23,7 +26,7 @@ template = cv2.Canny(template, 50, 200)
 count2 = 0
 
 
-class logo(Enum):
+class LOGO(Enum):
     no = 0
     one = 1
     two = 2
@@ -37,50 +40,47 @@ class logo(Enum):
 
 # may be not centers?
 
-def color_detection(img):
-    img_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    X = img.shape[0]
-    Y = img.shape[1]
-    B = None
-    R = None
+def color_detection(image):
+    img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    x = image.shape[0]
+    y = image.shape[1]
     e = 5
     d = 1
     k = None
     lower_blue = np.array([75, 50, 50])
     upper_blue = np.array([130, 255, 255])
-    maskB = cv2.inRange(img_hsv, lower_blue, upper_blue)
+    maskb = cv2.inRange(img_hsv, lower_blue, upper_blue)
 
-    maskB = cv2.dilate(maskB, kernel=k, iterations=d)
-    maskB = cv2.erode(maskB, kernel=k, iterations=e)
+    maskb = cv2.dilate(maskb, kernel=k, iterations=d)
+    maskb = cv2.erode(maskb, kernel=k, iterations=e)
 
-    (contours, _) = cv2.findContours(maskB, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    (contours, _) = cv2.findContours(maskb, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     B = len(contours)
     print("B {}".format(len(contours)))
-    cv2.imshow("m2", maskB)
+    cv2.imshow("m2", maskb)
 
     lower_yellow = np.array([22, 50, 50])
     upper_yellow = np.array([38, 255, 255])
-    maskY = cv2.inRange(img_hsv, lower_yellow, upper_yellow)
+    masky = cv2.inRange(img_hsv, lower_yellow, upper_yellow)
 
+    masky = cv2.dilate(masky, kernel=k, iterations=d)
+    masky = cv2.erode(masky, kernel=k, iterations=e)
 
-    maskY = cv2.dilate(maskY, kernel=k, iterations=d)
-    maskY = cv2.erode(maskY, kernel=k, iterations=e)
-
-    (contours, _) = cv2.findContours(maskY, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    if (len(contours) != 1):
-        return False, logo.no
-    cX = None
-    cY = None
+    (contours, _) = cv2.findContours(masky, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    if len(contours) != 1:
+        return False, LOGO.no
+    cx = None
+    cy = None
     for c in contours:
         # compute the center of the contour
-        M = cv2.moments(c)
-        if (M["m00"] == 0):
-            return False, logo.no
-        cX = int(M["m10"] / M["m00"])
-        cY = int(M["m01"] / M["m00"])
-    x_r, y_r = cX / X, cY / Y
-    if (x_r <= 0.28 or x_r >= 0.72 or y_r >= 0.72 or y_r <= 0.28):
-        return False, logo.no
+        m = cv2.moments(c)
+        if m["m00"] == 0:
+            return False, LOGO.no
+        cx = int(m["m10"] / m["m00"])
+        cy = int(m["m01"] / m["m00"])
+    x_r, y_r = cx / x, cy / y
+    if x_r <= 0.28 or x_r >= 0.72 or y_r >= 0.72 or y_r <= 0.28:
+        return False, LOGO.no
     # upper mask (170-180)
     lower_red = np.array([170, 50, 50])
     upper_red = np.array([180, 255, 255])
@@ -90,51 +90,52 @@ def color_detection(img):
     upper_red = np.array([10, 255, 255])
     mask2 = cv2.inRange(img_hsv, lower_red, upper_red)
 
-    maskR = mask1 + mask2
+    maskr = mask1 + mask2
 
-    maskR = cv2.dilate(maskR, kernel=k, iterations=d)
-    maskR = cv2.erode(maskR, kernel=k, iterations=e)
-    (contours, _) = cv2.findContours(maskR, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    cv2.imshow("m1", maskR)
-    cv2.imshow("img", img)
+    maskr = cv2.dilate(maskr, kernel=k, iterations=d)
+    maskr = cv2.erode(maskr, kernel=k, iterations=e)
+    (contours, _) = cv2.findContours(maskr, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+    cv2.imshow("m1", maskr)
+    cv2.imshow("img", image)
 
     R = len(contours)
     print("R {}".format(len(contours)))
 
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
     if (R + B) != 6:
-        return False, logo.no
-    if (len(contours) == 1):
-        return True, logo.one
-    if (len(contours) == 2):
-        return True, logo.two
-    if (len(contours) == 3):
-        return True, logo.three
-    if (len(contours) == 4):
-        return True, logo.four
-    if (len(contours) == 5):
-        return True, logo.five
-    if (len(contours) == 6):
-        return True, logo.six
-    if (len(contours) == 0):
-        return True, logo.seven
-    return False, logo.no
+        return False, LOGO.no
+    if len(contours) == 1:
+        return True, LOGO.one
+    if len(contours) == 2:
+        return True, LOGO.two
+    if len(contours) == 3:
+        return True, LOGO.three
+    if len(contours) == 4:
+        return True, LOGO.four
+    if len(contours) == 5:
+        return True, LOGO.five
+    if len(contours) == 6:
+        return True, LOGO.six
+    if len(contours) == 0:
+        return True, LOGO.seven
+    return False, LOGO.no
 
-def mark_logo(image, Logo, startX, startY, endX, endY):
-    if Logo == logo.one:
-        cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2) # red
-    if Logo == logo.two:
-        cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2) # green
-    if Logo == logo.three:
-        cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2) # blue
-    if Logo == logo.four:
-        cv2.rectangle(image, (startX, startY), (endX, endY), (255, 255, 0), 2) # aqua
-    if Logo == logo.five:
-        cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 255), 2) # pink
-    if Logo == logo.six:
-        cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 255), 2) # yellow
-    if Logo == logo.seven:
-        cv2.rectangle(image, (startX, startY), (endX, endY), (255, 255, 255), 2) # white
+
+def mark_logo(Img, Logo, startX, startY, endX, endY):
+    if Logo == LOGO.one:
+        cv2.rectangle(Img, (startX, startY), (endX, endY), (0, 0, 255), 2)  # red
+    if Logo == LOGO.two:
+        cv2.rectangle(Img, (startX, startY), (endX, endY), (0, 255, 0), 2)  # green
+    if Logo == LOGO.three:
+        cv2.rectangle(Img, (startX, startY), (endX, endY), (255, 0, 0), 2)  # blue
+    if Logo == LOGO.four:
+        cv2.rectangle(Img, (startX, startY), (endX, endY), (255, 255, 0), 2)  # aqua
+    if Logo == LOGO.five:
+        cv2.rectangle(Img, (startX, startY), (endX, endY), (255, 0, 255), 2)  # pink
+    if Logo == LOGO.six:
+        cv2.rectangle(Img, (startX, startY), (endX, endY), (0, 255, 255), 2)  # yellow
+    if Logo == LOGO.seven:
+        cv2.rectangle(Img, (startX, startY), (endX, endY), (255, 255, 255), 2)  # white
 
 
 # loop over the images to find the template in
@@ -187,8 +188,7 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
 
     # unpack the bookkeeping variable and compute the (x, y) coordinates
     # of the bounding box based on the resized ratio
-
-    previous = None # previous possible template place
+    previous = None  # previous possible template place
     ps_X = None
     ps_Y = None
     pe_X = None
@@ -203,7 +203,6 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
 
     total = len(all_found[0])
     counter = 0
-    # cv2.imshow("template", final_result)
 
     image2 = image.copy()
     print("Now pic {} has {}".format(count2, len(all_found[0])))
@@ -226,8 +225,8 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
             print("edge discard")
             continue
 
-        # only one
-        if (total == 1):
+        # only one logo
+        if total == 1:
             detected, Logo = color_detection(image3[startY:endY, startX: endX])
             print(Logo)
             if detected:
@@ -238,10 +237,8 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
             else:
                 print("logo is not detected")
             continue
-
         # get local infomation
-        img = final_result[pt[1]-1: pt[1]+ 1, pt[0]- 1: pt[0]+ 1]
-
+        img = final_result[pt[1]-1: pt[1] + 1, pt[0] - 1: pt[0] + 1]
         if previous is None:
             detected, Logo = color_detection(image3[startY:endY, startX: endX])
             print(Logo)
@@ -255,8 +252,8 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
             print("previous not got")
             continue
 
-        if (startX >= ps_X - 2 and startX <= ps_X + 2):
-            if (counter < total):
+        if ps_X - 2 <= startX <= ps_X + 2:
+            if counter < total:
                 print("too close discard again")
                 continue
             else:
@@ -269,11 +266,9 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
                 # print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
                 continue
 
-        if ( startX >= ps_X - int(tW) * r and startX <= ps_X + int(tW) * r ):
+        if ps_X - int(tW) * r <= startX <= ps_X + int(tW) * r:
             print("overlapped")
             current = np.argmax(img)
-            # print("previous {} current {}".format(previous, current))
-
             if current < previous:
                 print("not replace")
                 if counter == total:
@@ -288,7 +283,6 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
                     print("replace")
                     if counter == total:
                         mark_logo(image, Logo, startX, startY, endX, endY)
-                        # cv2.waitKey(0)
                         continue
                     else:
                         previous = np.argmax(img)
@@ -312,7 +306,6 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
         print(Logo)
         if detected:
             mark_logo(image, Logo, ps_X, ps_Y, pe_X, pe_Y)
-            # cv2.waitKey(0)
             cv2.imshow("changed", image)
             print("certain")
         # print("The location of this rec is {} {} {} {}".format(ps_X, ps_Y, ps_X, pe_Y))
@@ -324,19 +317,15 @@ for imagePath in glob.glob(args["images"] + "/*.jpg"):
             p_logo = Logo
         else:
             previous = None
-        if (counter == total):
+        if counter == total:
             print("last one")
             detected, Logo = color_detection(image3[startY:endY, startX: endX])
             print(Logo)
             if detected:
                 mark_logo(image, Logo, startX, startY, endX, endY)
-                # cv2.waitKey(0)
+
             # print("The location of this rec is {} {} {} {}".format(startX, startY, endX, endY))
 
-
-
-    # cv2.imshow("Image", image)
     cv2.imwrite("image/fram%d.jpg" % count2, image)  # save frame as JPEG file
     cv2.imwrite("image/framx%d.jpg" % count2, image2)  # save frame as JPEG file
-    # cv2.waitKey(0)
     count2 = count2 + 1
