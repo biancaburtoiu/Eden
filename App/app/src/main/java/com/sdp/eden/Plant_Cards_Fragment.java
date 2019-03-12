@@ -76,6 +76,7 @@ public class Plant_Cards_Fragment extends Fragment {
     private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
     private String enteredPlantName; // this will hopefully be temp
     private Uri takenImage; // once again hopeful;ly this will be temp!
+    private int width, height;
 
     // FAM Chunk
     FloatingActionMenu materialDesignFAM;
@@ -93,13 +94,15 @@ public class Plant_Cards_Fragment extends Fragment {
         fab_addPlant = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
 
+        width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
+        height = (int)(getResources().getDisplayMetrics().heightPixels*0.60);
+
         fab_addPlant.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.d(TAG, "User input: click on Add");
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                 //builder.setTitle("Add a new plant!");
-
                 View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant, (ViewGroup) getView(), false);
 
                 final EditText plantName = viewInflated.findViewById(R.id.plantName);
@@ -201,10 +204,12 @@ public class Plant_Cards_Fragment extends Fragment {
 
                         AlertDialog dialog1 = builder1.create();
                         dialog1.show();
+                        dialog1.getWindow().setLayout(width, height);
                     }
                 });
                 AlertDialog dialog = builder.create();
                 dialog.show();
+                dialog.getWindow().setLayout(width, height);
 
             }
         });
