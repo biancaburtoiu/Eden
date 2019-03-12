@@ -1,13 +1,12 @@
 package com.sdp.eden;
 
-import android.Manifest;
+
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
@@ -37,8 +36,6 @@ public class Signin extends AppCompatActivity {
         mEmailField = findViewById(R.id.loginemailfield);
         mPasswordField = findViewById(R.id.loginpasswordfield);
 
-        requestPermission();
-
         findViewById(R.id.sign_in_button).setOnClickListener(new View.OnClickListener(){
             public  void onClick(View v){
                 signIn(mEmailField.getText().toString(), mPasswordField.getText().toString());
@@ -57,6 +54,7 @@ public class Signin extends AppCompatActivity {
         Intent intent=new Intent(this, Create_account.class);
         startActivity(intent);
     }
+
 
 
 
@@ -137,49 +135,6 @@ public class Signin extends AppCompatActivity {
         updateUI(user);
     }
 
-    private void requestPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(new String[] {
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
-        } else {
-            Snackbar permissionSnackbar = Snackbar.make(findViewById(R.id.viewSnack), "You must allow permissions", Snackbar.LENGTH_LONG);
-            permissionSnackbar.setAction("Try Again", new PermissionAdd());
-            permissionSnackbar.show();
-
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        switch (requestCode) {
-            case 1:
-                if (grantResults.length > 0 && permissions[0].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-                    // check whether storage permission granted or not.
-                    if (grantResults[0] != PackageManager.PERMISSION_GRANTED) {
-
-                        Snackbar permissionSnackbar = Snackbar.make(findViewById(R.id.viewSnack), "You must allow permissions", Snackbar.LENGTH_LONG);
-                        permissionSnackbar.setAction("Try Again", new PermissionAdd());
-                        permissionSnackbar.show();
-
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-    }
-
-
-    public class PermissionAdd implements View.OnClickListener{
-
-        @Override
-        public void onClick(View v) {
-
-            requestPermission();
-        }
-    }
 
 
 

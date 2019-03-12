@@ -42,7 +42,4 @@ dependencies {
 
     //tablayout dependecy
     implementation 'com.android.support:design:28.0.0'
-
-    //fab dependency
-    implementation 'com.github.clans:fab:1.6.2'
 }
