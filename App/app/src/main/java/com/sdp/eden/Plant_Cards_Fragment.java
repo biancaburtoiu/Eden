@@ -77,8 +77,7 @@ public class Plant_Cards_Fragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
         getLatestPlantList();    // Query the database to get latest list
         recyclerView = view.findViewById(R.id.Plants_Recycler_view);
-
-
+        
         // FAM Chunk: https://www.viralandroid.com/2016/02/android-floating-action-menu-example.html
         materialDesignFAM = (FloatingActionMenu) view.findViewById(R.id.material_design_android_floating_action_menu);
         fab_addPlant = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
