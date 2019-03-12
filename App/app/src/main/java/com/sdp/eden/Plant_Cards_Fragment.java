@@ -167,7 +167,11 @@ public class Plant_Cards_Fragment extends Fragment {
                                 mProgress.setMessage("Creating the plant ...");
                                 mProgress.show();
 
-                                Bitmap defaultPlant = getBitmap((VectorDrawable) getResources().getDrawable(R.drawable.default_plant));
+                                Bitmap defaultPlant = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.def_plant_icon);
+                                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                                defaultPlant.compress(Bitmap.CompressFormat.PNG, 0, out);
+                                Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
+                                //Bitmap defaultPlant = getBitmap((VectorDrawable) getResources().getDrawable(R.drawable.def_));
                                 Log.d(TAG, "defaultPlant is: "+defaultPlant);
 
                                 // TODO: Need to adapt this if we save pictures to bucket!
