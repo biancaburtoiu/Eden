@@ -75,7 +75,7 @@ public class Plant_Cards_Fragment extends Fragment {
         fab_addPlant = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
 
-        FloatingActionButton addPlantButton = view.findViewById(R.id.addPlantButton);
+        
         addPlantButton.setOnClickListener(v -> {
             Log.d(TAG, "User input: click on Add");
 
@@ -100,7 +100,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     if (plantName.getText().toString().trim().length() == 0){
                         plantName.setError("Enter a plant name");
-                    }else{
+                    }else {
                         enteredPlantName = plantName.getText().toString().trim();
                         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
                         // TODO: Kieran - upload to firebase storage and pull for each card (having trouble with this)
@@ -108,8 +108,6 @@ public class Plant_Cards_Fragment extends Fragment {
                             startActivityForResult(takePictureIntent, 111); // set the request code for the photo to 111
                         }
                     }
-
-
                 }
             });
 
@@ -152,7 +150,7 @@ public class Plant_Cards_Fragment extends Fragment {
                 AlertDialog dialog = builder.create();
                 dialog.show();
 
-            }
+            });
         });
 
         fab_addSchedule.setOnClickListener(new View.OnClickListener() {
@@ -214,7 +212,8 @@ public class Plant_Cards_Fragment extends Fragment {
                 dialog.show();
             }
         });
-    }
+    });
+
 
 
     // https://stackoverflow.com/a/40886397
