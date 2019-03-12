@@ -4,10 +4,13 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.VectorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -18,6 +21,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -159,15 +163,17 @@ public class Plant_Cards_Fragment extends Fragment {
                                 mProgress = new ProgressDialog(getContext());
                                 mProgress.setMessage("Creating the plant ...");
                                 mProgress.show();
+                                
+                                Bitmap defaultPlant = getBitmap((VectorDrawable) getResources().getDrawable(R.drawable.default_plant));
+                                Log.d(TAG, "defaultPlant is: "+defaultPlant);
 
-                                // List<Integer> defaultPlant = bitmapToIntegerList(BitmapFactory.decodeResource(getResources(),R.drawable.default_plant));
 
                                 // TODO: Need to adapt this if we save pictures to bucket!
                                 Plant plant;
                                 if (imageBitmap == null) {
                                     plant = new Plant(plantName.getText().toString(),
                                             plantSpecies.getSelectedItem().toString(),
-                                            new ArrayList<>());
+                                            bitmapToIntegerList(defaultPlant));
                                 }
                                 else {
                                     plant = new Plant(plantName.getText().toString(),
@@ -271,6 +277,14 @@ public class Plant_Cards_Fragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
     }
 
+    private static Bitmap getBitmap(VectorDrawable vectorDrawable) {
+        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        vectorDrawable.draw(canvas);
+        return bitmap;
+    }
 
     // https://stackoverflow.com/a/40886397
     public String bitmapToString(Bitmap bmp) {
