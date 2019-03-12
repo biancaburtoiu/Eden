@@ -163,7 +163,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 ProgressDialog mProgress;
-                                mProgress = new ProgressDialog(getContext());
+                                mProgress = new ProgressDialog(getContext(), R.style.spinner);
                                 mProgress.setMessage("Creating the plant ...");
                                 mProgress.show();
 
