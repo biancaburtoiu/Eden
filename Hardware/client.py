@@ -4,6 +4,7 @@ import sys
 import ev3dev.ev3 as ev3
 import math
 import time
+import threading
 calibrated=False
 calibrating=False
 waiting=False
@@ -13,7 +14,9 @@ instructions_to_follow = []
 client=mqtt.Client("ev3")
 initial=None
 instrucions_to_follow=None
-
+cl=ev3.ColorSensor()
+def red():
+    cl.mode="COL-REFLECT"
 
 def forward(x):
     print("moving forward "+str(x) +" squares over" + str(x/speed))
@@ -87,10 +90,15 @@ def onMessage(client,userdata,msg):
 
                  if instructions_to_follow:
                      follow_insts_in_list(instructions_to_follow)
+        if msg.topic=="water":
+            cl.mode="COL-AMBIENT"
+            ev3.Sound.speak("Water")
+            threading.Timer(3,red).start()
+
 
     except:
         print("Error")
-        print(sys.exc_info()[0])
+        print(sys.exc_info())
         sys.exit()
         raise
 
@@ -136,7 +144,7 @@ def follow_insts_in_list(instructions_to_follow):
                 ##error
 
 def read_battery_for_updates():
-    
+    pass
 
 client.on_connect=onConnect
 client.on_message=onMessage
