@@ -1,8 +1,8 @@
 import queue as Q
 from math import sqrt
 from sys import argv
-from pathfinding import dirToInst
-
+#from pathfinding import dirToInst
+import dirToInst
 
 # ================= Graph class: references root node, and provides operations==
 class Graph:
@@ -39,15 +39,26 @@ class Graph:
             else:
                 # we must keep exploring
 
+                penalty = findClosenessPenalty(current,0)
                 for (neighbour, dirToNeighbour) in current.getNeighbours():
+                    # initial cost
+                    cost_of_move = 1
+
+                    # cost added for each case that's matched
+                    
+                    # case: passing through this node means turning
                     if current in parent.keys() and parent[current].neighbourToDir(current) !=dirToNeighbour:
-                        cost_of_move= 40
-                    elif len(neighbour.getNeighbours())==3:
-                        cost_of_move = 50
-                    elif len(neighbour.getNeighbours())==2:
-                        cost_of_move = 100
-                    else:
-                        cost_of_move = 1
+                        cost_of_move += 40
+                    
+                    # case: this node is 'close' to a wall
+                    if penalty>0:
+                        cost_of_move+=40*penalty
+
+                    # case: this is a 'bad' node
+                    if current.getIsBad():
+                        cost_of_move+= max(cost_of_move,30)
+
+                    # add cost up to current node 
                     cost = cost_so_far[current] + cost_of_move
                     if neighbour not in cost_so_far.keys() or cost < cost_so_far[neighbour]:
                         # we have found the best route to this node (so far)
@@ -84,7 +95,7 @@ class Graph:
     # takes a starting position pair, and a 2d bool grid of visitable squares
     # and turns it into a graph structure
     # A grid square is 0 iff the square is accessible
-    def graphFromGrid(self, start_pos, grid, upside_down=False):
+    def graphFromGrid(self, start_pos, grid, upside_down=False, bad_nodes=[]):
         # sychronise root note and starting position
         self.root.setPos(start_pos)
 
@@ -135,7 +146,11 @@ class Graph:
             for ((x, y), d) in neighbour_coords:
                 if grid[y][x] == 0:
                     # an unvisited, clear square. make a node and add it to stack
-                    grid[y][x] = Node((x, y))
+                    if (x,y) in bad_nodes:
+                        # if it's a bad node, mark it so
+                        grid[y][x] = Node((x, y),True)
+                    else:
+                        grid[y][x] = Node((x, y))
                     node_stack.append(grid[y][x])
 
                     # note the ==0 case still falls through vv
@@ -164,7 +179,7 @@ class Graph:
 
             (x, y) = current.getPos()
             try:
-                grid[y][x] = 0
+                grid[y][x] = current.getEdgeClosenessPenalty()
             except:
                 None
 
@@ -178,12 +193,23 @@ class Graph:
 # ============== Node class: should not be instantiated individually, used by Graph to=
 # ==============represent a node and it's neighbours===================================
 class Node:
-    def __init__(self, pos):
+    def __init__(self, pos,is_bad_node=False):
         # tuple co ordinate
         self.pos = pos
 
+        #to track if this node is marked as bad by vision - A* should try to avoid thiose
+        self.is_bad = is_bad_node
+
         # dictionary mapping nodes to directions
         self.neighbours = {}
+
+        # when A* is checking now far nodes are from the edge, it can store the penality applied
+        # here so it doesn't need to be recalculated in the future
+        # -1 means it hasn't been calculated yet
+        self.edge_closeness_penalty = -1
+
+        # when calculating closeness penalty, this flag is set to avoid repeating nodes
+        self.is_under_consideration = False
 
     # the priority queue contains tuples of (score,Node). If scores are equal, it tries to compare nodes.
     # if the score is the same, we don't care. So we implement a trivial comparison function for python to use
@@ -207,6 +233,21 @@ class Node:
 
     def getPos(self):
         return self.pos
+
+    def getIsBad(self):
+        return self.is_bad
+
+    def getIsUnderConsideration(self):
+        return self.is_under_consideration
+
+    def setIsUnderConsideration(self,new_val):
+        self.is_under_consideration = new_val
+
+    def getEdgeClosenessPenalty(self):
+        return self.edge_closeness_penalty
+
+    def setEdgeClosenessPenalty(self,new_val):
+        self.edge_closeness_penalty = new_val
 
     def setPos(self, new_pos):
         self.pos = new_pos
@@ -242,6 +283,106 @@ def mbd(node1, node2):
 
 
 # ====helpers======
+
+# If a node is nearby an obstacle, it has a higher penalty value, up to a max of MAX_PENALTY.
+# This algorithm calculates this value recursively. It is similar to depth-limited search, with
+# a limit of ~MAX_PENALTY
+MAX_PENALTY=3
+def findClosenessPenalty(node, current_depth):
+    if current_depth == MAX_PENALTY+1:
+        # if there was an edge, we would have found it by now
+        return 0
+    elif node.getIsUnderConsideration():
+        # don't go back on this node, as this means going in a loop
+        # the penalty will be wrong anyway as there must be a shorter path
+        # to wherever we go from here, by just cutting the loop out of the path
+        return -1
+    else:
+        current_penalty = node.getEdgeClosenessPenalty()
+        
+        if current_penalty != -1:
+            # penalty already calculated
+            return current_penalty
+        else:
+            neighbours = [node for (node,dir) in node.getNeighbours()]
+            num_neighbours = len(neighbours)
+
+            if num_neighbours < 4:
+                # some kind of wall directly nearby
+                penalty = MAX_PENALTY
+                node.setEdgeClosenessPenalty(penalty)
+                return penalty
+    
+            else:
+                # set flag on node that we should not visit it again during
+                # recursion of it's neighbours
+                node.setIsUnderConsideration(True)
+
+                # base penalty is 0
+                penalty = 0
+                for n in neighbours:
+                    penalty = max(penalty,findClosenessPenalty(n,current_depth+1)-1)
+                node.setEdgeClosenessPenalty(penalty)
+
+                # remove flag now node's neighbours have been explored enough
+                node.setIsUnderConsideration(False)
+                return penalty
+
+
+# Idea to approximate this if this is too slow!
+# Don't check every possible path away from the node, just go in a straight line away from the node,
+# continuing in that direction for the rest of that recursive call, up to a depth of MAX_PENALTY.
+# Then if a wall is found, propagate the penalty value back, otherwise do nothing.
+# 
+# Will work in vast majority of cases. It fails on corners since the closes wall is diagonal to the curr node
+# However I think that since a corner is next to two walls, it will have already been avoiding the walls
+# and therefore the shortest path will end up staying away from the corner too!      
+##^^ function is as described above
+
+def findESTClosenessPenalty(node):
+    neighbours = node.getNeighbours()
+
+    if len(neighbours)<4:
+        # this node itself is an edge, max penalty
+        return MAX_PENALTY
+    
+    # otherwise, check penalties of surrounding nodes
+    penalty = 0
+    for (n,dir) in neighbours:
+        penalty = max(penalty,check_for_walls(n,dir,MAX_PENALTY-1))
+    return penalty
+
+# keeps checking neighbours in a set direction, until an edge node is found, or a certian depth is reached
+def check_for_walls(node,dir,depth):
+    current_penalty = depth
+    neighbours = node.getNeighbours()
+
+    # we check until the penalty would be 0
+    while current_penalty!=0:
+        if len(neighbours)<4:
+            #edge node, return penalty
+            return current_penalty
+        else:
+            # find neighbour in same direction
+            node = getNeighbourAtDir(neighbours,dir)
+            
+            if node is None:
+                print("Graph.py: Node should have four neighbours, but there is no neighbour in direction %s!"%dir)
+                return 0
+
+            # node is further away => lower penalty
+            current_penalty-=1
+
+    # no walls within set depth, return 0
+    return 0
+
+# just gets a neighbour facing a certain direction, from a list of (node,direction) pairs
+# returns None if there is no node at that direction
+def getNeighbourAtDir(neighbours,target_dir):
+    for (n,n_dir) in neighbours:
+        if n_dir==target_dir:
+            return n
+    return None
 
 # up is opposite of down, etc
 def invert(d):
