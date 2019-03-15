@@ -4,6 +4,7 @@ from firebase_admin import storage
 from firebase_admin import firestore
 from PIL import Image
 import numpy as np
+import paho.mqtt as mqtt
 
 ## take np array image
 ## convert to reel image
@@ -24,9 +25,13 @@ gotta change it:
 
 
 class FirebaseInteraction:
+
     def __init__(self,unwarper):
         self.unwarper = unwarper
         self.db = self.init_fb()
+        client=mqtt.Client()
+        client.connect("129.215.202.200")
+        water_reader()
 
     def main(self,image_as_np):
         ''' get image from np array '''
@@ -42,7 +47,7 @@ class FirebaseInteraction:
         self.db.collection(u'overhead-image').document(u'overhead-image').set(new_status)
 
     def init_fb(self):
-        cred = fba.credentials.Certificate("eden-34f6a-firebase-adminsdk-yigr5-83fe6dc575.json")
+        cred = fba.credentials.Certificate("eden-34f6a-firebase-adminsdk-yigr5-b66d22fc0b.json")
         fba.initialize_app(cred,{
             'storageBucket': "eden-34f6a.appspot.com"
         })
@@ -56,5 +61,8 @@ class FirebaseInteraction:
         image = self.unwarper.get_recent_image()
         self.main(image)
 
+    def water_reader(self):
+            self.db.collection(u'Users').collection(u'test@gmail.com').document(u'Trigger').on_snapshot(water_writer)
+    def water_writer(self):
+        mqtt.publish("water")
 
-    

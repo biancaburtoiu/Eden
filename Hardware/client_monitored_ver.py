@@ -46,6 +46,9 @@ def onMessage(client,userdata,msg):
             elif pl=="ping":
                 #our own message
                 pass
+            elif pl=="crashed":
+                print("vision system says it's dead")
+                on_vision_death()
             else:
                 print("useless pong: %s"%pl)
 
@@ -56,20 +59,24 @@ def onMessage(client,userdata,msg):
         sys.exit()
         
 
-def follow_one_instruction(instruction_as_string):
+def follow_one_instruction(instruction_as_string,vision_error=False):
     print("about to follow instruction: %s"%instruction_as_string)
     global currently_moving
     global currently_pinging
+    global polling_sonar
 
     if currently_moving:
         # stop (moving) instruction
         if instruction_as_string=='s':
-            # not moving or pinging anymore
+            # not moving, pinging, or checking sonar  anymore
             currently_moving = False
             currently_pinging = -1
+            polling_sonar = False
             movement_controller.stop()
-            #request next instruction in path
-            ask_for_next_inst()
+            if not vision_error:
+                #request next instruction in path only when stopped 
+                # by vision system - not on a self-stop due to lack of pongs
+                ask_for_next_inst()
         else:
             print("useless instruction: %s"%instruction_as_string)
     else:
@@ -89,9 +96,19 @@ def follow_one_instruction(instruction_as_string):
                 currently_moving=True
                 # 0 represents active pinging with 0 pings missed so far
                 currently_pinging = 0
+
+                # start checking sonar regularly while we're moving
+                polling_sonar = True
+                poll_sonar()
+
                 movement_controller.forward_forever()
+
                 # send first ping to start playing
-                send_ping()
+                #send_ping()
+                
+                # start checking sonar regularly while we're moving
+                #polling_sonar = True
+                #poll_sonar_mainthread()
             elif inst_type=='r':
                 currently_moving=True
                 movement_controller.relative_turn(int(inst[1]))
@@ -105,39 +122,78 @@ def check_for_pong():
     # if this is -1, pinging is not active anymore, due to a stop instruction being sent
     # it must have been sent by vision since when we send one we don't initiate another ping
     # i.e. this means we successfully stopped under normal operation
-    if currently_pinging=>0:
+    if currently_pinging>=0:
         if received_pong:
             #reset missed ping count, and send the next ping
             currently_pinging = 0
             received_pong = False
             send_ping()
-        elif:
+        else:
             #a pong has not been sent in time!
             currently_pinging+=1
 
-            if currently_pinging==3:
+            if currently_pinging==5:
                 # stop the robot due to x missed pongs.
                 # pings will now stop, and currently_pinging will be set to -1
-                print("stopping!")
-                follow_one_instruction("s")
+                print("five pings! stopping!")
+                follow_one_instruction("s",True)
             else:
                 # we've acknowledged the missed pong, but keep trying 
                 print("%s missed pongs"%currently_pinging)
                 received_pong=False
                 send_ping()
 
+#called when vision system tells us explicitely it's dead. Instead of
+# waiting for next pong check, we just stop immediately
+def on_vision_death():
+    # stop pinging process, now even when next pong isn't received,
+    # check_for_pong() does nothing. This is because robot stopping
+    # has already been sorted here.
+    follow_one_instruction("s",True)
+
+def poll_sonar():
+    if polling_sonar:
+        if movement_controller.sonar_value()<=80:
+            # robot too close to a wall!
+
+            print("SONAR SAYS STOP~~~")
+            # this stops robot, but still asks
+            # for next instruction
+            follow_one_instruction("s")
+        else:
+            Timer(0.3,poll_sonar).start()
+
+def poll_sonar_mainthread():
+    while polling_sonar:
+        if movement_controller.sonar_value()<=80:
+            print("SONAR SAYS STOP~~~")
+            follow_one_instruction("s")
+            
+            #follow_one_instruction should make polling_sonar false
+            # but break just in case
+            break
+        else:
+            time.sleep(0.2)
+
 def send_ping():
-    global publishing_lock
     print("ping")
-    client.publish("ping-pong","ping",qos=2)
-    #in 3 seconds check for the pong
-    Timer(3,check_for_pong,[]).start()
+
+    try:
+        client.publish("ping-pong","ping",qos=2)
+    except:
+        print("couldn't publish ping :(")
+    
+    #in x seconds check for the pong
+    Timer(1,check_for_pong).start()
 
 def ask_for_next_inst():
     global currently_moving
     currently_moving = False
     print("about to send finish-instruction")
-    client.publish("finish-instruction","",qos=2)
+    try:
+        client.publish("finish-instruction","",qos=2)
+    except:
+        print("couldn't publish finish-instruction")
     print("instruction sent!")
 
 def read_battery_status(client):
@@ -166,6 +222,9 @@ currently_pinging = -1
 
 # movement object, with initial angle of 0
 movement_controller = movement_monitored_ver.Movement()
+
+# tracks whether we should be checking for sonar input
+polling_sonar = False
 
 #connect client and make it wait for inputs
 client.connect(ips.ip)
