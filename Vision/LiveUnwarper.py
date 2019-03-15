@@ -46,8 +46,6 @@ global cell_length
 cell_length = 33
 global shift_amount
 shift_amount = 1
-global alive
-alive = False
 global reached_goal
 reached_goal = False
 global up_left_down_right
@@ -56,6 +54,8 @@ global current_goal_number
 current_goal_number = 0
 global initial_dist_to_target
 initial_dist_to_target = None
+global connected
+connected = False
 
 # QA vars
 global start_pos
@@ -71,10 +71,17 @@ def set_res(cap, x, y):
 
 
 def on_connect(client, userdata, flags, rc):
+    global connected
+    connected = True
     print("connected")
     client.subscribe("finish-instruction")
     client.subscribe("battery-update")
     client.subscribe("ping-pong")
+
+
+def on_disconnect(client, userdata, rc):
+    global connected
+    connected = False
 
 
 def check_on_path(graph, to, frm_dec):
@@ -131,7 +138,6 @@ def on_message(client, userdata, msg):
     global insts
     global start_pos
     global original_goal
-    global alive
     global reached_goal
     global current_goal_number
     global initial_dist_to_target
@@ -162,7 +168,7 @@ def on_message(client, userdata, msg):
                 count_diff_target(start_pos, global_robot_pos, original_goal)
                 path_broken = False
                 closest = float('inf')
-                print(path)
+                print(insts)
                 grid_robot_pos = tuple([i / shift_amount for i in global_robot_pos])
                 print("SHAPE: (%s, %s)" % (len(search_graph), len(search_graph[0])))
                 for node in path:
@@ -187,50 +193,54 @@ def on_message(client, userdata, msg):
                 if abs(round(angle_to_turn)) > 5:
                     robot_rotating = True
                     print("TOLD TO TURN %s" % round(angle_to_turn))
+                    print(insts)
                     client.publish("start-instruction", "%s,%s" % ("r", round(angle_to_turn)), qos=2)
                     return
             # robot_direction = 0 if facing south, 1 if facing west, 2 if facing north, 3 if facing east
             robot_direction = round((int(robot_angle) % 360) / 90) % 4
             if len(insts) != 0:
+                got_valid_inst = False
                 next_inst = insts.pop(0)
-                if type(next_inst) is not tuple:
-                    next_inst = convert_orientation_inst_to_rotation(next_inst)
-                    if abs(int(next_inst.split(",")[1])) > 5:
-                        robot_rotating = True
-                        client.publish("start-instruction", next_inst, qos=2)
-                else:
-                    if next_inst[0] == "m":
-                        print("pos: %s, square_length: %s" % (str(global_robot_pos), str(square_length)))
-                        distance = next_inst[1] * square_length
-                        robot_target = list(global_robot_pos)
-                        # up
-                        if robot_direction == 0:
-                            robot_target[1] -= distance
-                        # right
-                        if robot_direction == 1:
-                            robot_target[0] += distance
-                        # down
-                        if robot_direction == 2:
-                            robot_target[1] += distance
-                        # left
-                        if robot_direction == 3:
-                            robot_target[0] -= distance
-                        robot_target = tuple(robot_target)
-                        robot_moving = True
-                    if next_inst[0] == "r":
-                        expected_end_angle = robot_angle + next_inst[1]
-                        robot_rotating = True
-                    start_pos = global_robot_pos
-                    original_goal = robot_target
-                    client.publish("start-instruction", "%s,%s" % next_inst, qos=2)
-                print("TOLD TO DO %s" % str(next_inst))
+                while not got_valid_inst:
+                    if type(next_inst) is not tuple:
+                        next_inst = convert_orientation_inst_to_rotation(next_inst)
+                        if abs(int(next_inst.split(",")[1])) > 5:
+                            robot_rotating = True
+                            print("1. TOLD TO DO %s" % str(next_inst))
+                            print(insts)
+                            client.publish("start-instruction", next_inst, qos=2)
+                            got_valid_inst = True
+                        else:
+                            next_inst = insts.pop(0)
+                    else:
+                        if next_inst[0] == "m":
+                            print("pos: %s, square_length: %s" % (str(global_robot_pos), str(square_length)))
+                            distance = next_inst[1] * square_length
+                            robot_target = list(global_robot_pos)
+                            # up
+                            if robot_direction == 0:
+                                robot_target[1] -= distance
+                            # right
+                            if robot_direction == 1:
+                                robot_target[0] += distance
+                            # down
+                            if robot_direction == 2:
+                                robot_target[1] += distance
+                            # left
+                            if robot_direction == 3:
+                                robot_target[0] -= distance
+                            robot_target = tuple(robot_target)
+                            robot_moving = True
+                        if next_inst[0] == "r":
+                            expected_end_angle = robot_angle + next_inst[1]
+                            robot_rotating = True
+                        start_pos = global_robot_pos
+                        original_goal = robot_target
+                        print("2. TOLD TO DO %s" % str(next_inst))
+                        print(insts)
+                        client.publish("start-instruction", "%s,%s" % next_inst, qos=2)
+                        got_valid_inst = True
                 print("INSTRUCTIONS REMAINING %s" % str(insts))
-        elif msg.topic == "ping-pong":
-            if msg.payload.decode() == "ping":
-                if alive:
-                    client.publish("ping-pong", "pong", qos=2)
-                else:
-                    client.publish("ping-pong", "crashed", qos=2)
 
     except:
         print("Error")
@@ -265,6 +275,7 @@ class Unwarper:
 
         self.mqtt = mqtt.Client("PathCommunicator")
         self.mqtt.on_connect = on_connect
+        self.mqtt.on_disconnect = on_disconnect
         self.mqtt.on_message = on_message
         self.mqtt.connect("129.215.3.65")
         self.mqtt.loop_start()
@@ -359,6 +370,8 @@ class Unwarper:
             next_inst = insts.pop(0)
             next_inst = convert_orientation_inst_to_rotation(next_inst)
             if abs(int(next_inst.split(",")[1])) > 5:
+                print("3. TOLD TO DO %s" % str(next_inst))
+                print(insts)
                 self.mqtt.publish("start-instruction", next_inst, qos=2)
                 robot_rotating = True
             else:
@@ -379,16 +392,20 @@ class Unwarper:
                     robot_target[0] -= distance
                 robot_target = tuple(robot_target)
                 robot_moving = True
+                print("4. TOLD TO DO %s" % str(next_inst))
+                print(insts)
                 self.mqtt.publish("start-instruction", "%s,%s" % next_inst, qos=2)
-            print("TOLD TO DO %s" % str(next_inst))
 
-    def check_robot_at_target(self, robot_pos):
+    def check_robot_at_target(self, robot_pos, local_robot_angle):
         global robot_target
         global robot_moving
         global robot_direction
+        global robot_rotating
         global square_length
         global insts
+        global path
         global initial_dist_to_target
+        # Check if robot at target
         if robot_moving and robot_pos[0] is not None and robot_pos[1] is not None and robot_direction is not None:
             dist_to_target = None
             # up
@@ -405,7 +422,7 @@ class Unwarper:
                 dist_to_target = robot_pos[0] - robot_target[0]
             if initial_dist_to_target is None:
                 initial_dist_to_target = dist_to_target
-            print("DIST TO TARGET IS %s" % dist_to_target)
+            # print("DIST TO TARGET IS %s" % dist_to_target)
             if dist_to_target < 16 or (initial_dist_to_target < 16 and dist_to_target < (initial_dist_to_target / 2)):
                 self.mqtt.publish("start-instruction", "s", qos=2)
                 print("TOLD TO STOP")
@@ -413,6 +430,19 @@ class Unwarper:
                 # while len(insts) == 0:
                 #    self.set_random_target(robot_pos)
                 #    print("NEW GOAL IS %s" % str(goal_pos))
+        # Check if robot deviated from path
+        if robot_moving and robot_pos[0] is not None and robot_pos[1] is not None and local_robot_angle is not None:
+            closest = float('inf')
+            grid_robot_pos = tuple([i / shift_amount for i in robot_pos])
+            for node in path:
+                x, y = node.pos
+                # Add 0.5 as we want robot to be in centre of each square
+                if math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2) < closest:
+                    closest = math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2)
+            if closest > 3:
+                self.mqtt.publish("start-instruction", "s", qos=2)
+                print("TOLD TO STOP")
+                initial_dist_to_target = None
 
     def set_random_target(self, robot_pos):
         global goal_pos
@@ -446,17 +476,6 @@ class Unwarper:
         if frm_dec[0] is not None:
             if path is None and robot_angle is not None and not reached_goal:
                 self.determine_new_path(graph, to, tuple([round(i) for i in frm_dec]))
-            '''
-            elif path is not None:
-                path_broken = False
-                for node in path:
-                    x, y = node.pos
-                    if search_graph[y][x] == 1:
-                        path_broken = True
-                        break
-                if path_broken:
-                    self.determine_new_path(graph, to, tuple([round(i) for i in frm_dec]))
-            '''
 
     def find_nearest_free_cells(self, search_graphs, robot_pos):
         global up_left_down_right
@@ -472,14 +491,17 @@ class Unwarper:
                     up_left_down_right[i][0] += delta[i][0]
                     up_left_down_right[i][1] += delta[i][1]
                     # If out of bounds there is no empty square to the left/right/up/down of the goal
-                    if up_left_down_right[i][1] < 0 or up_left_down_right[i][1] > len(search_graph) or \
-                            up_left_down_right[i][0] < 0 or up_left_down_right[i][1] > len(search_graph[0]):
+                    if up_left_down_right[i][1] < 0 or up_left_down_right[i][1] >= len(search_graph) or \
+                            up_left_down_right[i][0] < 0 or up_left_down_right[i][0] >= len(search_graph[0]):
                         up_left_down_right[i] = None
                         found[i] = True
                     else:
                         local_goal = tuple(up_left_down_right[i])
+                        if math.sqrt((local_goal[0] - goal_pos[0]) ** 2 + (local_goal[1] - goal_pos[1]) ** 2) > 40:
+                            up_left_down_right[i] = None
+                            found[i] = True
                         # If the cell is empty then this is the closest we can reach to the left/right/up/down of the goal
-                        if search_graph[local_goal[1]][local_goal[0]] == 0:
+                        elif search_graph[local_goal[1]][local_goal[0]] == 0:
                             _, path, _, _ = getInstructionsFromGrid(search_graphs[i], target=local_goal,
                                                                     start=robot_pos,
                                                                     upside_down=True)
@@ -509,10 +531,8 @@ class Unwarper:
             global search_graph
             global global_robot_pos
             global robot_angle
-            global alive
-            alive = True
             count = 6
-            goal_pos = (265, 178)
+            goal_pos = (264, 169)
             new_goal = True
             cam = cv2.VideoCapture(0)
             set_res(cam, 1920, 1080)
@@ -562,9 +582,9 @@ class Unwarper:
                                 if up_left_down_right[current_goal_number] is not None:
                                     new_goal = False
                         self.count_visibility(robot_pos_dec[0] is not None)
-                        self.check_robot_at_target(robot_pos_dec)
+                        self.check_robot_at_target(robot_pos_dec, local_robot_angle)
                         if robot_pos_dec[0] is not None:
-                            print("ROBOT IS AT %s" % (str(robot_pos_dec)))
+                            # print("ROBOT IS AT %s" % (str(robot_pos_dec)))
                             robot_pos_dec = tuple([i / shift_amount for i in robot_pos_dec])
                             '''
                             if abs(robot_pos[0] - last_robot_pos_sent[0]) > 0.1 or abs(
@@ -588,7 +608,7 @@ class Unwarper:
                             self.find_path(search_graph, goal_pos, robot_pos_dec)
 
                         # cv2.imshow("search graph", np.array(search_graph, dtype=np.uint8) * np.uint8(255))
-                        # print(path)
+                        # print(insts)
                         # print(insts)
                         # time.sleep(100000)
                         cv2.imshow("search graph", np.array(search_graph_copy, dtype=np.uint8) * 255)
@@ -603,12 +623,16 @@ class Unwarper:
                         if cv2.waitKey(1) == 48:
                             cv2.imwrite("Vision/record_output/%s.jpg" % count, merged_img)
                             count += 1
-                        # time.sleep(0.1)
+                        if connected and i % 20 == 0:
+                            pass
+                            # self.mqtt.publish("ping-pong", "pong", qos=2)
+                            # print("PONG")
                         if first_iteration:
                             first_iteration = False
                 i += 1
         except:
-            alive = False
+            if connected:
+                self.mqtt.publish("ping-pong", "crashed", qos=2)
             traceback.print_exc()
 
     def static_unwarp(self, photo_path="Vision/Calibrated Pictures/*.jpg"):
