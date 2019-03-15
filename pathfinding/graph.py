@@ -56,7 +56,7 @@ class Graph:
 
                     # case: this is a 'bad' node
                     if current.getIsBad():
-                        cost_of_move+=30
+                        cost_of_move+= max(cost_of_move,30)
 
                     # add cost up to current node 
                     cost = cost_so_far[current] + cost_of_move
@@ -283,6 +283,10 @@ def mbd(node1, node2):
 
 
 # ====helpers======
+
+# If a node is nearby an obstacle, it has a higher penalty value, up to a max of MAX_PENALTY.
+# This algorithm calculates this value recursively. It is similar to depth-limited search, with
+# a limit of ~MAX_PENALTY
 MAX_PENALTY=3
 def findClosenessPenalty(node, current_depth):
     if current_depth == MAX_PENALTY+1:
@@ -323,9 +327,62 @@ def findClosenessPenalty(node, current_depth):
                 # remove flag now node's neighbours have been explored enough
                 node.setIsUnderConsideration(False)
                 return penalty
+
+
+# Idea to approximate this if this is too slow!
+# Don't check every possible path away from the node, just go in a straight line away from the node,
+# continuing in that direction for the rest of that recursive call, up to a depth of MAX_PENALTY.
+# Then if a wall is found, propagate the penalty value back, otherwise do nothing.
+# 
+# Will work in vast majority of cases. It fails on corners since the closes wall is diagonal to the curr node
+# However I think that since a corner is next to two walls, it will have already been avoiding the walls
+# and therefore the shortest path will end up staying away from the corner too!      
+##^^ function is as described above
+
+def findESTClosenessPenalty(node):
+    neighbours = node.getNeighbours()
+
+    if len(neighbours)<4:
+        # this node itself is an edge, max penalty
+        return MAX_PENALTY
+    
+    # otherwise, check penalties of surrounding nodes
+    penalty = 0
+    for (n,dir) in neighbours:
+        penalty = max(penalty,check_for_walls(n,dir,MAX_PENALTY-1))
+    return penalty
+
+# keeps checking neighbours in a set direction, until an edge node is found, or a certian depth is reached
+def check_for_walls(node,dir,depth):
+    current_penalty = depth
+    neighbours = node.getNeighbours()
+
+    # we check until the penalty would be 0
+    while current_penalty!=0:
+        if len(neighbours)<4:
+            #edge node, return penalty
+            return current_penalty
+        else:
+            # find neighbour in same direction
+            node = getNeighbourAtDir(neighbours,dir)
             
+            if node is None:
+                print("Graph.py: Node should have four neighbours, but there is no neighbour in direction %s!"%dir)
+                return 0
 
+            # node is further away => lower penalty
+            current_penalty-=1
 
+    # no walls within set depth, return 0
+    return 0
+
+# just gets a neighbour facing a certain direction, from a list of (node,direction) pairs
+# returns None if there is no node at that direction
+def getNeighbourAtDir(neighbours,target_dir):
+    for (n,n_dir) in neighbours:
+        if n_dir==target_dir:
+            return n
+    return None
 
 # up is opposite of down, etc
 def invert(d):
