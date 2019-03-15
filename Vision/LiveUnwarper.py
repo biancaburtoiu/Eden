@@ -423,7 +423,7 @@ class Unwarper:
             if initial_dist_to_target is None:
                 initial_dist_to_target = dist_to_target
             # print("DIST TO TARGET IS %s" % dist_to_target)
-            if dist_to_target < 16 or (initial_dist_to_target < 16 and dist_to_target < (initial_dist_to_target / 2)):
+            if dist_to_target < 16 or (initial_dist_to_target < 16 and dist_to_target < (initial_dist_to_target / 4)):
                 self.mqtt.publish("start-instruction", "s", qos=2)
                 print("TOLD TO STOP")
                 initial_dist_to_target = None
@@ -439,7 +439,7 @@ class Unwarper:
                 # Add 0.5 as we want robot to be in centre of each square
                 if math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2) < closest:
                     closest = math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2)
-            if closest > 3:
+            if closest > 6:
                 self.mqtt.publish("start-instruction", "s", qos=2)
                 print("TOLD TO STOP")
                 initial_dist_to_target = None
@@ -532,7 +532,8 @@ class Unwarper:
             global global_robot_pos
             global robot_angle
             count = 6
-            goal_pos = (264, 169)
+            # goal_pos = (264, 169)
+            goal_pos = (128, 48)
             new_goal = True
             cam = cv2.VideoCapture(0)
             set_res(cam, 1920, 1080)

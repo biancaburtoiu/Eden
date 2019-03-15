@@ -2,7 +2,7 @@ import queue as Q
 from math import sqrt
 from sys import argv
 #from pathfinding import dirToInst
-import dirToInst
+from pathfinding import dirToInst
 
 # ================= Graph class: references root node, and provides operations==
 class Graph:
@@ -52,7 +52,7 @@ class Graph:
                     
                     # case: this node is 'close' to a wall
                     if penalty>0:
-                        cost_of_move+=40*penalty
+                        cost_of_move+=28*penalty
 
                     # case: this is a 'bad' node
                     if current.getIsBad():
@@ -287,7 +287,7 @@ def mbd(node1, node2):
 # If a node is nearby an obstacle, it has a higher penalty value, up to a max of MAX_PENALTY.
 # This algorithm calculates this value recursively. It is similar to depth-limited search, with
 # a limit of ~MAX_PENALTY
-MAX_PENALTY=3
+MAX_PENALTY=20
 def findClosenessPenalty(node, current_depth):
     if current_depth == MAX_PENALTY+1:
         # if there was an edge, we would have found it by now
