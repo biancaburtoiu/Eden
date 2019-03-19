@@ -2,42 +2,36 @@
 from __future__ import division
 from __future__ import absolute_import
 import numpy as np
-import argparse
 import imutils
-import glob
 import cv2
-from enum import Enum
 from itertools import izip
+
+import argparse
+
+import glob
+
+from enum import Enum
+
 
 # This code is written to be run in commond line
 
 
-# construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument(u"-t", u"--template", required=True, help=u"Path to template image")
-ap.add_argument(u"-i", u"--images", required=True,
-                help=u"Path to images where template will be matched")
-ap.add_argument(u"-v", u"--visualize",
-                help=u"Flag indicating whether or not to visualize each iteration")
-args = vars(ap.parse_args())
+# # construct the argument parser and parse the arguments
+# ap = argparse.ArgumentParser()
+# ap.add_argument(u"-t", u"--template", required=True, help=u"Path to template image")
+# ap.add_argument(u"-i", u"--images", required=True,
+#                 help=u"Path to images where template will be matched")
+# ap.add_argument(u"-v", u"--visualize",
+#                 help=u"Flag indicating whether or not to visualize each iteration")
+# args = vars(ap.parse_args())
 
 # load the image image, convert it to grayscale, and detect edges
+
 template = cv2.imread(args[u"template"])
 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
 
-
-class LOGO(Enum):
-    no = 0
-    one = 1
-    two = 2
-    three = 3
-    four = 4
-    five = 5
-    six = 6
-    seven = 7
-    fail = 4
 
 
 def color_detection(image):
@@ -66,19 +60,19 @@ def color_detection(image):
 
     (contours, _) = cv2.findContours(masky, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
     if len(contours) != 1:
-        return False, LOGO.no
+        return False, -1
     cx = None
     cy = None
     for c in contours:
         # compute the center of the contour
         m = cv2.moments(c)
         if m[u"m00"] == 0:
-            return False, LOGO.no
+            return False, -1
         cx = int(m[u"m10"] / m[u"m00"])
         cy = int(m[u"m01"] / m[u"m00"])
     x_r, y_r = cx / x, cy / y
     if x_r <= 0.28 or x_r >= 0.72 or y_r >= 0.72 or y_r <= 0.28:
-        return False, LOGO.no
+        return False, -1
     # upper mask (170-180)
     lower_red = np.array([170, 50, 50])
     upper_red = np.array([180, 255, 255])
@@ -97,38 +91,38 @@ def color_detection(image):
     R = len(contours)
 
     if (R + B) != 6:
-        return False, LOGO.no
+        return False, -1
     if len(contours) == 1:
-        return True, LOGO.one
+        return True, 1
     if len(contours) == 2:
-        return True, LOGO.two
+        return True, 2
     if len(contours) == 3:
-        return True, LOGO.three
+        return True, 3
     if len(contours) == 4:
-        return True, LOGO.four
+        return True, 4
     if len(contours) == 5:
-        return True, LOGO.five
+        return True, 5
     if len(contours) == 6:
-        return True, LOGO.six
+        return True, 6
     if len(contours) == 0:
-        return True, LOGO.seven
-    return False, LOGO.no
+        return True, 7
+    return False, -1
 
 
 def mark_logo(Logo, startX, endX, location):
-    if Logo == LOGO.one:
+    if Logo == 1:
         location[0] = (startX + endX)/2
-    if Logo == LOGO.two:
+    if Logo == 2:
         location[1] = (startX + endX)/2
-    if Logo == LOGO.three:
+    if Logo == 3:
         location[2] = (startX + endX)/2
-    if Logo == LOGO.four:
+    if Logo == 4:
         location[3] = (startX + endX)/2
-    if Logo == LOGO.five:
+    if Logo == 5:
         location[4] = (startX + endX)/2
-    if Logo == LOGO.six:
+    if Logo == 6:
         location[5] = (startX + endX)/2
-    if Logo == LOGO.seven:
+    if Logo == 7:
         location[6] = (startX + endX)/2
 
 
@@ -270,10 +264,10 @@ def get_location(image):
     return location
 
 
-# loop over the images to find the template in
-for imagePath in glob.glob(args[u"images"] + u"/*.jpg"):
-    # load the image, convert it to grayscale, and initialize the
-    # bookkeeping variable to keep track of the matched region
-    image = cv2.imread(imagePath)
-    location = get_location(image)
-    print location
+# # loop over the images to find the template in
+# for imagePath in glob.glob(args[u"images"] + u"/*.jpg"):
+#     # load the image, convert it to grayscale, and initialize the
+#     # bookkeeping variable to keep track of the matched region
+#     image = cv2.imread(imagePath)
+#     location = get_location(image)
+#     print location
