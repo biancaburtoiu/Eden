@@ -19,11 +19,11 @@ public class Plant {
 
     }
 
-    public Plant(String name, String species, List<Integer> photo){
-        Name=name;
-        Species=species;
-        Photo=photo;
-    }
+//    public Plant(String name, String species, List<Integer> photo){
+//        Name=name;
+//        Species=species;
+//        Photo=photo;
+//    }
 
     public Plant(String name, String species, List<Integer> photo, Float xcoordinate, Float ycoordinate){
         Name=name;

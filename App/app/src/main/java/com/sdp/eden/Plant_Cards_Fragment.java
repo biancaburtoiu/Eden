@@ -243,7 +243,8 @@ public class Plant_Cards_Fragment extends Fragment {
                 builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        String currentPlant = plantSelect.getSelectedItem().toString();
+                        String currentPlantName = plantSelect.getSelectedItem().toString();
+                        Plant currentPlant = plants.stream().filter(p -> p.getName() == currentPlantName).findFirst().orElse(null);
 
                         // getMinute is in 0-59 interval. The code below adds a 0 ahead of the minutes 0-9
                         // Result: 20:01 instead of 20:1
@@ -269,11 +270,12 @@ public class Plant_Cards_Fragment extends Fragment {
                             default: dayToNumber=6; break;
                         }
 
-                        ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlant, quantity, time);
+                        ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
+                                                            currentPlant.getXCoordinate(), currentPlant.getYCoordinate());
                         DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                             @Override
                             public void onAddScheduleEntryFinished(boolean success) {
-                                Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
+                                Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlantName +
                                         " on "+selectedDay+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
                             }
                         });
