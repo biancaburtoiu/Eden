@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from scipy.ndimage.filters import uniform_filter
 
 
 # Draw a grid with the specified cell lengths over an image
@@ -12,10 +13,7 @@ def add_grid_lines(img, cell_length=30):
 
 # Take a BGR binary image ([0,0,0] or [255,255,255]) and convert it to a 2D array to map where there is empty space
 # and where there is objects
-def convert_thresh_to_map(img, cell_length=30, shift_amount=5, visualize=False):
-    # For visualizing the graph we must have shift amout equal to cell length
-    if visualize:
-        cell_length = shift_amount
+def convert_thresh_to_map_slow(img, cell_length=30, shift_amount=5, visualize=False):
     result = []
     # (y,x) indicates the position of the top left of the cell
     # On each iteration shift where to position the top left of the cell by the shift_amount specified
@@ -40,3 +38,24 @@ def convert_thresh_to_map(img, cell_length=30, shift_amount=5, visualize=False):
     if visualize:
         result = np.array(result)
     return result
+
+
+# Take a BGR binary image ([0,0,0] or [255,255,255]) and convert it to a 2D array to map where there is empty space
+# and where there is objects
+def convert_thresh_to_map(img, cell_length=30, shift_amount=5, visualize=False):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    conv_img = uniform_filter(img, size=cell_length, mode="constant", cval=1)
+    binary_conv = np.ones(shape=(img.shape[0], img.shape[1]), dtype=np.uint8)
+    binary_conv[np.where(conv_img == 0)] = 0
+    if visualize:
+        binary_conv = binary_conv * 255
+        binary_conv = cv2.cvtColor(binary_conv, cv2.COLOR_GRAY2BGR)
+    else:
+        binary_conv = binary_conv.tolist()
+    return binary_conv
+
+
+# Convert image to grayscale
+# Use scipy.ndimage.filters.convolve
+# Create binary mask of where non zero
+# Have numpy array of black pixels and set to white wherever true
