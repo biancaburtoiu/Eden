@@ -243,8 +243,6 @@ public class Plant_Cards_Fragment extends Fragment {
                 builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-
-                        // TODO: modify this to grab plant somehow!!!
                         String currentPlant = plantSelect.getSelectedItem().toString();
 
                         // getMinute is in 0-59 interval. The code below adds a 0 ahead of the minutes 0-9
@@ -260,13 +258,23 @@ public class Plant_Cards_Fragment extends Fragment {
                         int quantity = Integer.parseInt(quantityInput.getText().toString());
 
                         String selectedDay = dayOfWeekPicker.getSelectedItem().toString();
+                        int dayToNumber;
+                        switch (selectedDay) {
+                            case "Monday": dayToNumber=0; break;
+                            case "Tuesday": dayToNumber=1; break;
+                            case "Wednesday": dayToNumber=2; break;
+                            case "Thursday": dayToNumber=3; break;
+                            case "Friday": dayToNumber=4; break;
+                            case "Saturday": dayToNumber=5; break;
+                            default: dayToNumber=6; break;
+                        }
 
-                        ScheduleEntry scheduleEntry = new ScheduleEntry(selectedDay,currentPlant, quantity, time);
+                        ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlant, quantity, time);
                         DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                             @Override
                             public void onAddScheduleEntryFinished(boolean success) {
                                 Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlant +
-                                        " on "+scheduleEntry.getDay()+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                        " on "+selectedDay+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
