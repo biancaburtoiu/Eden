@@ -10,6 +10,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.WriteBatch;
@@ -68,29 +69,6 @@ public class DbOps {
                             Log.d(TAG, "Get PlantList successful!");
                             List<Plant> plants = task.getResult().toObjects(Plant.class);
                             listener.onGetPlantListFinished(plants);
-                        }
-                    }
-                });
-    }
-
-    void addScheduleEntry(ScheduleEntry scheduleEntry, onAddScheduleEntryFinishedListener listener){
-        // Sets the name of the database document to something user-friendly
-        String scheduleString = scheduleEntry.getDay()+"-"+scheduleEntry.getTime();
-
-        db.collection("Users")
-                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
-                .collection("Schedules")
-                .document(scheduleString).set(scheduleEntry)
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (task.isSuccessful()) {
-                            listener.onAddScheduleEntryFinished(true);
-                            Log.d(TAG, "Schedule for plant: "+scheduleEntry.getPlantName()+" successfully added to database!");
-                        }
-                        else {
-                            listener.onAddScheduleEntryFinished(false);
-                            Log.d(TAG, "Could not add schedule entry for plant: "+scheduleEntry.getPlantName()+" to database.");
                         }
                     }
                 });
@@ -194,6 +172,43 @@ public class DbOps {
         });
     }
 
+    void addScheduleEntry(ScheduleEntry scheduleEntry, onAddScheduleEntryFinishedListener listener){
+        // Sets the name of the database document to something user-friendly
+        String scheduleString = scheduleEntry.getDay()+"-"+scheduleEntry.getTime();
+
+        WriteBatch batch = db.batch();
+
+        // Creates document in Schedules collection
+        DocumentReference setter = db.collection("Users")
+                                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                                .collection("Schedules")
+                                .document(scheduleString);
+        batch.set(setter, scheduleEntry);
+
+        // Adds data to Schedules document
+        DocumentReference updater = db.collection("Users")
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .collection("Schedules")
+                .document("Schedules");
+        batch.update(updater, "names", FieldValue.arrayUnion(scheduleString));
+
+        batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            listener.onAddScheduleEntryFinished(true);
+                            Log.d(TAG, "Schedule for plant: "+scheduleEntry.getPlantName()+" successfully added to database!");
+                            Log.d(TAG, "Schedules document successfully updated.");
+                        }
+                        else {
+                            listener.onAddScheduleEntryFinished(false);
+                            Log.d(TAG, "Could not add schedule entry for plant: "+scheduleEntry.getPlantName()+" to database.");
+                            Log.d(TAG, "Could not update schedules document.");
+                        }
+                    }
+                });
+    }
+
     void editPlantName(Plant oldPlant, String newName, onEditPlantFinishedListener listener) {
         WriteBatch batch = db.batch();
 
@@ -202,7 +217,8 @@ public class DbOps {
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
                 .document(newName);
-        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto()));
+        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto(),
+                oldPlant.getXCoordinate(), oldPlant.getYCoordinate()));
 
         // Remove current plant document
         DocumentReference remover = db.collection("Users")
@@ -233,7 +249,8 @@ public class DbOps {
                                         .collection("Schedules")
                                         .document(scheduleString);
                         batch.set(scheduleToUpdate, new ScheduleEntry(scheduleEntry.getDay(), newName,
-                                scheduleEntry.getQuantity(), scheduleEntry.getTime()));
+                                scheduleEntry.getQuantity(), scheduleEntry.getTime(),
+                                scheduleEntry.getPlantXCoordinate(), scheduleEntry.getPlantYCoordinate()));
                     }
                 }
 
