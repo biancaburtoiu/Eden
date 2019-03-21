@@ -2,7 +2,7 @@ import queue as Q
 from math import sqrt
 from sys import argv
 #from pathfinding import dirToInst
-import dirToInst
+from pathfinding import dirToInst
 
 # ================= Graph class: references root node, and provides operations==
 class Graph:
@@ -48,15 +48,15 @@ class Graph:
                     
                     # case: passing through this node means turning
                     if current in parent.keys() and parent[current].neighbourToDir(current) !=dirToNeighbour:
-                        cost_of_move += 40
+                        cost_of_move += 60
                     
                     # case: this node is 'close' to a wall
                     if penalty>0:
-                        cost_of_move+=40*penalty
+                        cost_of_move+=4*penalty
 
                     # case: this is a 'bad' node
                     if current.getIsBad():
-                        cost_of_move+= max(cost_of_move,30)
+                        cost_of_move+= max(cost_of_move,60)
 
                     # add cost up to current node 
                     cost = cost_so_far[current] + cost_of_move
@@ -287,7 +287,7 @@ def mbd(node1, node2):
 # If a node is nearby an obstacle, it has a higher penalty value, up to a max of MAX_PENALTY.
 # This algorithm calculates this value recursively. It is similar to depth-limited search, with
 # a limit of ~MAX_PENALTY
-MAX_PENALTY=3
+MAX_PENALTY=20
 def findClosenessPenalty(node, current_depth):
     if current_depth == MAX_PENALTY+1:
         # if there was an edge, we would have found it by now
@@ -439,10 +439,10 @@ def getPathLengthFromGrid(grid, target, start=(0, 0),upside_down=False):
     return length, path, dirs
 
 # 
-def getInstructionsFromGrid(grid,target,start=(0,0),upside_down=False):
+def getInstructionsFromGrid(grid,target,start=(0,0),upside_down=False, bad_node_ranges=[]):
     if target is not None:
         graph = Graph()
-        graph.graphFromGrid(start, grid,upside_down)
+        graph.graphFromGrid(start, grid,upside_down, bad_node_ranges)
         path, dirs = graph.searchGraph(target)
         length = 0
         if path is not None:
