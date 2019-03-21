@@ -48,15 +48,15 @@ class Graph:
                     
                     # case: passing through this node means turning
                     if current in parent.keys() and parent[current].neighbourToDir(current) !=dirToNeighbour:
-                        cost_of_move += 40
+                        cost_of_move += 60
                     
                     # case: this node is 'close' to a wall
                     if penalty>0:
-                        cost_of_move+=28*penalty
+                        cost_of_move+=4*penalty
 
                     # case: this is a 'bad' node
                     if current.getIsBad():
-                        cost_of_move+= max(cost_of_move,30)
+                        cost_of_move+= max(cost_of_move,60)
 
                     # add cost up to current node 
                     cost = cost_so_far[current] + cost_of_move
@@ -425,9 +425,9 @@ def getPathLengthFromGrid(grid, target, start=(0, 0),upside_down=False):
     return length, path, dirs
 
 # 
-def getInstructionsFromGrid(grid,target,start=(0,0),upside_down=False):
+def getInstructionsFromGrid(grid,target,start=(0,0),upside_down=False,bad_nodes=[]):
     graph = Graph()
-    graph.graphFromGrid(start, grid,upside_down)
+    graph.graphFromGrid(start, grid,upside_down,bad_nodes)
     path, dirs = graph.searchGraph(target)
     length = 0
     if path is not None:
