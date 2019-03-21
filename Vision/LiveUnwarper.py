@@ -56,6 +56,12 @@ global initial_dist_to_target
 initial_dist_to_target = None
 global connected
 connected = False
+global bad_nodes
+bad_nodes = [(x, y) for x in range(0, 101) for y in range(99, 125)] + [(x, y) for x in range(100, 321) for
+                                                                            y in range(93, 131)] \
+                 + [(x, y) for x in range(154, 183) for y in range(0, 94)] + [(x, y) for x in range(98, 128) for
+                                                                              y in range(124, 231)]
+bad_nodes = list(set([(round(x / shift_amount), round(y / shift_amount)) for (x, y) in bad_nodes]))
 
 # QA vars
 global start_pos
@@ -147,23 +153,24 @@ def on_message(client, userdata, msg):
             robot_was_rotating = robot_rotating
             robot_moving = False
             robot_rotating = False
-            print("DISTANCE TO GOAL IS %s" % math.sqrt(
-                (goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2))
-            if math.sqrt((goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2) < 20:
-                insts = []
-                path = None
-                initial_dist_to_target = None
-                # possible_goals = [(136, 44), (166, 209), (45, 179), (286, 75), (277, 194), (209, 158), (41, 109)]
-                # goal_pos = random.choice(possible_goals)
-                current_goal_number += 1
-                while current_goal_number < 3 and up_left_down_right[current_goal_number] is None:
+            if goal_pos is not None:
+                print("DISTANCE TO GOAL IS %s" % math.sqrt(
+                    (goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2))
+                if math.sqrt((goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2) < 20:
+                    insts = []
+                    path = None
+                    initial_dist_to_target = None
+                    # possible_goals = [(136, 44), (166, 209), (45, 179), (286, 75), (277, 194), (209, 158), (41, 109)]
+                    # goal_pos = random.choice(possible_goals)
                     current_goal_number += 1
-                if current_goal_number == 4:
-                    reached_goal = True
-                else:
-                    print("SET GOAL TO %s" % current_goal_number)
-                    goal_pos = up_left_down_right[current_goal_number]
-                return
+                    while current_goal_number < 3 and up_left_down_right[current_goal_number] is None:
+                        current_goal_number += 1
+                    if current_goal_number == 4:
+                        reached_goal = True
+                    else:
+                        print("SET GOAL TO %s" % current_goal_number)
+                        goal_pos = up_left_down_right[current_goal_number]
+                    return
             if robot_was_moving:
                 count_diff_target(start_pos, global_robot_pos, original_goal)
                 path_broken = False
@@ -181,8 +188,8 @@ def on_message(client, userdata, msg):
                         break
                 print(str(grid_robot_pos))
                 print("CLOSEST IS %s" % closest)
-                if path_broken or closest > 3:
-                    frm = tuple([round(i) for i in grid_robot_pos])
+                frm = tuple([round(i) for i in grid_robot_pos])
+                if path_broken or (closest > 6 and frm not in bad_nodes):
                     _, path, _, insts = getInstructionsFromGrid(search_graph, target=goal_pos, start=frm,
                                                                 upside_down=True)
             if robot_was_rotating:
@@ -439,7 +446,7 @@ class Unwarper:
                 # Add 0.5 as we want robot to be in centre of each square
                 if math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2) < closest:
                     closest = math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2)
-            if closest > 6:
+            if closest > 6 and tuple([round(i) for i in grid_robot_pos]) not in bad_nodes:
                 self.mqtt.publish("start-instruction", "s", qos=2)
                 print("TOLD TO STOP")
                 initial_dist_to_target = None
@@ -532,8 +539,8 @@ class Unwarper:
             global global_robot_pos
             global robot_angle
             count = 6
-            # goal_pos = (264, 169)
-            goal_pos = (128, 48)
+            #goal_pos = (116, 40)
+            goal_pos = None
             new_goal = True
             cam = cv2.VideoCapture(0)
             set_res(cam, 1920, 1080)
@@ -551,8 +558,8 @@ class Unwarper:
                     thresh_merged_img = self.stitch_one_two_three_and_four(img, thresh=True)
                     if merged_img is not None:
                         cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
-                        cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
-                        cv2.imshow('3. merged', merged_img)
+                        # cv2.imshow('1.5. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
+                        cv2.imshow('2. merged', merged_img)
                         robot_pos_dec, local_robot_angle = self.robot_finder.find_robot(merged_img)
                         if local_robot_angle is not None:
                             robot_angle = local_robot_angle
@@ -565,7 +572,7 @@ class Unwarper:
                             upper_j = round(global_robot_pos[0] + 24)
                             thresh_merged_img[lower_i:upper_i, lower_j:upper_j, :] = np.zeros(
                                 thresh_merged_img[lower_i:upper_i, lower_j:upper_j, :].shape, dtype=np.uint8)
-                        cv2.imshow('4. thresholded', thresh_merged_img)
+                        cv2.imshow('3. edges', thresh_merged_img)
                         object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                      cell_length=cell_length,
                                                                      visualize=True)
@@ -574,7 +581,7 @@ class Unwarper:
                         search_graph_copy = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                           cell_length=cell_length)
                         if robot_pos_dec[0] is not None and robot_pos_dec[1] is not None:
-                            if new_goal and not first_iteration:
+                            if new_goal and not first_iteration and goal_pos is not None:
                                 search_graphs = [
                                     Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                   cell_length=cell_length) for x in range(4)]
@@ -612,7 +619,7 @@ class Unwarper:
                         # print(insts)
                         # print(insts)
                         # time.sleep(100000)
-                        cv2.imshow("search graph", np.array(search_graph_copy, dtype=np.uint8) * 255)
+                        cv2.imshow("4. object graph", np.array(search_graph_copy, dtype=np.uint8) * 255)
                         if path is not None:
                             for node in path:
                                 x, y = node.pos
@@ -620,7 +627,7 @@ class Unwarper:
                             if path is not None:
                                 if len(path) != 0:
                                     object_graph[y][x] = np.array([0, 255, 0], dtype=np.uint8)
-                        cv2.imshow('6. object graph', object_graph)  # cv2.resize(object_graph, (0, 0), fx=6, fy=6))
+                        cv2.imshow('5. navigation graph', object_graph)  # cv2.resize(object_graph, (0, 0), fx=6, fy=6))
                         if cv2.waitKey(1) == 48:
                             cv2.imwrite("Vision/record_output/%s.jpg" % count, merged_img)
                             count += 1
@@ -649,7 +656,7 @@ class Unwarper:
                 cv2.imshow('1. raw', cv2.resize(img, (0, 0), fx=0.33, fy=0.33))
                 cv2.imshow('2. unwarped', cv2.resize(unwarp_img, (0, 0), fx=0.5, fy=0.5))
                 cv2.imshow('3. merged', merged_img)
-                cv2.imshow('4. thresholded', thresh_merged_img)
+                cv2.imshow('4. edges', thresh_merged_img)
                 cv2.waitKey()
 
     def camera_one_segment(self, original_img):
