@@ -95,7 +95,7 @@ class Graph:
     # takes a starting position pair, and a 2d bool grid of visitable squares
     # and turns it into a graph structure
     # A grid square is 0 iff the square is accessible
-    def graphFromGrid(self, start_pos, grid, upside_down=False, bad_nodes=[]):
+    def graphFromGrid(self, start_pos, grid, upside_down=False, bad_node_ranges=[]):
         # sychronise root note and starting position
         self.root.setPos(start_pos)
 
@@ -146,7 +146,7 @@ class Graph:
             for ((x, y), d) in neighbour_coords:
                 if grid[y][x] == 0:
                     # an unvisited, clear square. make a node and add it to stack
-                    if (x,y) in bad_nodes:
+                    if is_bad((x,y),bad_node_ranges) :
                         # if it's a bad node, mark it so
                         grid[y][x] = Node((x, y),True)
                     else:
@@ -395,6 +395,20 @@ def invert(d):
     else:
         return 'l'
 
+# takes a tuple (x,y), and a list of ranges of form ((x_low,x_high),(y_low,y_high)). returns true
+# iff x>=x_low and x<=x_high and y>=y_low and y<=y_high for at least one tuple in list_of_ranges.
+
+def is_bad(node_as_tuple,list_of_ranges):
+    for xy_range in list_of_ranges:
+        x_range,y_range = xy_range
+        x,y = node_as_tuple
+        if val_in_range(x,x_range) and val_in_range(y,y_range):
+            return True
+    return False
+
+def val_in_range(val,range_tuple):
+    low,high = range_tuple
+    return val >= low and val <= high
 
 # prints a grid
 def gridprint(grid):
@@ -426,15 +440,18 @@ def getPathLengthFromGrid(grid, target, start=(0, 0),upside_down=False):
 
 # 
 def getInstructionsFromGrid(grid,target,start=(0,0),upside_down=False):
-    graph = Graph()
-    graph.graphFromGrid(start, grid,upside_down)
-    path, dirs = graph.searchGraph(target)
-    length = 0
-    if path is not None:
-        length = len(path)
-    insts = dirToInst.main(dirs)
-
-    return length, path, dirs, insts
+    if target is not None:
+        graph = Graph()
+        graph.graphFromGrid(start, grid,upside_down)
+        path, dirs = graph.searchGraph(target)
+        length = 0
+        if path is not None:
+            length = len(path)
+        insts = dirToInst.main(dirs)
+        return length, path, dirs, insts
+    else:
+        # values that signify there is no path
+        return 0,None,[],[]
 
 
 # =====main=======
