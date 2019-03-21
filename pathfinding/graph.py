@@ -397,7 +397,6 @@ def invert(d):
 
 # takes a tuple (x,y), and a list of ranges of form ((x_low,x_high),(y_low,y_high)). returns true
 # iff x>=x_low and x<=x_high and y>=y_low and y<=y_high for at least one tuple in list_of_ranges.
-
 def is_bad(node_as_tuple,list_of_ranges):
     for xy_range in list_of_ranges:
         x_range,y_range = xy_range
@@ -440,10 +439,15 @@ def getPathLengthFromGrid(grid, target, start=(0, 0),upside_down=False):
 
 # 
 def getInstructionsFromGrid(grid,target,start=(0,0),upside_down=False, bad_node_ranges=[]):
+    # only act if we have a valid target
     if target is not None:
+        
+        # derive graph and path
         graph = Graph()
         graph.graphFromGrid(start, grid,upside_down, bad_node_ranges)
         path, dirs = graph.searchGraph(target)
+        
+        # derive instructions from path, and return
         length = 0
         if path is not None:
             length = len(path)
