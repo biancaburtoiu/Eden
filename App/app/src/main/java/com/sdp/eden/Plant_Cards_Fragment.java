@@ -95,7 +95,7 @@ public class Plant_Cards_Fragment extends Fragment {
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
 
         width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
-        height = (int)(getResources().getDisplayMetrics().heightPixels*0.60);
+        height = (int)(getResources().getDisplayMetrics().heightPixels*0.70);
 
         fab_addPlant.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -107,13 +107,17 @@ public class Plant_Cards_Fragment extends Fragment {
 
                 final EditText plantName = viewInflated.findViewById(R.id.plantName);
                 final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
+                final Spinner petalNumber = viewInflated.findViewById(R.id.petalNumber);
                 plantPic = viewInflated.findViewById(R.id.plantPic);
                 builder.setView(viewInflated);
 
                 // TODO: perhaps changing species to a short description of the plant (E.G. location or characteristic)
                 String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
+                String[] petals = new String[] {"# of Red petals", " 0 petals", "1 petals", "2 petals", "3 petals","4 petals","5 petals", "6 petals"};
                 ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
+                ArrayAdapter<String> petalAdapter = new ArrayAdapter<>(getContext(), R.layout.species_option, petals);
                 plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
+                petalNumber.setAdapter(petalAdapter);
 
                 plantPic.setOnClickListener(new View.OnClickListener() {
                     @Override
