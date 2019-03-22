@@ -48,15 +48,14 @@ class Graph:
                     
                     # case: passing through this node means turning
                     if current in parent.keys() and parent[current].neighbourToDir(current) !=dirToNeighbour:
-                        cost_of_move += 60
+                        cost_of_move += 80
+                        # case: this is also a 'bad' node
+                        if current.getIsBad():
+                            cost_of_move += 80
                     
                     # case: this node is 'close' to a wall
                     if penalty>0:
-                        cost_of_move+=4*penalty
-
-                    # case: this is a 'bad' node
-                    if current.getIsBad():
-                        cost_of_move+= max(cost_of_move,60)
+                        cost_of_move+=2*penalty
 
                     # add cost up to current node 
                     cost = cost_so_far[current] + cost_of_move

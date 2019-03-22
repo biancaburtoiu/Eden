@@ -16,7 +16,7 @@ import Vision.CamerasUnwarper
 import Vision.firebase_interaction as fbi
 from Vision import Gridify
 from Vision.Finder import RobotFinder
-from pathfinding.graph import getInstructionsFromGrid
+from pathfinding.graph import getInstructionsFromGrid, is_bad
 
 global robot_moving
 robot_moving = False
@@ -56,12 +56,12 @@ global initial_dist_to_target
 initial_dist_to_target = None
 global connected
 connected = False
-global bad_nodes
-bad_nodes = [(x, y) for x in range(0, 101) for y in range(99, 125)] + [(x, y) for x in range(100, 321) for
-                                                                            y in range(93, 131)] \
-                 + [(x, y) for x in range(154, 183) for y in range(0, 94)] + [(x, y) for x in range(98, 128) for
-                                                                              y in range(124, 231)]
-bad_nodes = list(set([(round(x / shift_amount), round(y / shift_amount)) for (x, y) in bad_nodes]))
+global stopping_distance
+stopping_distance = 16
+global bad_node_ranges
+bad_node_ranges = [((0, 100), (99, 124)), ((100, 320), (93, 130)), ((154, 182), (0, 93)), ((98, 127), (124, 230))]
+bad_node_ranges = [((x1 - stopping_distance, x2 + stopping_distance), (y1 - stopping_distance, y2 + stopping_distance))
+                   for ((x1, x2), (y1, y2)) in bad_node_ranges]
 
 # QA vars
 global start_pos
@@ -172,8 +172,8 @@ def on_message(client, userdata, msg):
                         goal_pos = up_left_down_right[current_goal_number]
                     return
             if robot_was_moving:
+                initial_dist_to_target = None
                 count_diff_target(start_pos, global_robot_pos, original_goal)
-                path_broken = False
                 closest = float('inf')
                 print(insts)
                 grid_robot_pos = tuple([i / shift_amount for i in global_robot_pos])
@@ -183,15 +183,12 @@ def on_message(client, userdata, msg):
                     # Add 0.5 as we want robot to be in centre of each square
                     if math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2) < closest:
                         closest = abs(x - grid_robot_pos[0]) + abs(y - grid_robot_pos[1])
-                    if search_graph[y][x] == 1:
-                        path_broken = True
-                        break
                 print(str(grid_robot_pos))
                 print("CLOSEST IS %s" % closest)
                 frm = tuple([round(i) for i in grid_robot_pos])
-                if path_broken or (closest > 6 and frm not in bad_nodes):
+                if closest > 6:
                     _, path, _, insts = getInstructionsFromGrid(search_graph, target=goal_pos, start=frm,
-                                                                upside_down=True)
+                                                                upside_down=True, bad_node_ranges=bad_node_ranges)
             if robot_was_rotating:
                 time.sleep(1)
                 angle_to_turn = (expected_end_angle - robot_angle) % 360
@@ -371,7 +368,35 @@ class Unwarper:
         global robot_rotating
         global robot_moving
         global robot_target
-        _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True)
+        if graph[frm[1]][frm[0]] == 1:
+            delta = [[0, -1], [-1, 0], [0, 1], [1, 0]]
+            poss_escapes = [frm, frm, frm, frm]
+            escape = False
+            while not escape:
+                poss_escapes = [(poss_escapes[i][0] - delta[i][0], poss_escapes[i][1] - delta[i][1]) for i in
+                                range(len(poss_escapes))]
+                removed = 0
+                for i in range(len(poss_escapes)):
+                    poss_escape = poss_escapes[i - removed]
+                    if poss_escape[0] < 0 or poss_escape[1] < 0 or \
+                            poss_escape[1] >= len(graph) or poss_escape[0] >= len(graph[0]):
+                        del poss_escapes[i]
+                        removed += 1
+                        continue
+                    if graph[poss_escape[1]][poss_escape[0]] == 0:
+                        start_x = min(frm[0],poss_escape[0])
+                        end_x = max(frm[0],poss_escape[0])
+                        start_y = min(frm[1],poss_escape[1])
+                        end_y = max(frm[1],poss_escape[1])
+                        for x in range(frm[0], poss_escape[0] + 1):
+                            for y in range(frm[1], poss_escape[1] + 1):
+                                graph[y][x] = 0
+                        escape = True
+                        break
+                if len(poss_escapes) == 0:
+                    break
+        _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True,
+                                                    bad_node_ranges=bad_node_ranges)
         print(str(insts))
         if not robot_rotating and not robot_moving and insts != []:
             next_inst = insts.pop(0)
@@ -429,11 +454,16 @@ class Unwarper:
                 dist_to_target = robot_pos[0] - robot_target[0]
             if initial_dist_to_target is None:
                 initial_dist_to_target = dist_to_target
+                # PRINTING
+                if initial_dist_to_target < stopping_distance:
+                    print("WILL GO %s" % stopping_distance)
+                else:
+                    print("WILL GO %s" % (initial_dist_to_target / 4))
             # print("DIST TO TARGET IS %s" % dist_to_target)
-            if dist_to_target < 16 or (initial_dist_to_target < 16 and dist_to_target < (initial_dist_to_target / 4)):
+            if dist_to_target < stopping_distance or (
+                    initial_dist_to_target < stopping_distance and dist_to_target < (initial_dist_to_target / 4)):
                 self.mqtt.publish("start-instruction", "s", qos=2)
-                print("TOLD TO STOP")
-                initial_dist_to_target = None
+                # print("TOLD TO STOP")
                 # while len(insts) == 0:
                 #    self.set_random_target(robot_pos)
                 #    print("NEW GOAL IS %s" % str(goal_pos))
@@ -446,10 +476,9 @@ class Unwarper:
                 # Add 0.5 as we want robot to be in centre of each square
                 if math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2) < closest:
                     closest = math.sqrt((x + 0.5 - grid_robot_pos[0]) ** 2 + (y + 0.5 - grid_robot_pos[1]) ** 2)
-            if closest > 6 and tuple([round(i) for i in grid_robot_pos]) not in bad_nodes:
+            if closest > 6 and not is_bad(tuple([round(i) for i in grid_robot_pos]), bad_node_ranges):
                 self.mqtt.publish("start-instruction", "s", qos=2)
-                print("TOLD TO STOP")
-                initial_dist_to_target = None
+                # print("TOLD TO STOP")
 
     def set_random_target(self, robot_pos):
         global goal_pos
@@ -511,7 +540,7 @@ class Unwarper:
                         elif search_graph[local_goal[1]][local_goal[0]] == 0:
                             _, path, _, _ = getInstructionsFromGrid(search_graphs[i], target=local_goal,
                                                                     start=robot_pos,
-                                                                    upside_down=True)
+                                                                    upside_down=True, bad_node_ranges=bad_node_ranges)
                             if path is not None:
                                 up_left_down_right[i] = tuple(up_left_down_right[i])
                                 found[i] = True
@@ -539,8 +568,8 @@ class Unwarper:
             global global_robot_pos
             global robot_angle
             count = 6
-            #goal_pos = (116, 40)
-            goal_pos = None
+            goal_pos = (117, 44)
+            # goal_pos = None
             new_goal = True
             cam = cv2.VideoCapture(0)
             set_res(cam, 1920, 1080)
@@ -549,10 +578,12 @@ class Unwarper:
             global square_length
             square_length = shift_amount
             first_iteration = True
+            first_robot_seen = True
+            start_thresh_merged_img = None
             while True:  # not reached_goal:
                 _, img = cam.read()
                 if i > 20:
-                    unwarp_img = self.unwarp_image(img)
+                    # unwarp_img = self.unwarp_image(img)
                     merged_img = self.stitch_one_two_three_and_four(img)
                     self.overhead_image = merged_img
                     thresh_merged_img = self.stitch_one_two_three_and_four(img, thresh=True)
@@ -572,6 +603,13 @@ class Unwarper:
                             upper_j = round(global_robot_pos[0] + 24)
                             thresh_merged_img[lower_i:upper_i, lower_j:upper_j, :] = np.zeros(
                                 thresh_merged_img[lower_i:upper_i, lower_j:upper_j, :].shape, dtype=np.uint8)
+                            if first_robot_seen:
+                                start_thresh_merged_img = copy.deepcopy(thresh_merged_img)
+                                first_robot_seen = False
+
+                        if start_thresh_merged_img is not None:
+                            thresh_merged_img = start_thresh_merged_img + thresh_merged_img
+                            thresh_merged_img[thresh_merged_img > 255] = 255
                         cv2.imshow('3. edges', thresh_merged_img)
                         object_graph = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                      cell_length=cell_length,
