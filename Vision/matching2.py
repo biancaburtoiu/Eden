@@ -17,18 +17,19 @@ from enum import Enum
 
 
 # # construct the argument parser and parse the arguments
-# ap = argparse.ArgumentParser()
-# ap.add_argument(u"-t", u"--template", required=True, help=u"Path to template image")
-# ap.add_argument(u"-i", u"--images", required=True,
-#                 help=u"Path to images where template will be matched")
-# ap.add_argument(u"-v", u"--visualize",
-#                 help=u"Flag indicating whether or not to visualize each iteration")
-# args = vars(ap.parse_args())
+ap = argparse.ArgumentParser()
+ap.add_argument(u"-t", u"--template", required=True, help=u"Path to template image")
+ap.add_argument(u"-i", u"--images", required=True,
+                help=u"Path to images where template will be matched")
+ap.add_argument(u"-v", u"--visualize",
+                help=u"Flag indicating whether or not to visualize each iteration")
+args = vars(ap.parse_args())
 
 # load the image image, convert it to grayscale, and detect edges
 
 template = cv2.imread(args[u"template"])
 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+template = imutils.resize(template, width=int(template.shape[1] * 0.5))
 template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
 
@@ -264,10 +265,10 @@ def get_location(image):
     return location
 
 
-# # loop over the images to find the template in
-# for imagePath in glob.glob(args[u"images"] + u"/*.jpg"):
-#     # load the image, convert it to grayscale, and initialize the
-#     # bookkeeping variable to keep track of the matched region
-#     image = cv2.imread(imagePath)
-#     location = get_location(image)
-#     print location
+# loop over the images to find the template in
+for imagePath in glob.glob(args[u"images"] + u"/*.jpg"):
+    # load the image, convert it to grayscale, and initialize the
+    # bookkeeping variable to keep track of the matched region
+    image = cv2.imread(imagePath)
+    location = get_location(image)
+    print location
