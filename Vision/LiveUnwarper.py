@@ -62,6 +62,8 @@ global bad_node_ranges
 bad_node_ranges = [((0, 100), (99, 124)), ((100, 320), (93, 130)), ((154, 182), (0, 93)), ((98, 127), (124, 230))]
 bad_node_ranges = [((x1 - stopping_distance, x2 + stopping_distance), (y1 - stopping_distance, y2 + stopping_distance))
                    for ((x1, x2), (y1, y2)) in bad_node_ranges]
+global final_turn
+final_turn = False
 
 # QA vars
 global start_pos
@@ -147,6 +149,7 @@ def on_message(client, userdata, msg):
     global reached_goal
     global current_goal_number
     global initial_dist_to_target
+    global final_turn
     try:
         if msg.topic == "finish-instruction":
             robot_was_moving = robot_moving
@@ -159,18 +162,32 @@ def on_message(client, userdata, msg):
                 if math.sqrt((goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2) < 20:
                     insts = []
                     path = None
+                    old_goal_pos = goal_pos
+                    goal_pos = None
                     initial_dist_to_target = None
-                    # possible_goals = [(136, 44), (166, 209), (45, 179), (286, 75), (277, 194), (209, 158), (41, 109)]
-                    # goal_pos = random.choice(possible_goals)
-                    current_goal_number += 1
-                    while current_goal_number < 3 and up_left_down_right[current_goal_number] is None:
-                        current_goal_number += 1
-                    if current_goal_number == 4:
-                        reached_goal = True
-                    else:
-                        print("SET GOAL TO %s" % current_goal_number)
-                        goal_pos = up_left_down_right[current_goal_number]
+                    angle_to_turn = ((math.degrees(
+                        math.atan2(old_goal_pos[0] - global_robot_pos[0],
+                                   (old_goal_pos[1] - global_robot_pos[1]) * -1))) % 360)
+                    if angle_to_turn > 180:
+                        angle_to_turn -= 360
+                    print("TOLD TO FINAL TURN - r,%s" % round(angle_to_turn))
+                    client.publish("start-instruction", "r,%s" % round(angle_to_turn), qos=2)
+                    final_turn = True
                     return
+            if final_turn:
+                final_turn = False
+                print("FINISHED FINAL TURN")
+                '''
+                current_goal_number += 1
+                while current_goal_number < 3 and up_left_down_right[current_goal_number] is None:
+                    current_goal_number += 1
+                if current_goal_number == 4:
+                    reached_goal = True
+                else:
+                    print("SET GOAL TO %s" % current_goal_number)
+                    goal_pos = up_left_down_right[current_goal_number]
+                '''
+                return
             if robot_was_moving:
                 initial_dist_to_target = None
                 count_diff_target(start_pos, global_robot_pos, original_goal)
@@ -189,6 +206,7 @@ def on_message(client, userdata, msg):
                 if closest > 6:
                     _, path, _, insts = getInstructionsFromGrid(search_graph, target=goal_pos, start=frm,
                                                                 upside_down=True, bad_node_ranges=bad_node_ranges)
+
             if robot_was_rotating:
                 time.sleep(1)
                 angle_to_turn = (expected_end_angle - robot_angle) % 360
@@ -384,10 +402,10 @@ class Unwarper:
                         removed += 1
                         continue
                     if graph[poss_escape[1]][poss_escape[0]] == 0:
-                        start_x = min(frm[0],poss_escape[0])
-                        end_x = max(frm[0],poss_escape[0])
-                        start_y = min(frm[1],poss_escape[1])
-                        end_y = max(frm[1],poss_escape[1])
+                        start_x = min(frm[0], poss_escape[0])
+                        end_x = max(frm[0], poss_escape[0])
+                        start_y = min(frm[1], poss_escape[1])
+                        end_y = max(frm[1], poss_escape[1])
                         for x in range(frm[0], poss_escape[0] + 1):
                             for y in range(frm[1], poss_escape[1] + 1):
                                 graph[y][x] = 0
@@ -568,7 +586,7 @@ class Unwarper:
             global global_robot_pos
             global robot_angle
             count = 6
-            goal_pos = (117, 44)
+            goal_pos = (272, 34)
             # goal_pos = None
             new_goal = True
             cam = cv2.VideoCapture(0)
