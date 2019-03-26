@@ -284,8 +284,12 @@ public class Plant_Cards_Fragment extends Fragment {
                         DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                             @Override
                             public void onAddScheduleEntryFinished(boolean success) {
-                                Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlantName +
+                                if (success)
+                                    Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlantName +
                                         " on "+selectedDay+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                else
+                                    Toast.makeText(getContext(), "Could not add watering schedule entry for "+ currentPlantName +".",
+                                            Toast.LENGTH_SHORT).show();
                             }
                         });
                     }

@@ -10,14 +10,17 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class DbOps {
     private static final String TAG = "DbOps";
@@ -73,27 +76,65 @@ public class DbOps {
                 });
     }
 
+
     void addScheduleEntry(ScheduleEntry scheduleEntry, onAddScheduleEntryFinishedListener listener){
         // Sets the name of the database document to something user-friendly
         String scheduleString = scheduleEntry.getDay()+"-"+scheduleEntry.getTime();
 
-        db.collection("Users")
+        WriteBatch batch = db.batch();
+
+        // Creates document in Schedules collection
+        DocumentReference setter = db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Schedules")
-                .document(scheduleString).set(scheduleEntry)
-                .addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        if (task.isSuccessful()) {
-                            listener.onAddScheduleEntryFinished(true);
-                            Log.d(TAG, "Schedule for plant: "+scheduleEntry.getPlantName()+" successfully added to database!");
-                        }
-                        else {
-                            listener.onAddScheduleEntryFinished(false);
-                            Log.d(TAG, "Could not add schedule entry for plant: "+scheduleEntry.getPlantName()+" to database.");
-                        }
-                    }
-                });
+                .document(scheduleString);
+        batch.set(setter, scheduleEntry);
+
+        // Creates Schedules document if it does not exist
+        Map <String, String> map = new HashMap<String, String>();
+        map.put("names", "");
+
+        DocumentReference creator = db.collection("Users")
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .collection("Schedules")
+                .document("Schedules");
+        batch.set(creator, map, SetOptions.mergeFields());
+
+        batch.commit().addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful()) {
+                    Log.d(TAG, "Task was successful, entering append");
+
+                    // Adds data to Schedules document
+                    db.collection("Users")
+                            .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                            .collection("Schedules")
+                            .document("Schedules")
+                            .update("names", FieldValue.arrayUnion(scheduleString))
+                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    if (task.isSuccessful()) {
+                                        listener.onAddScheduleEntryFinished(true);
+                                        Log.d(TAG, "Schedule for plant: "+scheduleEntry.getPlantName()+" successfully added to database!");
+                                        Log.d(TAG, "Schedules document successfully updated.");
+                                    }
+                                    else {
+                                        listener.onAddScheduleEntryFinished(false);
+                                        Log.d(TAG, "Failed before appending: "+scheduleEntry.getPlantName()+" to database.");
+                                        Log.d(TAG, "Could not update schedules document.");
+                                    }
+                                }
+                            });
+                }
+                else {
+                    listener.onAddScheduleEntryFinished(false);
+                    Log.d(TAG, "Could not add schedule entry for plant: "+scheduleEntry.getPlantName()+" to database.");
+                    Log.d(TAG, "Could not update schedules document.");
+                }
+            }
+        });
     }
 
     void getScheduleEntriesForPlant(Plant plant, OnGetSchedulesForPlantFinishedListener listener) {
@@ -352,5 +393,4 @@ public class DbOps {
     interface onSetWaterNowFinishedListener {
         void onSetWaterFinished(boolean success);
     }
-
 }
