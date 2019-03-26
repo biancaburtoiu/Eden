@@ -202,7 +202,7 @@ public class DbOps {
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
                 .document(newName);
-        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto()));
+        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto(), oldPlant.getNoOfPetals()));
 
         // Remove current plant document
         DocumentReference remover = db.collection("Users")
@@ -233,7 +233,7 @@ public class DbOps {
                                         .collection("Schedules")
                                         .document(scheduleString);
                         batch.set(scheduleToUpdate, new ScheduleEntry(scheduleEntry.getDay(), newName,
-                                scheduleEntry.getQuantity(), scheduleEntry.getTime()));
+                                scheduleEntry.getQuantity(), scheduleEntry.getTime(), scheduleEntry.getPlantNoOfPetals()));
                     }
                 }
 

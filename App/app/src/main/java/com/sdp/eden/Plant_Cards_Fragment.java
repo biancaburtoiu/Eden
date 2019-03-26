@@ -40,6 +40,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.NumberPicker;
 import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -95,7 +96,7 @@ public class Plant_Cards_Fragment extends Fragment {
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
 
         width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
-        height = (int)(getResources().getDisplayMetrics().heightPixels*0.60);
+        height = (int)(getResources().getDisplayMetrics().heightPixels*0.70);
 
         fab_addPlant.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -107,13 +108,18 @@ public class Plant_Cards_Fragment extends Fragment {
 
                 final EditText plantName = viewInflated.findViewById(R.id.plantName);
                 final Spinner plantSpecies = viewInflated.findViewById(R.id.plantSpecies);
+                final NumberPicker petalPicker = viewInflated.findViewById(R.id.petalPicker);
+
                 plantPic = viewInflated.findViewById(R.id.plantPic);
                 builder.setView(viewInflated);
 
-                // TODO: perhaps changing species to a short description of the plant (E.G. location or characteristic)
                 String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
                 ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
                 plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
+
+                //Petal picker setup
+                petalPicker.setMinValue(1);
+                petalPicker.setMaxValue(7);
 
                 plantPic.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -124,7 +130,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         }else{
                             enteredPlantName = plantName.getText().toString().trim();
                             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
-                            // TODO: Kieran - upload to firebase storage and pull for each card (having trouble with this)
+
                             if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
                                 startActivityForResult(takePictureIntent, 111); // set the request code for the photo to 111
                             }
@@ -136,6 +142,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     Log.d(TAG, "New plant to add to database:");
                     Log.d(TAG, "Plant name: " + plantName.getText().toString());
                     Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString()); // extracts the plant data from user input
+                    Log.d(TAG, "Number of petals: "+petalPicker.getValue());
 
                     if(plantSpecies.getSelectedItem().toString().equals("Select Species")){
                         Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Select a Species", Snackbar.LENGTH_SHORT).show();
@@ -179,14 +186,16 @@ public class Plant_Cards_Fragment extends Fragment {
                                 if (imageBitmap == null) {
                                     plant = new Plant(plantName.getText().toString(),
                                             plantSpecies.getSelectedItem().toString(),
-                                            bitmapToIntegerList(defaultPlant)
-                                    ,Float.valueOf("212.48"), Float.valueOf("594.51"));
+                                            bitmapToIntegerList(defaultPlant),
+                                            petalPicker.getValue(),
+                                            Float.valueOf("212.48"), Float.valueOf("594.51"));
                                 }
                                 else {
                                     plant = new Plant(plantName.getText().toString(),
                                             plantSpecies.getSelectedItem().toString(),
-                                            bitmapToIntegerList(imageBitmap)
-                                            ,Float.valueOf("212.48"), Float.valueOf("594.51"));
+                                            bitmapToIntegerList(imageBitmap),
+                                            petalPicker.getValue(),
+                                            Float.valueOf("212.48"), Float.valueOf("594.51"));
                                 }
 
                                 DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
@@ -203,12 +212,12 @@ public class Plant_Cards_Fragment extends Fragment {
 
                         AlertDialog dialog1 = builder1.create();
                         dialog1.show();
-                        dialog1.getWindow().setLayout(width, height);
+                        //dialog1.getWindow().setLayout(width, height);
                     }
                 });
                 AlertDialog dialog = builder.create();
                 dialog.show();
-                dialog.getWindow().setLayout(width, height);
+                //dialog.getWindow().setLayout(width, height);
 
             }
         });
@@ -271,7 +280,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         }
 
                         ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
-                                                            currentPlant.getXCoordinate(), currentPlant.getYCoordinate());
+                                currentPlant.getNoOfPetals(),currentPlant.getXCoordinate(), currentPlant.getYCoordinate());
                         DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                             @Override
                             public void onAddScheduleEntryFinished(boolean success) {
@@ -285,7 +294,6 @@ public class Plant_Cards_Fragment extends Fragment {
                 dialog.show();
             }
         });
-        // FAM Chunk End
 
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
         return view;

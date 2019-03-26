@@ -11,24 +11,27 @@ public class Plant {
     private List<Integer> Photo;
 
     private Float XCoordinate;
-
     private Float YCoordinate;
+
+    private Integer NoOfPetals;
 
 
     public Plant(){
 
     }
 
-    public Plant(String name, String species, List<Integer> photo){
+    public Plant(String name, String species, List<Integer> photo, Integer noOfPetals){
         Name=name;
         Species=species;
         Photo=photo;
+        NoOfPetals=noOfPetals;
     }
 
-    public Plant(String name, String species, List<Integer> photo, Float xcoordinate, Float ycoordinate){
+    public Plant(String name, String species, List<Integer> photo, Integer noOfPetals, Float xcoordinate, Float ycoordinate){
         Name=name;
         Species=species;
         Photo=photo;
+        NoOfPetals=noOfPetals;
         XCoordinate=xcoordinate;
         YCoordinate=ycoordinate;
     }
@@ -45,6 +48,9 @@ public class Plant {
 
     public List<Integer> getPhoto() { return Photo; }
     public void setPhoto(List<Integer> photo) { Photo = photo; }
+
+    public Integer getNoOfPetals() { return NoOfPetals; }
+    public void setNoOfPetals(Integer noOfPetals) { NoOfPetals = noOfPetals; }
 
     //@Exclude
     public Float getXCoordinate() { return XCoordinate; }
