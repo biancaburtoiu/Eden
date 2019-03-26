@@ -13,6 +13,13 @@ public class ScheduleEntry {
 
     }
 
+    public ScheduleEntry(Integer day, String plantName, Integer quantity, String time) {
+        DayOfWeek = day;
+        PlantName = plantName;
+        Quantity = quantity;
+        Time = time;
+    }
+
     public ScheduleEntry(Integer day, String plantName, Integer quantity, String time, Float plantXCoordinate, Float plantYCoordinate) {
         DayOfWeek = day;
         PlantName = plantName;

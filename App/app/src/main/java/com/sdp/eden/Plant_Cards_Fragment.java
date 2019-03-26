@@ -499,7 +499,17 @@ public class Plant_Cards_Fragment extends Fragment {
 
                                 for (ScheduleEntry entry : scheduleEntries) {
                                     // Simple approach - could be done differently
-                                    String entryText = entry.getDay()+"s at "+entry.getTime()+" with quantity: "+entry.getQuantity()+"ml";
+                                    String dayAsText;
+                                    switch (entry.getDay()) {
+                                        case 0: dayAsText="Monday"; break;
+                                        case 1: dayAsText="Tuesday"; break;
+                                        case 2: dayAsText="Wednesday"; break;
+                                        case 3: dayAsText="Thursday"; break;
+                                        case 4: dayAsText="Friday"; break;
+                                        case 5: dayAsText="Saturday"; break;
+                                        default: dayAsText="Sunday"; break;
+                                    }
+                                    String entryText = dayAsText+"s at "+entry.getTime()+" with quantity: "+entry.getQuantity()+"ml";
                                     values.add(entryText);
                                 }
 
