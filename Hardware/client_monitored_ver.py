@@ -43,9 +43,6 @@ def onMessage(client,userdata,msg):
                 print("pong")
                 # update global var received_pong for check_for_pong()
                 received_pong = True
-            elif pl=="ping":
-                #our own message
-                pass
             elif pl=="crashed":
                 print("vision system says it's dead")
                 on_vision_death()
@@ -84,8 +81,7 @@ def follow_one_instruction(instruction_as_string,vision_error=False):
 
         if instruction_as_string == 's':
             # received a stop when we're already stopped!
-            print("ignoring useless s instruction")
-
+            pass
         # movement / relative turn instructions (subsequent insts)
         else:
             # in form (r,[degrees],[target dir]), or (m,[squares])
@@ -96,6 +92,8 @@ def follow_one_instruction(instruction_as_string,vision_error=False):
                 currently_moving=True
                 # 0 represents active pinging with 0 pings missed so far
                 currently_pinging = 0
+                # start listening for pongs
+                #check_for_pong()
 
                 # start checking sonar regularly while we're moving
                 polling_sonar = True
@@ -103,9 +101,6 @@ def follow_one_instruction(instruction_as_string,vision_error=False):
 
                 movement_controller.forward_forever()
 
-                # send first ping to start playing
-                #send_ping()
-                
                 # start checking sonar regularly while we're moving
                 #polling_sonar = True
                 #poll_sonar_mainthread()
@@ -127,7 +122,7 @@ def check_for_pong():
             #reset missed ping count, and send the next ping
             currently_pinging = 0
             received_pong = False
-            send_ping()
+            Timer(1,check_for_pong).start()
         else:
             #a pong has not been sent in time!
             currently_pinging+=1
@@ -141,7 +136,7 @@ def check_for_pong():
                 # we've acknowledged the missed pong, but keep trying 
                 print("%s missed pongs"%currently_pinging)
                 received_pong=False
-                send_ping()
+                Timer(1,check_for_pong).start()
 
 #called when vision system tells us explicitely it's dead. Instead of
 # waiting for next pong check, we just stop immediately
@@ -153,7 +148,7 @@ def on_vision_death():
 
 def poll_sonar():
     if polling_sonar:
-        if movement_controller.sonar_value()<=80:
+        if min(movement_controller.sonar_value())<=80:
             # robot too close to a wall!
 
             print("SONAR SAYS STOP~~~")
@@ -175,6 +170,7 @@ def poll_sonar_mainthread():
         else:
             time.sleep(0.2)
 
+#= DEPRECATED - Now we just listen for pongs, we don't send pings =
 def send_ping():
     print("ping")
 

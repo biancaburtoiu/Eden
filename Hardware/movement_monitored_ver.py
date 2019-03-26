@@ -9,12 +9,13 @@ class Movement:
         self.gyro.mode="GYRO-ANG"
         self.motors = setupMotors()
         self.start_arm_pos=self.motors[2].position
-        self.sonar = ev3.UltrasonicSensor('in2')
-        self.sonar.connected
-        self.sonar.mode = 'US-DIST-CM'
+        self.sonars = setupSonars()
 
     def sonar_value(self):
-        return self.sonar.value()
+        sonar_vals = []
+        for sonar in self.sonars:
+            sonar_vals.append(sonar.value())
+        return sonar_vals
 
     def relative_turn(self,degrees):
         # we will measure difference in gyro angle from start to finish
@@ -87,6 +88,20 @@ def setupMotors():
     motors.append(ev3.LargeMotor('outB'))
     motors.append(ev3.LargeMotor('outC'))
     return motors
+
+def setupSonars():
+    sonars = []
+    
+    sonars.append(ev3.UltrasonicSensor('in2'))
+    sonars.append(ev3.UltrasonicSensor('in3'))
+    sonars.append(ev3.UltrasonicSensor('in4'))
+    
+    for sonar in sonars:
+        sonar.connected
+        sonar.mode = 'US-DIST-CM'
+    
+    return sonars
+
 
 # derive a relative turn from absolute current and target angles
 def rel_from_abs_turn(target_angle,current_angle):
