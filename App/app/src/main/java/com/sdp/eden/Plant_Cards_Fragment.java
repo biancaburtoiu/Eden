@@ -35,10 +35,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.PopupMenu;
@@ -456,21 +458,63 @@ public class Plant_Cards_Fragment extends Fragment {
 
 
     // Recyclerview Holders & Adapters:
-    private class RecyclerViewHolder extends RecyclerView.ViewHolder{
 
-        private CardView mCardView; // card for data display
-        private TextView plantName; // plants name from firebase
-        private TextView plantDetail; // plants detail (currently species)
-        private ImageView plantImage; // plants picture
+    private class ScheduleRVHolder extends RecyclerView.ViewHolder{
+        private TextView day;
+        private TextView time;
+        private TextView quantity;
+        private Button deleteWateringButton;
 
+        ScheduleRVHolder(@NonNull View itemView){
+            super(itemView);
+            day = itemView.findViewById(R.id.day);
+            time = itemView.findViewById(R.id.time);
+            quantity = itemView.findViewById(R.id.quantity);
+            deleteWateringButton = itemView.findViewById(R.id.deleteWateringButton);
+        }
+    }
 
-        RecyclerViewHolder(LayoutInflater inflater, ViewGroup container){
-            super(inflater.inflate(R.layout.card_layout, container, false));
-            //finding the location for each container in the display card
-            mCardView = itemView.findViewById(R.id.card_view);
-            plantName = itemView.findViewById(R.id.card_plant_name);
-            plantDetail = itemView.findViewById(R.id.card_plant_detail);
-            plantImage = itemView.findViewById(R.id.card_plant_image);
+    private class ScheduleRVAdapter extends RecyclerView.Adapter<ScheduleRVHolder> {
+        ArrayList<ScheduleEntry> scheduleEntriesList;
+
+        ScheduleRVAdapter(ArrayList<ScheduleEntry> list) {
+            this.scheduleEntriesList = list;
+        }
+
+        @Override
+        public int getItemCount() {
+            return scheduleEntriesList.size();
+        }
+
+        @NonNull
+        @Override
+        public ScheduleRVHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
+            View v = LayoutInflater.from(viewGroup.getContext())
+                    .inflate(R.layout.individual_schedule_view_item, viewGroup, false);
+            return new ScheduleRVHolder(v);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ScheduleRVHolder scheduleRVHolder, int i) {
+            String dayAsText;
+            switch (scheduleEntriesList.get(i).getDay()) {
+                case 0: dayAsText="Monday"; break;
+                case 1: dayAsText="Tuesday"; break;
+                case 2: dayAsText="Wednesday"; break;
+                case 3: dayAsText="Thursday"; break;
+                case 4: dayAsText="Friday"; break;
+                case 5: dayAsText="Saturday"; break;
+                default: dayAsText="Sunday"; break;
+            }
+            scheduleRVHolder.day.setText(dayAsText);
+            scheduleRVHolder.time.setText(scheduleEntriesList.get(i).getTime());
+            scheduleRVHolder.quantity.setText(scheduleEntriesList.get(i).getQuantity()+"ml");
+            scheduleRVHolder.deleteWateringButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    // TODO: delete schedule entry i.e. set param to false
+                }
+            });
         }
     }
 
@@ -506,7 +550,9 @@ public class Plant_Cards_Fragment extends Fragment {
                     AlertDialog.Builder viewbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                     View scheduleViewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.individual_schedule_view, (ViewGroup) getView(), false);
 
-                    ListView scheduleList = scheduleViewInflated.findViewById(R.id.individualScheduleList);
+                    RecyclerView scheduleList = scheduleViewInflated.findViewById(R.id.individualScheduleRecyclerView);
+                    scheduleList.setLayoutManager(new LinearLayoutManager(getActivity()));
+
                     TextView name = scheduleViewInflated.findViewById(R.id.plantName);
                     TextView spec = scheduleViewInflated.findViewById(R.id.species);
                     ImageView plantpic = scheduleViewInflated.findViewById(R.id.plantPic);
@@ -520,33 +566,15 @@ public class Plant_Cards_Fragment extends Fragment {
                         @Override
                         public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
                             if (scheduleEntries==null) {
-                                String[] values = new String[] {"No schedule entries to display."};
-                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Objects.requireNonNull(getContext()),
-                                        R.layout.individual_schedule_view_item, R.id.schedule, values);
-                                scheduleList.setAdapter(adapter);
+                                ScheduleRVAdapter scheduleRVAdapter = new ScheduleRVAdapter(new ArrayList<>());
+                                scheduleList.setAdapter(scheduleRVAdapter);
                             }
                             else {
-                                List<String> values = new ArrayList<String>();
-
-                                for (ScheduleEntry entry : scheduleEntries) {
-                                    // Simple approach - could be done differently
-                                    String dayAsText;
-                                    switch (entry.getDay()) {
-                                        case 0: dayAsText="Monday"; break;
-                                        case 1: dayAsText="Tuesday"; break;
-                                        case 2: dayAsText="Wednesday"; break;
-                                        case 3: dayAsText="Thursday"; break;
-                                        case 4: dayAsText="Friday"; break;
-                                        case 5: dayAsText="Saturday"; break;
-                                        default: dayAsText="Sunday"; break;
-                                    }
-                                    String entryText = dayAsText+"s at "+entry.getTime()+" with quantity: "+entry.getQuantity()+"ml";
-                                    values.add(entryText);
-                                }
-
-                                ArrayAdapter<String> adapter = new ArrayAdapter<String>(Objects.requireNonNull(getContext()),
-                                        R.layout.individual_schedule_view_item, R.id.schedule, values);
-                                scheduleList.setAdapter(adapter);
+                                // for safety. not necessary
+                                List<ScheduleEntry> correctEntries = scheduleEntries.stream()
+                                                    .filter(entry -> entry.getValid()).collect(Collectors.toList());
+                                ScheduleRVAdapter scheduleRVAdapter = new ScheduleRVAdapter(new ArrayList<>(correctEntries));
+                                scheduleList.setAdapter(scheduleRVAdapter);
                             }
                         }
                     });
@@ -602,7 +630,23 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
 
+    private class RecyclerViewHolder extends RecyclerView.ViewHolder{
 
+        private CardView mCardView; // card for data display
+        private TextView plantName; // plants name from firebase
+        private TextView plantDetail; // plants detail (currently species)
+        private ImageView plantImage; // plants picture
+
+
+        RecyclerViewHolder(LayoutInflater inflater, ViewGroup container){
+            super(inflater.inflate(R.layout.card_layout, container, false));
+            //finding the location for each container in the display card
+            mCardView = itemView.findViewById(R.id.card_view);
+            plantName = itemView.findViewById(R.id.card_plant_name);
+            plantDetail = itemView.findViewById(R.id.card_plant_detail);
+            plantImage = itemView.findViewById(R.id.card_plant_image);
+        }
+    }
 
 
     // Bitmap image helper methods:

@@ -4,12 +4,9 @@ import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -20,7 +17,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class DbOps {
     private static final String TAG = "DbOps";
@@ -181,8 +177,8 @@ public class DbOps {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 if (task.isSuccessful()) {
-                    Log.d(TAG, "Task was successful, entering deleteSchedulesOfPlant");
-                    deleteSchedulesOfPlant(plant, listener);
+                    Log.d(TAG, "Task was successful, entering deleteAllSchedulesOfPlant");
+                    deleteAllSchedulesOfPlant(plant, listener);
                 } else {
                     listener.onDeletePlantFinished(false);
                     Log.d(TAG, "Could not delete plant");
@@ -191,7 +187,7 @@ public class DbOps {
         });
     }
 
-    void deleteSchedulesOfPlant(Plant plant, onDeletePlantFinishedListener listener) {
+    void deleteAllSchedulesOfPlant(Plant plant, onDeletePlantFinishedListener listener) {
         // Gets the schedule entries of that specific plant and then removes them in a batch operation.
 
         WriteBatch batch = db.batch();
