@@ -8,4 +8,10 @@
         android:title="Sign Out"
         app:showAsAction="never"
         />
+    <item
+        android:id="@+id/action_batteryStatus"
+        android:orderInCategory="100"
+        android:title="Battery Status"
+        app:showAsAction="never"
+        />
 </menu>

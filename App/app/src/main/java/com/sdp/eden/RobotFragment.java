@@ -39,9 +39,9 @@ public class RobotFragment extends Fragment{
 //        falsebatteryStatus = v.findViewById(R.id.f_robot_battery_status_text);
 //        waterStatus = v.findViewById(R.id.f_robot_water_status_text);
         mProgressBat =  v.findViewById(R.id.circularProgressbar);
-        batPer = v.findViewById(R.id.batPer);
-        mProgressWater =  v.findViewById(R.id.circularProgressbarWater);
-        tvWater = v.findViewById(R.id.watPer);
+//        batPer = v.findViewById(R.id.batPer);
+//        mProgressWater =  v.findViewById(R.id.circularProgressbarWater);
+//        tvWater = v.findViewById(R.id.watPer);
 
        return v;
     }
@@ -53,35 +53,32 @@ public class RobotFragment extends Fragment{
         Resources res = getResources();
         //Drawable drawable = res.getDrawable(R.drawable.circular);
 
-        DbOps.instance.getBatteryStatus(new DbOps.OnGetBatteryStatusFinishedListener() {
-            @Override
-            public void onGetBatteryStatusFinished(List<BatteryStatus> statuses) {
-                if (statuses==null) {
-                    mProgressBat.setProgress(0);
-                    mProgressWater.setProgress(0);
-                    return;
-                }
-
-                BatteryStatus status = statuses.get(0);
-                double voltage = Double.parseDouble(status.getVoltage());
-                Log.d(TAG, "Current voltage: "+voltage);
-
-                int waterAmount = 98; // temp
-                tvWater.setText(waterAmount + "%");
-
-                // 8 - 2.5 = 5.5
-                int calculatedPercentage = (int) Math.round((voltage+2.5/5.5*100)*100.0/100.0);
-                //batteryStatus.setText(calculatedPercentage + "%");
-                mProgressBat.setProgress(calculatedPercentage);
-
-                batPer.setText(calculatedPercentage + "%");
-                mProgressWater.setProgress(waterAmount);
-                mProgressBat.setMax(100);
-                mProgressWater.setMax(100);
-
-
-
-            }
-        });
+//        DbOps.instance.getBatteryStatus(new DbOps.OnGetBatteryStatusFinishedListener() {
+//            @Override
+//            public void onGetBatteryStatusFinished(List<BatteryStatus> statuses) {
+//                if (statuses==null) {
+//                    mProgressBat.setProgress(0);
+//                    mProgressWater.setProgress(0);
+//                    return;
+//                }
+//
+//                BatteryStatus status = statuses.get(0);
+//                double voltage = Double.parseDouble(status.getVoltage());
+//                Log.d(TAG, "Current voltage: "+voltage);
+//
+//                int waterAmount = 98; // temp
+//                tvWater.setText(waterAmount + "%");
+//
+//                // 8 - 2.5 = 5.5
+//                int calculatedPercentage = (int) Math.round((voltage+2.5/5.5*100)*100.0/100.0);
+//                //batteryStatus.setText(calculatedPercentage + "%");
+//                mProgressBat.setProgress(calculatedPercentage);
+//
+//                batPer.setText(calculatedPercentage + "%");
+//                mProgressWater.setProgress(waterAmount);
+//                mProgressBat.setMax(100);
+////                mProgressWater.setMax(100);
+//            }
+//        });
     }
 }

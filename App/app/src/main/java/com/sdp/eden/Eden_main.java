@@ -7,22 +7,37 @@ import android.support.v4.app.Fragment;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ProgressBar;
 import android.widget.TableLayout;
+import android.widget.TextView;
 import android.widget.Toolbar;
 
 import com.google.firebase.auth.FirebaseAuth;
+
+import java.util.List;
+import java.util.Objects;
 
 
 public class Eden_main extends AppCompatActivity {
     private android.support.v7.widget.Toolbar toolbar;
     public Fragment fr;
+    private static final String TAG = "Eden_mainActivity";
+
+
+    TextView batPer;
+    TextView batText;
+    private ProgressBar mProgressBat;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -79,6 +94,48 @@ public class Eden_main extends AppCompatActivity {
             FirebaseAuth.getInstance().signOut();
             startActivity(new Intent(this, Signin.class));
             finish();
+            return true;
+        }
+        else if (id == R.id.action_batteryStatus) {
+            Log.d(TAG, "Entered action_batteryStatus");
+
+            final AlertDialog.Builder builder = new AlertDialog.Builder(Eden_main.this);
+            final View view = getLayoutInflater().inflate(R.layout.fragment_robot, null);
+            builder.setView(view);
+
+            mProgressBat = view.findViewById(R.id.circularProgressbar);
+            batPer = view.findViewById(R.id.batPer);
+            batText = view.findViewById(R.id.batteryText);
+
+            DbOps.instance.getBatteryStatus(new DbOps.OnGetBatteryStatusFinishedListener() {
+                @Override
+                public void onGetBatteryStatusFinished(List<BatteryStatus> statuses) {
+                    Log.d(TAG, "Returned from database call");
+                    if (statuses == null) {
+                        Log.d(TAG, "Statuses is null");
+                        mProgressBat.setProgress(0);
+                        return;
+                    }
+                    else {
+                        Log.d(TAG, "Statuses is NOT null!");
+
+                        BatteryStatus status = statuses.get(0);
+                        double voltage = Double.parseDouble(status.getVoltage());
+                        Log.d(TAG, "Voltage is: "+voltage);
+
+                        // 8 - 2.5 = 5.5
+                        int calculatedPercentage = (int) Math.round((voltage - 2.5) * 100.0 / 5.5);
+                        mProgressBat.setProgress(calculatedPercentage);
+                        batPer.setText(calculatedPercentage + "%");
+                        batText.setText("Eden currently has "+calculatedPercentage+"% battery.");
+                        mProgressBat.setMax(100);
+
+                        AlertDialog editdialog = builder.create();
+                        editdialog.show();
+                    }
+                }
+            });
+
             return true;
         }
 
