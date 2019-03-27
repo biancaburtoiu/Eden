@@ -378,6 +378,84 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
 
+    class MyMenuItemClickListener implements PopupMenu.OnMenuItemClickListener { // class for when an item is clicked withing the popup menu
+
+        private int position;
+        MyMenuItemClickListener(int positon) {
+            this.position=positon;
+        }
+
+        @Override
+        public boolean onMenuItemClick(MenuItem menuItem) {
+            switch (menuItem.getItemId()) {
+
+                case R.id.card_delete: // delete is selected
+                    DbOps.instance.deletePlant(plants.get(position), success -> getLatestPlantList());
+                    return true;
+
+                case R.id.card_edit: // edit is selected
+
+                    Plant currentPlant = plants.get(position);
+
+                    AlertDialog.Builder editbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                    //editbuilder.setTitle("Edit plant name");
+
+                    View editviewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_edit_plant,
+                            (ViewGroup) getView(), false);
+
+                    final EditText newPlantName = editviewInflated.findViewById(R.id.plantName);
+                    newPlantName.setHint(currentPlant.getName());
+
+                    final Spinner newPlantSpecies = editviewInflated.findViewById(R.id.plantSpecies);
+                    newPlantSpecies.setPrompt(currentPlant.getSpecies());
+                    // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
+                    String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
+                    ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
+                    newPlantSpecies.setAdapter(speciesAdapter);
+
+                    editbuilder.setView(editviewInflated);
+
+                    editbuilder.setPositiveButton("Change name", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if (newPlantName.getText().toString().trim().length() != 0) {
+                                DbOps.instance.editPlantName(currentPlant, newPlantName.getText().toString(), new DbOps.onEditPlantFinishedListener() {
+                                    @Override
+                                    public void onEditPlantFinished(boolean success) {
+                                        getLatestPlantList();
+                                        Toast.makeText(getContext(), "Successfully changed name!", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                            else Toast.makeText(getContext(), "Invalid new plant name. Please use a valid name.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    editbuilder.setNeutralButton("Change species", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if (!newPlantSpecies.getSelectedItem().toString().equals("Select Species")) {
+                                DbOps.instance.editPlantSpecies(currentPlant, newPlantSpecies.getSelectedItem().toString(), new DbOps.onEditPlantFinishedListener() {
+                                    @Override
+                                    public void onEditPlantFinished(boolean success) {
+                                        getLatestPlantList();
+                                        Toast.makeText(getContext(), "Successfully changed species!", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
+                            else Toast.makeText(getContext(), "No species selected. Please select species.", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                    AlertDialog editdialog = editbuilder.create();
+                    editdialog.show();
+                    return true;
+            }
+            return false;
+        }
+    }
+
+
+
+    // Recyclerview Holders & Adapters:
     private class RecyclerViewHolder extends RecyclerView.ViewHolder{
 
         private CardView mCardView; // card for data display
@@ -393,7 +471,6 @@ public class Plant_Cards_Fragment extends Fragment {
             plantName = itemView.findViewById(R.id.card_plant_name);
             plantDetail = itemView.findViewById(R.id.card_plant_detail);
             plantImage = itemView.findViewById(R.id.card_plant_image);
-
         }
     }
 
@@ -499,7 +576,6 @@ public class Plant_Cards_Fragment extends Fragment {
                             viewdialog.show();
                         }
                     });
-
                     AlertDialog viewdialog = viewbuilder.create();
                     viewdialog.show();
                 }
@@ -526,85 +602,8 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
 
-    class MyMenuItemClickListener implements PopupMenu.OnMenuItemClickListener { // class for when an item is clicked withing the popup menu
-
-        private int position;
-        MyMenuItemClickListener(int positon) {
-            this.position=positon;
-        }
-
-        @Override
-        public boolean onMenuItemClick(MenuItem menuItem) {
-            switch (menuItem.getItemId()) {
-
-                case R.id.card_delete: // delete is selected
-                    DbOps.instance.deletePlant(plants.get(position), success -> getLatestPlantList());
-                    return true;
-
-                case R.id.card_edit: // edit is selected
-
-                    Plant currentPlant = plants.get(position);
-
-                    AlertDialog.Builder editbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
-                    //editbuilder.setTitle("Edit plant name");
-
-                    View editviewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_edit_plant,
-                            (ViewGroup) getView(), false);
-
-                    final EditText newPlantName = editviewInflated.findViewById(R.id.plantName);
-                    newPlantName.setHint(currentPlant.getName());
-
-                    final Spinner newPlantSpecies = editviewInflated.findViewById(R.id.plantSpecies);
-                    newPlantSpecies.setPrompt(currentPlant.getSpecies());
-                    // TODO: perhaps changing specicies to a short description of the plant (E.G. location or characteristic)
-                    String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
-                    ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
-                    newPlantSpecies.setAdapter(speciesAdapter);
-
-                    editbuilder.setView(editviewInflated);
-
-                    editbuilder.setPositiveButton("Change name", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            if (newPlantName.getText().toString().trim().length() != 0) {
-                                DbOps.instance.editPlantName(currentPlant, newPlantName.getText().toString(), new DbOps.onEditPlantFinishedListener() {
-                                    @Override
-                                    public void onEditPlantFinished(boolean success) {
-                                        getLatestPlantList();
-                                        Toast.makeText(getContext(), "Successfully changed name!", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                            else Toast.makeText(getContext(), "Invalid new plant name. Please use a valid name.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    editbuilder.setNeutralButton("Change species", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            if (!newPlantSpecies.getSelectedItem().toString().equals("Select Species")) {
-                                DbOps.instance.editPlantSpecies(currentPlant, newPlantSpecies.getSelectedItem().toString(), new DbOps.onEditPlantFinishedListener() {
-                                    @Override
-                                    public void onEditPlantFinished(boolean success) {
-                                        getLatestPlantList();
-                                        Toast.makeText(getContext(), "Successfully changed species!", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                            else Toast.makeText(getContext(), "No species selected. Please select species.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
-                    AlertDialog editdialog = editbuilder.create();
-                    editdialog.show();
-                    return true;
-            }
-            return false;
-        }
-    }
 
 
-
-
-    
 
     // Bitmap image helper methods:
     private static Bitmap getBitmap(VectorDrawable vectorDrawable) {
