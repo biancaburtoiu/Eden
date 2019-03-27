@@ -280,7 +280,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         }
 
                         ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
-                                currentPlant.getNoOfPetals(),currentPlant.getXCoordinate(), currentPlant.getYCoordinate());
+                                currentPlant.getNoOfPetals(),currentPlant.getXCoordinate(), currentPlant.getYCoordinate(), true);
                         DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                             @Override
                             public void onAddScheduleEntryFinished(boolean success) {

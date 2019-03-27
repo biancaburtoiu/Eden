@@ -9,21 +9,24 @@ public class ScheduleEntry {
     private Float PlantYCoordinate;
 
     private Integer PlantNoOfPetals;
+    private Boolean Valid;
 
 
     public ScheduleEntry() {
 
     }
 
-    public ScheduleEntry(Integer day, String plantName, Integer quantity, String time, Integer plantNoOfPetals) {
+    public ScheduleEntry(Integer day, String plantName, Integer quantity, String time, Integer plantNoOfPetals, Boolean valid) {
         DayOfWeek = day;
         PlantName = plantName;
         Quantity = quantity;
         Time = time;
         PlantNoOfPetals = plantNoOfPetals;
+        Valid = true;
     }
 
-    public ScheduleEntry(Integer day, String plantName, Integer quantity, String time, Integer plantNoOfPetals, Float plantXCoordinate, Float plantYCoordinate) {
+    public ScheduleEntry(Integer day, String plantName, Integer quantity, String time,
+                         Integer plantNoOfPetals, Float plantXCoordinate, Float plantYCoordinate, Boolean valid) {
         DayOfWeek = day;
         PlantName = plantName;
         Quantity = quantity;
@@ -31,6 +34,7 @@ public class ScheduleEntry {
         PlantNoOfPetals = plantNoOfPetals;
         PlantXCoordinate=plantXCoordinate;
         PlantYCoordinate=plantYCoordinate;
+        Valid = true;
     }
 
     public String getPlantName() {return PlantName; }
@@ -40,6 +44,7 @@ public class ScheduleEntry {
     public Integer getPlantNoOfPetals() {return PlantNoOfPetals; }
     public Float getPlantXCoordinate() { return PlantXCoordinate; }
     public Float getPlantYCoordinate() { return PlantYCoordinate; }
+    public Boolean getValid() {return Valid; }
 
     public void setPlantName(String plantName) {PlantName = plantName; }
     public void setDay(Integer day) {DayOfWeek = day; }
@@ -48,4 +53,5 @@ public class ScheduleEntry {
     public void setPlantNoOfPetals(Integer plantNoOfPetals) {PlantNoOfPetals=plantNoOfPetals; }
     public void setPlantXCoordinate(Float xCoordinate) {PlantXCoordinate=xCoordinate;}
     public void setPlantYCoordinate(Float yCoordinate) {PlantYCoordinate=yCoordinate;}
+    public void setValid(Boolean valid) {Valid = valid; }
 }

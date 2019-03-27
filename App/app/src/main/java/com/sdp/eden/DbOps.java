@@ -212,7 +212,7 @@ public class DbOps {
                                         .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                                         .collection("Schedules")
                                         .document(scheduleString);
-                        batch.delete(scheduleToRemove);
+                        batch.update(scheduleToRemove, "valid", false);
                     }
                 }
 
@@ -274,7 +274,7 @@ public class DbOps {
                                         .collection("Schedules")
                                         .document(scheduleString);
                         batch.set(scheduleToUpdate, new ScheduleEntry(scheduleEntry.getDay(), newName,
-                                scheduleEntry.getQuantity(), scheduleEntry.getTime(), scheduleEntry.getPlantNoOfPetals()));
+                                scheduleEntry.getQuantity(), scheduleEntry.getTime(), scheduleEntry.getPlantNoOfPetals(),true));
                     }
                 }
 
