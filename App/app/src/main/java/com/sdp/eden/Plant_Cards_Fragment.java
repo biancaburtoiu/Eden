@@ -355,16 +355,23 @@ public class Plant_Cards_Fragment extends Fragment {
         adapter.notifyDataSetChanged();
     }
 
+    private void populateSchedules(ArrayList<ScheduleEntry> schedules) {
+        ScheduleRVAdapter adapter = new ScheduleRVAdapter(schedules);
+        schedulesRV.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
+    }
+
 
     public void getLatestSchedulesList(Plant plant) {
         DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
             @Override
             public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
                 if (scheduleEntries==null) return;
-
-                ScheduleRVAdapter adapter = new ScheduleRVAdapter(new ArrayList<>(scheduleEntries));
-                schedulesRV.setAdapter(adapter);
-                adapter.notifyDataSetChanged();
+                else
+                {
+                    Log.d(TAG, "Obtained schedules list of size: "+scheduleEntries.size());
+                    populateSchedules(new ArrayList<>(scheduleEntries));
+                }
             }
         });
     }
