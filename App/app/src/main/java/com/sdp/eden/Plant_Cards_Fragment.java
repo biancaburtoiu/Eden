@@ -105,6 +105,8 @@ public class Plant_Cards_Fragment extends Fragment {
         width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
         height = (int)(getResources().getDisplayMetrics().heightPixels*0.70);
 
+        materialDesignFAM.setClosedOnTouchOutside(true);
+
         fab_addPlant.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.d(TAG, "User input: click on Add");
