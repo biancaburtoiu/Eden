@@ -2,6 +2,7 @@ package com.sdp.eden;
 
 import android.support.annotation.NonNull;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -138,6 +139,7 @@ public class DbOps {
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Schedules")
                 .whereEqualTo("plantName", plant.getName())
+                .whereEqualTo("valid", true)
                 .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {
@@ -186,6 +188,30 @@ public class DbOps {
             }
         });
     }
+
+    void deleteScheduleEntryOfPlant(ScheduleEntry scheduleEntry, onDeletePlantScheduleFinishedListener listener) {
+        String scheduleString = scheduleEntry.getDay()+"-"+scheduleEntry.getTime();
+
+        db.collection("Users")
+                .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
+                .collection("Schedules")
+                .document(scheduleString)
+                .update("valid", false)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            listener.onDeleteScheduleFinished(true);
+                            Log.d(TAG, "Successfully deleted watering schedule entry: "+scheduleString);
+                        }
+                        else {
+                            listener.onDeleteScheduleFinished(false);
+                            Log.d(TAG, "Could not delete watering schedule entry for: "+scheduleString);
+                        }
+                    }
+                });
+    }
+
 
     void deleteAllSchedulesOfPlant(Plant plant, onDeletePlantFinishedListener listener) {
         // Gets the schedule entries of that specific plant and then removes them in a batch operation.
@@ -388,5 +414,9 @@ public class DbOps {
 
     interface onSetWaterNowFinishedListener {
         void onSetWaterFinished(boolean success);
+    }
+
+    interface onDeletePlantScheduleFinishedListener {
+        void onDeleteScheduleFinished(boolean success);
     }
 }

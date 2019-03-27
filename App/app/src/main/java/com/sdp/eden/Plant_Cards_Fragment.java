@@ -4,7 +4,6 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -19,9 +18,6 @@ import android.support.annotation.Nullable;
 //import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.LinearLayoutManager;
@@ -36,12 +32,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.NumberPicker;
 import android.widget.PopupMenu;
 import android.widget.Spinner;
@@ -60,7 +53,6 @@ import com.google.firebase.storage.UploadTask;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -74,7 +66,11 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private static final String TAG = "Plant_Cards_Fragment";
     private ArrayList<Plant> plants; // list of plants pulled from firebase
-    private RecyclerView recyclerView;
+    private ArrayList<ScheduleEntry> scheduleEntries;
+
+    private RecyclerView plantsRV;
+    private RecyclerView schedulesRV;
+
     private ImageView plantPic;
     private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
     private String enteredPlantName; // this will hopefully be temp
@@ -99,7 +95,7 @@ public class Plant_Cards_Fragment extends Fragment {
     public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
         getLatestPlantList();    // Query the database to get latest list
-        recyclerView = view.findViewById(R.id.Plants_Recycler_view);
+        plantsRV = view.findViewById(R.id.Plants_Recycler_view);
         
         // https://www.viralandroid.com/2016/02/android-floating-action-menu-example.html
         materialDesignFAM = (FloatingActionMenu) view.findViewById(R.id.material_design_android_floating_action_menu);
@@ -302,7 +298,7 @@ public class Plant_Cards_Fragment extends Fragment {
                 dialog.show();
             }
         });
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
+        plantsRV.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
         return view;
     }
 
@@ -353,10 +349,24 @@ public class Plant_Cards_Fragment extends Fragment {
 
     }
 
-    private void populateRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
+    private void populatePlantRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
         RecyclerViewAdapter adapter = new RecyclerViewAdapter(plants);
-        recyclerView.setAdapter(adapter);
+        plantsRV.setAdapter(adapter);
         adapter.notifyDataSetChanged();
+    }
+
+
+    public void getLatestSchedulesList(Plant plant) {
+        DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
+            @Override
+            public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
+                if (scheduleEntries==null) return;
+
+                ScheduleRVAdapter adapter = new ScheduleRVAdapter(new ArrayList<>(scheduleEntries));
+                schedulesRV.setAdapter(adapter);
+                adapter.notifyDataSetChanged();
+            }
+        });
     }
 
 
@@ -374,7 +384,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     // Refreshes the recyclerview:
                     plants = new ArrayList<>(plantsFromDB);
-                    populateRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
+                    populatePlantRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
                     mProgress.dismiss();
                 });
     }
@@ -512,7 +522,21 @@ public class Plant_Cards_Fragment extends Fragment {
             scheduleRVHolder.deleteWateringButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // TODO: delete schedule entry i.e. set param to false
+                    DbOps.instance.deleteScheduleEntryOfPlant(scheduleEntriesList.get(i), new DbOps.onDeletePlantScheduleFinishedListener() {
+                        @Override
+                        public void onDeleteScheduleFinished(boolean success) {
+                            if (success) {
+                                Toast.makeText(getContext(), "Successfully deleted schedule entry!", Toast.LENGTH_SHORT).show();
+                                Plant curPlant = plants.stream()
+                                        .findFirst()
+                                        .filter(plant -> plant.getName().equals(scheduleEntriesList.get(i).getPlantName()))
+                                        .orElse(null);
+                                getLatestSchedulesList(curPlant);
+
+                            }
+                            else Toast.makeText(getContext(), "Could not delete schedule entry. Please retry!", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             });
         }
@@ -550,8 +574,8 @@ public class Plant_Cards_Fragment extends Fragment {
                     AlertDialog.Builder viewbuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                     View scheduleViewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.individual_schedule_view, (ViewGroup) getView(), false);
 
-                    RecyclerView scheduleList = scheduleViewInflated.findViewById(R.id.individualScheduleRecyclerView);
-                    scheduleList.setLayoutManager(new LinearLayoutManager(getActivity()));
+                    schedulesRV = scheduleViewInflated.findViewById(R.id.individualScheduleRecyclerView);
+                    schedulesRV.setLayoutManager(new LinearLayoutManager(getActivity()));
 
                     TextView name = scheduleViewInflated.findViewById(R.id.plantName);
                     TextView spec = scheduleViewInflated.findViewById(R.id.species);
@@ -567,14 +591,14 @@ public class Plant_Cards_Fragment extends Fragment {
                         public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
                             if (scheduleEntries==null) {
                                 ScheduleRVAdapter scheduleRVAdapter = new ScheduleRVAdapter(new ArrayList<>());
-                                scheduleList.setAdapter(scheduleRVAdapter);
+                                schedulesRV.setAdapter(scheduleRVAdapter);
                             }
                             else {
                                 // for safety. not necessary
                                 List<ScheduleEntry> correctEntries = scheduleEntries.stream()
                                                     .filter(entry -> entry.getValid()).collect(Collectors.toList());
                                 ScheduleRVAdapter scheduleRVAdapter = new ScheduleRVAdapter(new ArrayList<>(correctEntries));
-                                scheduleList.setAdapter(scheduleRVAdapter);
+                                schedulesRV.setAdapter(scheduleRVAdapter);
                             }
                         }
                     });
