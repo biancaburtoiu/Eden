@@ -79,10 +79,19 @@ public class Plant_Cards_Fragment extends Fragment {
     private Uri takenImage; // once again hopeful;ly this will be temp!
     private int width, height;
 
-    // FAM Chunk
+
     FloatingActionMenu materialDesignFAM;
     FloatingActionButton fab_addPlant, fab_addSchedule;
-    // FAM Chunk End
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        getLatestPlantList();    // Query the database to get latest list
+    }
+
+    public static Fragment newInstance() {
+        return new Plant_Cards_Fragment(); // new instance of the fragment
+    }
 
 
     public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
@@ -90,7 +99,7 @@ public class Plant_Cards_Fragment extends Fragment {
         getLatestPlantList();    // Query the database to get latest list
         recyclerView = view.findViewById(R.id.Plants_Recycler_view);
         
-        // FAM Chunk: https://www.viralandroid.com/2016/02/android-floating-action-menu-example.html
+        // https://www.viralandroid.com/2016/02/android-floating-action-menu-example.html
         materialDesignFAM = (FloatingActionMenu) view.findViewById(R.id.material_design_android_floating_action_menu);
         fab_addPlant = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
@@ -103,7 +112,6 @@ public class Plant_Cards_Fragment extends Fragment {
                 Log.d(TAG, "User input: click on Add");
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
-                //builder.setTitle("Add a new plant!");
                 View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant, (ViewGroup) getView(), false);
 
                 final EditText plantName = viewInflated.findViewById(R.id.plantName);
@@ -127,7 +135,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
                         if (plantName.getText().toString().trim().length() == 0){
                             plantName.setError("Enter a plant name");
-                        }else{
+                        }else {
                             enteredPlantName = plantName.getText().toString().trim();
                             Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
 
@@ -225,8 +233,6 @@ public class Plant_Cards_Fragment extends Fragment {
         fab_addSchedule.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
-                //builder.setTitle("Add schedule for plant");
-
                 View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant_schedule,
                         (ViewGroup) getView(), false);
 
@@ -254,10 +260,6 @@ public class Plant_Cards_Fragment extends Fragment {
                     public void onClick(DialogInterface dialog, int which) {
                         String currentPlantName = plantSelect.getSelectedItem().toString();
                         Plant currentPlant = plants.stream().filter(p -> p.getName() == currentPlantName).findFirst().orElse(null);
-
-                        // getMinute is in 0-59 interval. The code below adds a 0 ahead of the minutes 0-9
-                        // Result: 20:01 instead of 20:1
-                        // However, hours between 12am and 12pm will have a single digit: e.g. 2:45
 
                         String time;
                         if (timePicker.getMinute()<10)
@@ -298,7 +300,6 @@ public class Plant_Cards_Fragment extends Fragment {
                 dialog.show();
             }
         });
-
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
         return view;
     }
@@ -307,54 +308,6 @@ public class Plant_Cards_Fragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-    }
-
-    private static Bitmap getBitmap(VectorDrawable vectorDrawable) {
-        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
-                vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        vectorDrawable.draw(canvas);
-        return bitmap;
-    }
-
-    // https://stackoverflow.com/a/40886397
-    public String bitmapToString(Bitmap bmp) {
-
-        ByteArrayOutputStream bao = new ByteArrayOutputStream();
-        bmp.compress(Bitmap.CompressFormat.PNG, 100, bao);
-        bmp.recycle();
-        byte[] byteArray = bao.toByteArray();
-        String result = Base64.encodeToString(byteArray, Base64.DEFAULT);
-
-        Log.d(TAG, "Result of bitmapToString is: "+result);
-        return result;
-    }
-
-    // https://stackoverflow.com/a/40886397
-    public List<Integer> bitmapToIntegerList(Bitmap bmp) {
-
-        ByteArrayOutputStream bao = new ByteArrayOutputStream();
-        bmp.compress(Bitmap.CompressFormat.PNG, 100, bao); // bmp is bitmap from user image file
-        bmp.recycle();
-        byte[] byteArray = bao.toByteArray();
-
-        List<Byte> byteList = Bytes.asList(byteArray);
-        List<Integer> integerList = Ints.asList(Ints.toArray(byteList));
-
-        Log.d(TAG, "Result of bitmapToIntegerList is: "+integerList);
-        return integerList;
-    }
-
-
-    // http://ramsandroid4all.blogspot.com/2014/09/converting-byte-array-to-bitmap-in.html
-    public Bitmap byteArrayToBitmap(byte[] byteArray)
-    {
-        ByteArrayInputStream arrayInputStream = new ByteArrayInputStream(byteArray);
-        Bitmap bitmap = BitmapFactory.decodeStream(arrayInputStream);
-
-        Log.d(TAG, "Result of byteArrayToBitmap is: "+bitmap);
-        return bitmap;
     }
 
 
@@ -396,17 +349,6 @@ public class Plant_Cards_Fragment extends Fragment {
             public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) { mProgress.dismiss(); }
         });
 
-    }
-
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        getLatestPlantList();    // Query the database to get latest list
-    }
-
-    public static Fragment newInstance() {
-        return new Plant_Cards_Fragment(); // new instance of the fragment
     }
 
     private void populateRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
@@ -457,11 +399,11 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewHolder>{
 
-        ArrayList<Plant> plantsList; // plants list
+        ArrayList<Plant> plantsList;
 
-        RecyclerViewAdapter(ArrayList<Plant> list){
+        RecyclerViewAdapter(ArrayList<Plant> list) {
             this.plantsList = list;
-        } // Adapter for the recycler view
+        }
 
         @NonNull
         @Override
@@ -657,5 +599,59 @@ public class Plant_Cards_Fragment extends Fragment {
             }
             return false;
         }
+    }
+
+
+
+
+    
+
+    // Bitmap image helper methods:
+    private static Bitmap getBitmap(VectorDrawable vectorDrawable) {
+        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        vectorDrawable.draw(canvas);
+        return bitmap;
+    }
+
+    // https://stackoverflow.com/a/40886397
+    public String bitmapToString(Bitmap bmp) {
+
+        ByteArrayOutputStream bao = new ByteArrayOutputStream();
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, bao);
+        bmp.recycle();
+        byte[] byteArray = bao.toByteArray();
+        String result = Base64.encodeToString(byteArray, Base64.DEFAULT);
+
+        Log.d(TAG, "Result of bitmapToString is: "+result);
+        return result;
+    }
+
+    // https://stackoverflow.com/a/40886397
+    public List<Integer> bitmapToIntegerList(Bitmap bmp) {
+
+        ByteArrayOutputStream bao = new ByteArrayOutputStream();
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, bao); // bmp is bitmap from user image file
+        bmp.recycle();
+        byte[] byteArray = bao.toByteArray();
+
+        List<Byte> byteList = Bytes.asList(byteArray);
+        List<Integer> integerList = Ints.asList(Ints.toArray(byteList));
+
+        Log.d(TAG, "Result of bitmapToIntegerList is: "+integerList);
+        return integerList;
+    }
+
+
+    // http://ramsandroid4all.blogspot.com/2014/09/converting-byte-array-to-bitmap-in.html
+    public Bitmap byteArrayToBitmap(byte[] byteArray)
+    {
+        ByteArrayInputStream arrayInputStream = new ByteArrayInputStream(byteArray);
+        Bitmap bitmap = BitmapFactory.decodeStream(arrayInputStream);
+
+        Log.d(TAG, "Result of byteArrayToBitmap is: "+bitmap);
+        return bitmap;
     }
 }
