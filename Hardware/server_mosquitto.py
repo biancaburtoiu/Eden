@@ -8,7 +8,12 @@ def onConnect(client,userdata,flags,rc):
 client=mqtt.Client("desktopMachine")
 
 client.on_connect=onConnect
-client.connect("129.215.202.200")
+client.connect("129.215.3.65")
+client.subscribe("navigate-finish")
+
+def on_message(cl,ud,fl):
+    print("FINISHED UWU")
+
 
 client.loop_start()
 def remoteMove(insts_string):
@@ -18,10 +23,10 @@ def remoteMove(insts_string):
 def debugfunc():
     while True:
         ##wait for input
-        inputs = input("e:").split(" ")
+        inputi = input("e:").strip().split("\n")
 
         ##check input format, and perform action
-        client.publish(inputs[0],inputs[1].encode())
+        client.publish("navigate-start",inputi[0].encode())
 
 if __name__ == "__main__":
     debugfunc()
