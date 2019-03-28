@@ -427,7 +427,24 @@ public class Plant_Cards_Fragment extends Fragment {
             switch (menuItem.getItemId()) {
 
                 case R.id.card_delete: // delete is selected
-                    DbOps.instance.deletePlant(plants.get(position), success -> getLatestPlantList());
+                    AlertDialog.Builder deleteBuilder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()));
+                    deleteBuilder.setTitle("Delete "+plants.get(position).getName());
+                    deleteBuilder.setMessage("Are you sure you want to delete "+plants.get(position).getName()+"? " +
+                            "This action cannot be undone.");
+                    deleteBuilder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            DbOps.instance.deletePlant(plants.get(position), success -> getLatestPlantList());
+                        }
+                    });
+                    deleteBuilder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // nothing happens
+                        }
+                    });
+                    AlertDialog deleteDialog = deleteBuilder.create();
+                    deleteDialog.show();
                     return true;
 
                 case R.id.card_edit: // edit is selected
