@@ -205,7 +205,7 @@ def on_message(client, userdata, msg):
                         angle_to_turn -= 360
                     print("TOLD TO FINAL TURN - r,%s" % round(angle_to_turn))
                     print("ROBOT ANGLE IS: %s, GOAL POS IS: %s, ROBOT POS IS: %s" % (
-                    robot_angle, goal_pos, global_robot_pos))
+                        robot_angle, goal_pos, global_robot_pos))
                     robot_was_rotating = True
                     client.publish("start-instruction", "r,%s" % round(angle_to_turn), qos=2)
                     final_turn = True
@@ -434,35 +434,43 @@ class Unwarper:
         global robot_moving
         global robot_target
         global stopping_distance
-        if graph[frm[1]][frm[0]] == 1:
-            delta = [[0, -1], [-1, 0], [0, 1], [1, 0]]
-            poss_escapes = [frm, frm, frm, frm]
-            escape = False
-            while not escape:
-                poss_escapes = [(poss_escapes[i][0] - delta[i][0], poss_escapes[i][1] - delta[i][1]) for i in
-                                range(len(poss_escapes))]
-                removed = 0
-                for i in range(len(poss_escapes)):
-                    poss_escape = poss_escapes[i - removed]
-                    if poss_escape[0] < 0 or poss_escape[1] < 0 or \
-                            poss_escape[1] >= len(graph) or poss_escape[0] >= len(graph[0]):
-                        del poss_escapes[i]
-                        removed += 1
-                        continue
-                    if graph[poss_escape[1]][poss_escape[0]] == 0:
-                        start_x = min(frm[0], poss_escape[0])
-                        end_x = max(frm[0], poss_escape[0])
-                        start_y = min(frm[1], poss_escape[1])
-                        end_y = max(frm[1], poss_escape[1])
-                        for x in range(start_x, end_x + 1):
+        if goal_pos is not None:
+            if graph[frm[1]][frm[0]] == 1:
+                if graph[frm[1]][frm[0]] == 1:
+                    escape = False
+                    visited = []
+                    stack = [list(frm)]
+                    while not escape:
+                        curr_node = stack.pop(0)
+                        if graph[curr_node[1]][curr_node[0]] == 0:
+                            start_x = min(frm[0], curr_node[0])
+                            end_x = max(frm[0], curr_node[0])
+                            start_y = min(frm[1], curr_node[1])
+                            end_y = max(frm[1], curr_node[1])
+                            print("ROBOT AT (%s, %s) CLEARED X %s to %s AND Y %s to %s" % (
+                                frm[0], frm[1], start_x, end_x, start_y, end_y))
                             for y in range(start_y, end_y + 1):
-                                graph[y][x] = 0
-                        escape = True
-                        break
-                if len(poss_escapes) == 0:
-                    break
-        _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True,
-                                                    bad_node_ranges=bad_node_ranges)
+                                graph[y][end_x] = 0
+                            for x in range(start_x, end_x + 1):
+                                graph[end_y][x] = 0
+                            escape = True
+                            break
+                        else:
+                            print("(%s,%s) contains a 1" % (curr_node[1], curr_node[0]))
+                            visited.append(curr_node)
+                            deltas = [[0, -1], [-1, 0], [0, 1], [1, 0]]
+                            for delta in deltas:
+                                new_node = copy.copy(curr_node)
+                                new_node[0] -= delta[0]
+                                new_node[1] -= delta[1]
+                                if new_node[1] >= 0 and new_node[1] < len(graph) and new_node[0] >= 0 and new_node[0] < len(
+                                        graph[0]) and new_node not in visited and new_node not in stack:
+                                    stack.append(new_node)
+                        if len(stack) == 0:
+                            break
+                            print("NO ESCAPE!")
+            _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True,
+                                                        bad_node_ranges=bad_node_ranges)
         if not robot_rotating and not robot_moving and insts != []:
             next_inst = insts.pop(0)
             next_inst = convert_orientation_inst_to_rotation(next_inst)
@@ -611,6 +619,7 @@ class Unwarper:
                 break
         if new_goal_pos is not None:
             goal_pos = new_goal_pos
+            print("FOUND SIDES AT %s" % str(up_left_down_right))
         if goal_pos is None and current_goal_number == 3:
             reached_goal = True
 
