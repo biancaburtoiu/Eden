@@ -133,15 +133,12 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(View v) {
 
-                        if (plantName.getText().toString().trim().length() == 0){
-                            plantName.setError("Enter a plant name");
-                        }else {
-                            enteredPlantName = plantName.getText().toString().trim();
-                            Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
+                        enteredPlantName = plantName.getText().toString().trim(); // this is currently not used.
+                        // When this starts and the plant has no name yet, it would be saved as blank name
+                        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE); // kieran - opens camera
 
-                            if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
-                                startActivityForResult(takePictureIntent, 111); // set the request code for the photo to 111
-                            }
+                        if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) != null) {
+                            startActivityForResult(takePictureIntent, 111); // set the request code for the photo to 111
                         }
                     }
                 });
@@ -152,18 +149,18 @@ public class Plant_Cards_Fragment extends Fragment {
                     Log.d(TAG, "Plant species: " + plantSpecies.getSelectedItem().toString()); // extracts the plant data from user input
                     Log.d(TAG, "Number of petals: "+petalPicker.getValue());
 
-                    if(plantSpecies.getSelectedItem().toString().equals("Select Species")){
-                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Select a Species", Snackbar.LENGTH_SHORT).show();
-                    }
-                    // Checks for empty plant name
+                    // Sanity checks before continuing
                     if (plantName.getText().toString().trim().length() == 0) {
                         Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
-                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Name your plant!", Snackbar.LENGTH_SHORT).show();
+                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must enter a plant name!", Snackbar.LENGTH_SHORT).show();
+                    }
+                    else if (plantSpecies.getSelectedItem().toString().equals("Select Species")){
+                        Log.d(TAG, "Empty plant species selection. Rejected further operations.");
+                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must select a species!", Snackbar.LENGTH_SHORT).show();
                     }
                     else {
                         Log.d(TAG, "Plant name format correct.");
                         Log.d(TAG, "Going to pick coordinates...");
-
 
                         // TODO: Go to the fragment
                         AlertDialog.Builder builder1 = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
@@ -181,7 +178,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                 mProgress = new ProgressDialog(getContext(), R.style.spinner);
                                 mProgress.setMessage("Creating the plant ...");
                                 mProgress.setCanceledOnTouchOutside(false);
-//                                mProgress.show();
+                                mProgress.show();
 
                                 List<Float> coordinates = PictureTagMain.getPointCoordinatesFromRoom(getActivity());
                                 Log.d("Coords", coordinates.toString());
@@ -194,16 +191,15 @@ public class Plant_Cards_Fragment extends Fragment {
                                 float x = PictureTagLayout.returnX();
                                 float y = PictureTagLayout.returnY();
 
-
-
                                 Log.d("CoordsRaw", x + ", " + y);
 
+                                // TODO: Reject continuing if coords are incorrect!!!
+
+                                // Generating plant icon
                                 Bitmap defaultPlant = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.def_plant_icon);
                                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                                 defaultPlant.compress(Bitmap.CompressFormat.PNG, 0, out);
                                 Bitmap decoded = BitmapFactory.decodeStream(new ByteArrayInputStream(out.toByteArray()));
-                                //Bitmap defaultPlant = getBitmap((VectorDrawable) getResources().getDrawable(R.drawable.def_));
-                                Log.d(TAG, "defaultPlant is: "+defaultPlant);
 
                                 List<Integer> image;
 
@@ -319,7 +315,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
                         int quantityTextLength = quantityInput.getText().toString().trim().length();
 
-                        // Sanity checks before continuing:
+                        // Sanity checks before continuing
                         if(currentPlantName.equals("Select Plant")){
                             Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must select a plant!", Snackbar.LENGTH_SHORT).show();
                         }
@@ -333,16 +329,20 @@ public class Plant_Cards_Fragment extends Fragment {
                             int quantity = Integer.parseInt(quantityInput.getText().toString());
 
                             ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
-                                    currentPlant.getNoOfPetals(),currentPlant.getXCoordinate(), currentPlant.getYCoordinate(), true);
+                                                currentPlant.getNoOfPetals(),
+                                                currentPlant.getXCoordinate(), currentPlant.getYCoordinate(),
+                                                true);
+
                             DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                 @Override
                                 public void onAddScheduleEntryFinished(boolean success) {
                                     if (success)
-                                        Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlantName +
-                                                " on "+selectedDay+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                "Added watering schedule entry for "+ currentPlantName + " on "+selectedDay+ "s at "
+                                                        + scheduleEntry.getTime()+ "!", Snackbar.LENGTH_SHORT).show();
                                     else
-                                        Toast.makeText(getContext(), "Could not add watering schedule entry for "+ currentPlantName +".",
-                                                Toast.LENGTH_SHORT).show();
+                                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                "Could not add watering schedule entry for "+ currentPlantName +".", Snackbar.LENGTH_SHORT).show();
                                 }
                             });
                         }
@@ -520,11 +520,14 @@ public class Plant_Cards_Fragment extends Fragment {
                                     @Override
                                     public void onEditPlantFinished(boolean success) {
                                         getLatestPlantList();
-                                        Toast.makeText(getContext(), "Successfully changed name!", Toast.LENGTH_SHORT).show();
+                                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                "Successfully changed name!", Snackbar.LENGTH_SHORT).show();
                                     }
                                 });
                             }
-                            else Toast.makeText(getContext(), "Invalid new plant name. Please use a valid name.", Toast.LENGTH_SHORT).show();
+                            else
+                                Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                        "Invalid new plant name. Please use a valid name.", Snackbar.LENGTH_SHORT).show();
                         }
                     });
                     editbuilder.setNeutralButton("Change species", new DialogInterface.OnClickListener() {
@@ -610,7 +613,8 @@ public class Plant_Cards_Fragment extends Fragment {
                         @Override
                         public void onDeleteScheduleFinished(boolean success) {
                             if (success) {
-                                Toast.makeText(getContext(), "Successfully deleted schedule entry!", Toast.LENGTH_SHORT).show();
+                                Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                        "Successfully deleted schedule entry!", Snackbar.LENGTH_SHORT).show();
                                 Plant curPlant = plants.stream()
                                         .findFirst()
                                         .filter(plant -> plant.getName().equals(scheduleEntriesList.get(i).getPlantName()))
@@ -618,7 +622,9 @@ public class Plant_Cards_Fragment extends Fragment {
                                 getLatestSchedulesList(curPlant);
 
                             }
-                            else Toast.makeText(getContext(), "Could not delete schedule entry. Please retry!", Toast.LENGTH_SHORT).show();
+                            else
+                                Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                        "Could not delete schedule entry. Please retry!", Snackbar.LENGTH_SHORT).show();
                         }
                     });
                 }
@@ -702,8 +708,12 @@ public class Plant_Cards_Fragment extends Fragment {
                                     DbOps.instance.setWaterNowTrigger(curPlant,new DbOps.onSetWaterNowFinishedListener() {
                                         @Override
                                         public void onSetWaterFinished(boolean success) {
-                                            if (success) Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Eden will water "+curPlant.getName()+" now!", Snackbar.LENGTH_SHORT).show();
-                                            else Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Database error. Try again!", Snackbar.LENGTH_SHORT).show();
+                                            if (success)
+                                                Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                        "Eden will water "+curPlant.getName()+" now!", Snackbar.LENGTH_SHORT).show();
+                                            else
+                                                Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                        "Database error. Try again!", Snackbar.LENGTH_SHORT).show();
                                         }
                                     });
                                 }
