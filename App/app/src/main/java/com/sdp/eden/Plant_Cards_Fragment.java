@@ -128,6 +128,7 @@ public class Plant_Cards_Fragment extends Fragment {
                 //Petal picker setup
                 petalPicker.setMinValue(1);
                 petalPicker.setMaxValue(7);
+                petalPicker.setWrapSelectorWheel(false);
 
                 plantPic.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -282,7 +283,11 @@ public class Plant_Cards_Fragment extends Fragment {
                 ArrayAdapter<String> daysAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.spinner_style, days);
                 dayOfWeekPicker.setAdapter(daysAdapter); // creates the drop down selection
 
-                EditText quantityInput = viewInflated.findViewById(R.id.quantityInput);
+                final NumberPicker quantityPicker = viewInflated.findViewById(R.id.quantityPicker);
+                quantityPicker.setWrapSelectorWheel(false);
+                quantityPicker.setMinValue(0);
+                quantityPicker.setMaxValue(6);
+                quantityPicker.setDisplayedValues(new String[] {"10","25","50","75","100","125","150"});
 
                 builder.setView(viewInflated);
 
@@ -313,8 +318,6 @@ public class Plant_Cards_Fragment extends Fragment {
                             default: dayToNumber=6; break;
                         }
 
-                        int quantityTextLength = quantityInput.getText().toString().trim().length();
-
                         // Sanity checks before continuing
                         if(currentPlantName.equals("Select Plant")){
                             Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must select a plant!", Snackbar.LENGTH_SHORT).show();
@@ -322,11 +325,9 @@ public class Plant_Cards_Fragment extends Fragment {
                         else if (selectedDay.equals("Select Day")) {
                             Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must select the day of week!", Snackbar.LENGTH_SHORT).show();
                         }
-                        else if (quantityTextLength<2 || quantityTextLength>3) { // only accepts numbers between 10-99ml
-                            Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Enter a suitable water quantity (10-99ml)!", Snackbar.LENGTH_SHORT).show();
-                        }
                         else {
-                            int quantity = Integer.parseInt(quantityInput.getText().toString());
+                            Log.d(TAG, "Quantity picker result: "+quantityPicker.getValue());
+                            int quantity = Integer.parseInt(quantityPicker.getDisplayedValues()[quantityPicker.getValue()]);
 
                             ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
                                                 currentPlant.getNoOfPetals(),
@@ -437,6 +438,7 @@ public class Plant_Cards_Fragment extends Fragment {
             }
         });
     }
+
     // Queries the database to get the most recent list of plants
     public void getLatestPlantList() {
         ProgressDialog mProgress;
