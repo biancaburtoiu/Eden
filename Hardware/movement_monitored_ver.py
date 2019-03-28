@@ -66,10 +66,11 @@ class Movement:
         self.relative_turn(rel_angle)
     '''
 
-    def forward_forever(self):
-        print("beginning to move forever")
-        self.motors[0].run_forever(speed_sp=1000,stop_action="brake")
-        self.motors[1].run_forever(speed_sp=1000,stop_action="brake")
+    def forward_forever(self,speed_modifier=1):
+        speed_modifier = max(0,min(speed_modifier,1)) # clip to [0,1]
+        print("starting to move at speed %s" %(speed_modifier*1000))
+        self.motors[0].run_forever(speed_sp=1000*speed_modifier,stop_action="brake")
+        self.motors[1].run_forever(speed_sp=1000*speed_modifier,stop_action="brake")
 
     def stop(self):
         print("stopping motors")

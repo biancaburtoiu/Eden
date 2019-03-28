@@ -57,7 +57,7 @@ def onMessage(client,userdata,msg):
         
 
 def follow_one_instruction(instruction_as_string,vision_error=False):
-    print("about to follow instruction: %s"%instruction_as_string)
+    #print("about to follow instruction: %s"%instruction_as_string)
     global currently_moving
     global currently_pinging
     global polling_sonar
@@ -88,7 +88,16 @@ def follow_one_instruction(instruction_as_string,vision_error=False):
             # note the number of squares is unused for the main navigation
             inst = instruction_as_string.split(",")
             inst_type = inst[0]
+
             if inst_type=='m':
+
+                # default speed is 1000, but this can be scaled
+                speed_modifier = 1
+                # some move instructions don't have a modifer, in this case
+                # default value of 1 is kept
+                if len(inst)==3:
+                    speed_modifier = float(inst[2])
+
                 currently_moving=True
                 # 0 represents active pinging with 0 pings missed so far
                 currently_pinging = 0
@@ -99,7 +108,7 @@ def follow_one_instruction(instruction_as_string,vision_error=False):
                 polling_sonar = True
                 poll_sonar()
 
-                movement_controller.forward_forever()
+                movement_controller.forward_forever(speed_modifier)
 
                 # start checking sonar regularly while we're moving
                 #polling_sonar = True
