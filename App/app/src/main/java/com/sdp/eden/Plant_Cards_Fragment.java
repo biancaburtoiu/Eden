@@ -498,6 +498,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         }
                     });
                     AlertDialog deleteDialog = deleteBuilder.create();
+                    deleteDialog.setCanceledOnTouchOutside(false);
                     deleteDialog.show();
                     return true;
 
