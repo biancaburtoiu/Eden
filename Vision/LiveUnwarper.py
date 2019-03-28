@@ -259,7 +259,7 @@ def on_message(client, userdata, msg):
                 frm = tuple([round(i) for i in grid_robot_pos])
                 if closest > 6:
                     if search_graph[frm[1]][frm[0]] == 1:
-                        search_graph = burrow_out_graph(search_graph, robot_pos)
+                        search_graph = burrow_out_graph(search_graph, frm)
                     _, path, _, insts = getInstructionsFromGrid(search_graph, target=goal_pos, start=frm,
                                                                 upside_down=True, bad_node_ranges=bad_node_ranges)
 
