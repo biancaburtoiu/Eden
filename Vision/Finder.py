@@ -18,10 +18,10 @@ class RobotFinder:
         params.maxArea = 60
         params.filterByCircularity = True
         params.minCircularity = 0.8
-        params.maxCircularity = 1
+        params.maxCircularity = 1.1
         params.filterByInertia = True
         params.minInertiaRatio = 0.5
-        params.maxInertiaRatio = 1
+        params.maxInertiaRatio = 1.1
         params.filterByColor = False
         params.filterByConvexity = False
 
