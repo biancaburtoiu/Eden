@@ -235,12 +235,30 @@ public class Plant_Cards_Fragment extends Fragment {
                             }
                         });
 
+                        // Adds cancel in overhead image plant creation step
+                        builder1.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                // nothing happens
+                            }
+                        });
+
                         AlertDialog dialog1 = builder1.create();
+                        dialog1.setCanceledOnTouchOutside(false);
                         dialog1.show();
                         //dialog1.getWindow().setLayout(width, height);
                     }
                 });
+
+                // Adds cancel in plant data plant creation step
+                builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // nothing happens
+                    }
+                });
                 AlertDialog dialog = builder.create();
+                dialog.setCanceledOnTouchOutside(false);
                 dialog.show();
                 //dialog.getWindow().setLayout(width, height);
 
@@ -313,10 +331,18 @@ public class Plant_Cards_Fragment extends Fragment {
                         });
                     }
                 });
+                builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // nothing happens
+                    }
+                });
                 AlertDialog dialog = builder.create();
+                dialog.setCanceledOnTouchOutside(false);
                 dialog.show();
             }
         });
+
         plantsRV.setLayoutManager(new LinearLayoutManager(getActivity())); // sets layout for recycler view, linear list in this case
         return view;
     }
