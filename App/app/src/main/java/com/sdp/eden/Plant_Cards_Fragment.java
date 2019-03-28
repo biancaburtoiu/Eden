@@ -305,8 +305,6 @@ public class Plant_Cards_Fragment extends Fragment {
 
                         if (timePicker.getHour()<10) time = "0"+time;
 
-                        int quantity = Integer.parseInt(quantityInput.getText().toString());
-
                         String selectedDay = dayOfWeekPicker.getSelectedItem().toString();
                         int dayToNumber;
                         switch (selectedDay) {
@@ -319,19 +317,35 @@ public class Plant_Cards_Fragment extends Fragment {
                             default: dayToNumber=6; break;
                         }
 
-                        ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
-                                currentPlant.getNoOfPetals(),currentPlant.getXCoordinate(), currentPlant.getYCoordinate(), true);
-                        DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
-                            @Override
-                            public void onAddScheduleEntryFinished(boolean success) {
-                                if (success)
-                                    Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlantName +
-                                        " on "+selectedDay+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
-                                else
-                                    Toast.makeText(getContext(), "Could not add watering schedule entry for "+ currentPlantName +".",
-                                            Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                        int quantityTextLength = quantityInput.getText().toString().trim().length();
+
+                        // Sanity checks before continuing:
+                        if(currentPlantName.equals("Select Plant")){
+                            Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must select a plant!", Snackbar.LENGTH_SHORT).show();
+                        }
+                        else if (selectedDay.equals("Select Day")) {
+                            Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must select the day of week!", Snackbar.LENGTH_SHORT).show();
+                        }
+                        else if (quantityTextLength<2 || quantityTextLength>3) { // only accepts numbers between 10-99ml
+                            Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "Enter a suitable water quantity (10-99ml)!", Snackbar.LENGTH_SHORT).show();
+                        }
+                        else {
+                            int quantity = Integer.parseInt(quantityInput.getText().toString());
+
+                            ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
+                                    currentPlant.getNoOfPetals(),currentPlant.getXCoordinate(), currentPlant.getYCoordinate(), true);
+                            DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
+                                @Override
+                                public void onAddScheduleEntryFinished(boolean success) {
+                                    if (success)
+                                        Toast.makeText(getContext(), "Added watering schedule entry for "+ currentPlantName +
+                                                " on "+selectedDay+ "s at "+ scheduleEntry.getTime()+ "!", Toast.LENGTH_SHORT).show();
+                                    else
+                                        Toast.makeText(getContext(), "Could not add watering schedule entry for "+ currentPlantName +".",
+                                                Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        }
                     }
                 });
                 builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
