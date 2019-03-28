@@ -180,7 +180,23 @@ public class Plant_Cards_Fragment extends Fragment {
                                 ProgressDialog mProgress;
                                 mProgress = new ProgressDialog(getContext(), R.style.spinner);
                                 mProgress.setMessage("Creating the plant ...");
-                                mProgress.show();
+                                mProgress.setCanceledOnTouchOutside(false);
+//                                mProgress.show();
+
+                                List<Float> coordinates = PictureTagMain.getPointCoordinatesFromRoom(getActivity());
+                                Log.d("Coords", coordinates.toString());
+
+                                if (coordinates.get(0) < 0f) coordinates.set(0, 0f);
+                                if (coordinates.get(0) > 1f) coordinates.set(0, 1f);
+                                if (coordinates.get(1) < 0f) coordinates.set(1, 0f);
+                                if (coordinates.get(1) > 1f) coordinates.set(1, 1f);
+
+                                float x = PictureTagLayout.returnX();
+                                float y = PictureTagLayout.returnY();
+
+
+
+                                Log.d("CoordsRaw", x + ", " + y);
 
                                 Bitmap defaultPlant = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.def_plant_icon);
                                 ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -189,22 +205,23 @@ public class Plant_Cards_Fragment extends Fragment {
                                 //Bitmap defaultPlant = getBitmap((VectorDrawable) getResources().getDrawable(R.drawable.def_));
                                 Log.d(TAG, "defaultPlant is: "+defaultPlant);
 
-                                // TODO: Need to adapt this if we save pictures to bucket!
-                                Plant plant;
+                                List<Integer> image;
+
                                 if (imageBitmap == null) {
-                                    plant = new Plant(plantName.getText().toString(),
-                                            plantSpecies.getSelectedItem().toString(),
-                                            bitmapToIntegerList(defaultPlant),
-                                            petalPicker.getValue(),
-                                            Float.valueOf("212.48"), Float.valueOf("594.51"));
+                                    image = bitmapToIntegerList(defaultPlant);
+                                } else {
+                                    image = bitmapToIntegerList(imageBitmap);
                                 }
-                                else {
-                                    plant = new Plant(plantName.getText().toString(),
-                                            plantSpecies.getSelectedItem().toString(),
-                                            bitmapToIntegerList(imageBitmap),
-                                            petalPicker.getValue(),
-                                            Float.valueOf("212.48"), Float.valueOf("594.51"));
-                                }
+
+                                //TODO: Adapt coordinates to what robot uses.
+                                Plant plant = new Plant(
+                                        plantName.getText().toString(),
+                                        plantSpecies.getSelectedItem().toString(),
+                                        image,
+                                        petalPicker.getValue(),
+                                        coordinates.get(0),
+                                        coordinates.get(1)
+                                );
 
                                 DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
                                     @Override
@@ -342,6 +359,7 @@ public class Plant_Cards_Fragment extends Fragment {
         ProgressDialog mProgress;
         mProgress = new ProgressDialog(getContext());
         mProgress.setMessage("Creating Plant ...");
+        mProgress.setCanceledOnTouchOutside(false);
         mProgress.show();
         StorageReference filepath = mStorage.child("PlantPhotos").child(FirebaseAuth.getInstance().getCurrentUser().getEmail().toString()).child(enteredPlantName);
         filepath.putFile(takenImage).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -363,7 +381,6 @@ public class Plant_Cards_Fragment extends Fragment {
         adapter.notifyDataSetChanged();
     }
 
-
     public void getLatestSchedulesList(Plant plant) {
         DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
             @Override
@@ -377,13 +394,12 @@ public class Plant_Cards_Fragment extends Fragment {
             }
         });
     }
-
-
     // Queries the database to get the most recent list of plants
     public void getLatestPlantList() {
         ProgressDialog mProgress;
         mProgress = new ProgressDialog(getContext(), R.style.spinner);
         mProgress.setMessage("Getting your plants ...");
+        mProgress.setCanceledOnTouchOutside(false);
         mProgress.show();
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
@@ -473,7 +489,6 @@ public class Plant_Cards_Fragment extends Fragment {
             return false;
         }
     }
-
 
 
     // Recyclerview Holders & Adapters:
@@ -662,7 +677,6 @@ public class Plant_Cards_Fragment extends Fragment {
         }
     }
 
-
     private class RecyclerViewHolder extends RecyclerView.ViewHolder{
 
         private CardView mCardView; // card for data display
@@ -691,7 +705,6 @@ public class Plant_Cards_Fragment extends Fragment {
         vectorDrawable.draw(canvas);
         return bitmap;
     }
-
     // https://stackoverflow.com/a/40886397
     public String bitmapToString(Bitmap bmp) {
 
@@ -704,7 +717,6 @@ public class Plant_Cards_Fragment extends Fragment {
         Log.d(TAG, "Result of bitmapToString is: "+result);
         return result;
     }
-
     // https://stackoverflow.com/a/40886397
     public List<Integer> bitmapToIntegerList(Bitmap bmp) {
 
@@ -719,8 +731,6 @@ public class Plant_Cards_Fragment extends Fragment {
         Log.d(TAG, "Result of bitmapToIntegerList is: "+integerList);
         return integerList;
     }
-
-
     // http://ramsandroid4all.blogspot.com/2014/09/converting-byte-array-to-bitmap-in.html
     public Bitmap byteArrayToBitmap(byte[] byteArray)
     {

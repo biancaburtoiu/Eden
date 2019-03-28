@@ -1,6 +1,7 @@
 package com.sdp.eden;
 
 
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Picture;
@@ -46,13 +47,13 @@ public class PictureTagMain extends Fragment {
     }
 
 
-    public List<Float> getPointCoordinatesFromRoom(){
-        //WindowManager wm = (WindowManager) getActivity().getSystemService(getActivity().WINDOW_SERVICE);
+    public static List<Float> getPointCoordinatesFromRoom(Activity activity){
+        WindowManager wm = (WindowManager) activity.getSystemService(Activity.WINDOW_SERVICE);
         Point size = new Point();
-        //wm.getDefaultDisplay().getRealSize(size);
+        wm.getDefaultDisplay().getRealSize(size);
 
         DisplayMetrics displaymetrics = new DisplayMetrics();
-        getActivity().getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
+        activity.getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
         int height = displaymetrics.heightPixels;
         int width = displaymetrics.widthPixels;
 

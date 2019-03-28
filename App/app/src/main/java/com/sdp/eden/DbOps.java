@@ -156,6 +156,7 @@ public class DbOps {
         db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Schedules")
+                .whereEqualTo("valid",true)
                 .get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
             @Override
             public void onComplete(@NonNull Task<QuerySnapshot> task) {

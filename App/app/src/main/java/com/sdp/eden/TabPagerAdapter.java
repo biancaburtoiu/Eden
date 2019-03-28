@@ -6,14 +6,17 @@ import android.support.v4.app.FragmentPagerAdapter;
 
 public class TabPagerAdapter extends FragmentPagerAdapter {
 
+    public static ScheduleFragment scheduleFragmentInstance;
     TabPagerAdapter(FragmentManager fm){super(fm);}
 
     @Override
     public Fragment getItem(int i) {
         switch(i){
             default: return new Plant_Cards_Fragment().newInstance();
-            case 1: return new ScheduleFragment();
-        }
+            case 1:
+                scheduleFragmentInstance = new ScheduleFragment();
+                return scheduleFragmentInstance;
+    }
     }
 
     @Override
