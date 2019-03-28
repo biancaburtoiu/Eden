@@ -156,6 +156,38 @@ def find_robot_dist_to_target(robot_pos, robot_target):
         dist_to_target = robot_pos[0] - robot_target[0]
     return dist_to_target
 
+def burrow_out_graph(graph, frm):
+    escape = False
+    visited = []
+    stack = [list(frm)]
+    while not escape:
+        curr_node = stack.pop(0)
+        if graph[curr_node[1]][curr_node[0]] == 0:
+            start_x = min(frm[0], curr_node[0])
+            end_x = max(frm[0], curr_node[0])
+            start_y = min(frm[1], curr_node[1])
+            end_y = max(frm[1], curr_node[1])
+            for y in range(start_y, end_y + 1):
+                graph[y][end_x] = 0
+            for x in range(start_x, end_x + 1):
+                graph[end_y][x] = 0
+            escape = True
+            break
+        else:
+            visited.append(curr_node)
+            deltas = [[0, -1], [-1, 0], [0, 1], [1, 0]]
+            for delta in deltas:
+                new_node = copy.copy(curr_node)
+                new_node[0] -= delta[0]
+                new_node[1] -= delta[1]
+                if new_node[1] >= 0 and new_node[1] < len(graph) and new_node[0] >= 0 and \
+                        new_node[0] < len(graph[0]) and new_node not in visited and new_node not in stack:
+                    stack.append(new_node)
+        if len(stack) == 0:
+            print("NO ESCAPE!")
+            break
+    return graph
+
 
 def on_message(client, userdata, msg):
     global robot_moving
@@ -226,6 +258,8 @@ def on_message(client, userdata, msg):
                 # print("CLOSEST IS %s" % closest)
                 frm = tuple([round(i) for i in grid_robot_pos])
                 if closest > 6:
+                    if search_graph[frm[1]][frm[0]] == 1:
+                        search_graph = burrow_out_graph(search_graph, robot_pos)
                     _, path, _, insts = getInstructionsFromGrid(search_graph, target=goal_pos, start=frm,
                                                                 upside_down=True, bad_node_ranges=bad_node_ranges)
 
@@ -436,78 +470,46 @@ class Unwarper:
         global stopping_distance
         if goal_pos is not None:
             if graph[frm[1]][frm[0]] == 1:
-                if graph[frm[1]][frm[0]] == 1:
-                    escape = False
-                    visited = []
-                    stack = [list(frm)]
-                    while not escape:
-                        curr_node = stack.pop(0)
-                        if graph[curr_node[1]][curr_node[0]] == 0:
-                            start_x = min(frm[0], curr_node[0])
-                            end_x = max(frm[0], curr_node[0])
-                            start_y = min(frm[1], curr_node[1])
-                            end_y = max(frm[1], curr_node[1])
-                            print("ROBOT AT (%s, %s) CLEARED X %s to %s AND Y %s to %s" % (
-                                frm[0], frm[1], start_x, end_x, start_y, end_y))
-                            for y in range(start_y, end_y + 1):
-                                graph[y][end_x] = 0
-                            for x in range(start_x, end_x + 1):
-                                graph[end_y][x] = 0
-                            escape = True
-                            break
-                        else:
-                            print("(%s,%s) contains a 1" % (curr_node[1], curr_node[0]))
-                            visited.append(curr_node)
-                            deltas = [[0, -1], [-1, 0], [0, 1], [1, 0]]
-                            for delta in deltas:
-                                new_node = copy.copy(curr_node)
-                                new_node[0] -= delta[0]
-                                new_node[1] -= delta[1]
-                                if new_node[1] >= 0 and new_node[1] < len(graph) and new_node[0] >= 0 and new_node[0] < len(
-                                        graph[0]) and new_node not in visited and new_node not in stack:
-                                    stack.append(new_node)
-                        if len(stack) == 0:
-                            break
-                            print("NO ESCAPE!")
+                graph = burrow_out_graph(graph, frm)
             _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True,
                                                         bad_node_ranges=bad_node_ranges)
-        if not robot_rotating and not robot_moving and insts != []:
-            next_inst = insts.pop(0)
-            next_inst = convert_orientation_inst_to_rotation(next_inst)
-            if abs(int(next_inst.split(",")[1])) > 5:
-                print("3. TOLD TO DO %s" % str(next_inst))
-                # print(insts)
-                self.mqtt.publish("start-instruction", next_inst, qos=2)
-                robot_rotating = True
-            else:
+            if not robot_rotating and not robot_moving and insts != []:
                 next_inst = insts.pop(0)
-                distance = next_inst[1] * square_length
-                robot_target = list(global_robot_pos)
-                # up
-                if robot_direction == 0:
-                    robot_target[1] -= distance
-                # right
-                if robot_direction == 1:
-                    robot_target[0] += distance
-                # down
-                if robot_direction == 2:
-                    robot_target[1] += distance
-                # left
-                if robot_direction == 3:
-                    robot_target[0] -= distance
-                robot_target = tuple(robot_target)
-                robot_moving = True
-                dist_to_target = find_robot_dist_to_target(global_robot_pos, robot_target)
-                if dist_to_target < 16:
-                    next_inst = list(next_inst)
-                    next_inst.append("%.2f" % ((dist_to_target / 2) / stopping_distance))
-                    next_inst = tuple(next_inst)
-                print("4. TOLD TO DO %s" % str(next_inst))
-                # print(insts)
-                if len(next_inst) == 2:
-                    client.publish("start-instruction", "%s,%s" % next_inst, qos=2)
-                elif len(next_inst) == 3:
-                    client.publish("start-instruction", "%s,%s,%s" % next_inst, qos=2)
+                next_inst = convert_orientation_inst_to_rotation(next_inst)
+                if abs(int(next_inst.split(",")[1])) > 5:
+                    print("3. TOLD TO DO %s" % str(next_inst))
+                    # print(insts)
+                    self.mqtt.publish("start-instruction", next_inst, qos=2)
+                    robot_rotating = True
+                else:
+                    next_inst = insts.pop(0)
+                    distance = next_inst[1] * square_length
+                    robot_target = list(global_robot_pos)
+                    # up
+                    if robot_direction == 0:
+                        robot_target[1] -= distance
+                    # right
+                    if robot_direction == 1:
+                        robot_target[0] += distance
+                    # down
+                    if robot_direction == 2:
+                        robot_target[1] += distance
+                    # left
+                    if robot_direction == 3:
+                        robot_target[0] -= distance
+                    robot_target = tuple(robot_target)
+                    robot_moving = True
+                    dist_to_target = find_robot_dist_to_target(global_robot_pos, robot_target)
+                    if dist_to_target < 16:
+                        next_inst = list(next_inst)
+                        next_inst.append("%.2f" % ((dist_to_target / 2) / stopping_distance))
+                        next_inst = tuple(next_inst)
+                    print("4. TOLD TO DO %s" % str(next_inst))
+                    # print(insts)
+                    if len(next_inst) == 2:
+                        client.publish("start-instruction", "%s,%s" % next_inst, qos=2)
+                    elif len(next_inst) == 3:
+                        client.publish("start-instruction", "%s,%s,%s" % next_inst, qos=2)
 
     def check_robot_at_target(self, robot_pos, local_robot_angle):
         global robot_target
@@ -601,6 +603,8 @@ class Unwarper:
                             found[i] = True
                         # If the cell is empty then this is the closest we can reach to the left/right/up/down of the goal
                         elif search_graph[local_goal[1]][local_goal[0]] == 0:
+                            if search_graphs[i][robot_pos[1]][robot_pos[0]] == 1:
+                                search_graphs[i] = burrow_out_graph(search_graphs[i], robot_pos)
                             _, path, _, _ = getInstructionsFromGrid(search_graphs[i], target=local_goal,
                                                                     start=robot_pos,
                                                                     upside_down=True, bad_node_ranges=bad_node_ranges)
