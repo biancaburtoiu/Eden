@@ -294,13 +294,16 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         String currentPlantName = plantSelect.getSelectedItem().toString();
-                        Plant currentPlant = plants.stream().filter(p -> p.getName() == currentPlantName).findFirst().orElse(null);
+                        Plant currentPlant = plants.stream().filter(p -> p.getName() == currentPlantName)
+                                .findFirst().orElse(null);
 
                         String time;
                         if (timePicker.getMinute()<10)
                             time = timePicker.getHour()+":0"+timePicker.getMinute();
                         else
                             time = timePicker.getHour()+":"+timePicker.getMinute();
+
+                        if (timePicker.getHour()<10) time = "0"+time;
 
                         int quantity = Integer.parseInt(quantityInput.getText().toString());
 
