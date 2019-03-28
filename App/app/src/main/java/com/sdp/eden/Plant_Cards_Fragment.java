@@ -620,24 +620,42 @@ public class Plant_Cards_Fragment extends Fragment {
             scheduleRVHolder.deleteWateringButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    DbOps.instance.deleteScheduleEntryOfPlant(scheduleEntriesList.get(i), new DbOps.onDeletePlantScheduleFinishedListener() {
-                        @Override
-                        public void onDeleteScheduleFinished(boolean success) {
-                            if (success) {
-                                Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                        "Successfully deleted schedule entry!", Snackbar.LENGTH_SHORT).show();
-                                Plant curPlant = plants.stream()
-                                        .findFirst()
-                                        .filter(plant -> plant.getName().equals(scheduleEntriesList.get(i).getPlantName()))
-                                        .orElse(null);
-                                getLatestSchedulesList(curPlant);
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                    builder.setTitle("Delete schedule entry");
+                    builder.setMessage("Are you sure you want to delete this entry? This action cannot be undone.");
 
-                            }
-                            else
-                                Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                        "Could not delete schedule entry. Please retry!", Snackbar.LENGTH_SHORT).show();
+                    builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            DbOps.instance.deleteScheduleEntryOfPlant(scheduleEntriesList.get(i), new DbOps.onDeletePlantScheduleFinishedListener() {
+                                @Override
+                                public void onDeleteScheduleFinished(boolean success) {
+                                    if (success) {
+                                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                "Successfully deleted schedule entry!", Snackbar.LENGTH_SHORT).show();
+                                        Plant curPlant = plants.stream()
+                                                .findFirst()
+                                                .filter(plant -> plant.getName().equals(scheduleEntriesList.get(i).getPlantName()))
+                                                .orElse(null);
+                                        getLatestSchedulesList(curPlant);
+
+                                    }
+                                    else
+                                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                "Could not delete schedule entry. Please retry!", Snackbar.LENGTH_SHORT).show();
+                                }
+                            });
                         }
                     });
+                    builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // do nothing
+                        }
+                    });
+                    AlertDialog dialog = builder.create();
+                    dialog.setCanceledOnTouchOutside(false);
+                    dialog.show();
                 }
             });
         }
