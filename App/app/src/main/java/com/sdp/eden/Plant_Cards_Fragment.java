@@ -477,7 +477,18 @@ public class Plant_Cards_Fragment extends Fragment {
                     deleteBuilder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            DbOps.instance.deletePlant(plants.get(position), success -> getLatestPlantList());
+                            DbOps.instance.deletePlant(plants.get(position), success -> {
+                                if (success) {
+                                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                            "Successfully deleted plant!", Snackbar.LENGTH_SHORT).show();
+                                    getLatestPlantList();
+                                }
+                                else {
+                                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                            "Could not delete plant. Please try again!", Snackbar.LENGTH_SHORT).show();
+                                    getLatestPlantList();
+                                }
+                            });
                         }
                     });
                     deleteBuilder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
