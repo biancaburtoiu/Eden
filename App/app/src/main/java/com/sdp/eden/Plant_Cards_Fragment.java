@@ -283,6 +283,7 @@ public class Plant_Cards_Fragment extends Fragment {
         });
 
         fab_addSchedule.setOnClickListener(new View.OnClickListener() {
+
             public void onClick(View v) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                 View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant_schedule,
@@ -314,6 +315,13 @@ public class Plant_Cards_Fragment extends Fragment {
                 builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+
+                        ProgressDialog mProgress;
+                        mProgress = new ProgressDialog(getContext(), R.style.spinner);
+                        mProgress.setMessage("Planning a watering...");
+                        mProgress.setCanceledOnTouchOutside(false);
+                        mProgress.show();
+
                         String currentPlantName = plantSelect.getSelectedItem().toString();
                         Plant currentPlant = plants.stream().filter(p -> p.getName() == currentPlantName)
                                 .findFirst().orElse(null);
@@ -354,7 +362,6 @@ public class Plant_Cards_Fragment extends Fragment {
                                                 currentPlant.getXCoordinate(), currentPlant.getYCoordinate(),
                                                 true);
 
-                            // TODO: Progress spinner here
                             DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                 @Override
                                 public void onAddScheduleEntryFinished(boolean success) {
@@ -365,6 +372,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                     else
                                         Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
                                                 "Could not add watering schedule entry for "+ currentPlantName +".", Snackbar.LENGTH_SHORT).show();
+                                    mProgress.dismiss();
                                 }
                             });
                         }
@@ -501,6 +509,12 @@ public class Plant_Cards_Fragment extends Fragment {
                     deleteBuilder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            ProgressDialog mProgress;
+                            mProgress = new ProgressDialog(getContext(), R.style.spinner);
+                            mProgress.setMessage("Deleting the plant...");
+                            mProgress.setCanceledOnTouchOutside(false);
+                            mProgress.show();
+
                             DbOps.instance.deletePlant(plants.get(position), success -> {
                                 if (success) {
                                     Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
@@ -512,6 +526,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                             "Could not delete plant. Please try again!", Snackbar.LENGTH_SHORT).show();
                                     getLatestPlantList();
                                 }
+                                mProgress.dismiss();
                             });
                         }
                     });
