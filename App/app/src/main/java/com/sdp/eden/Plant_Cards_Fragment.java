@@ -1,12 +1,15 @@
 package com.sdp.eden;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.VectorDrawable;
@@ -31,6 +34,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -80,7 +84,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
 
     FloatingActionMenu materialDesignFAM;
-    FloatingActionButton fab_addPlant, fab_addSchedule;
+    FloatingActionButton fab_addPlant, fab_addSchedule, fab_updateRoom;
 
     @Override
     public void onResume() {
@@ -102,6 +106,7 @@ public class Plant_Cards_Fragment extends Fragment {
         materialDesignFAM = (FloatingActionMenu) view.findViewById(R.id.material_design_android_floating_action_menu);
         fab_addPlant = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
+        fab_updateRoom = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item3);
 
         width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
         height = (int)(getResources().getDisplayMetrics().heightPixels*0.70);
@@ -184,11 +189,21 @@ public class Plant_Cards_Fragment extends Fragment {
                         Log.d(TAG, "Plant name format correct.");
                         Log.d(TAG, "Going to pick coordinates...");
 
+                        // Closing fam in the background
+                        materialDesignFAM.close(false);
+
                         // TODO: Go to the fragment
                         AlertDialog.Builder builder1 = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                         View viewInflated1 = LayoutInflater.from(getActivity()).inflate(R.layout.picturetag_main, (ViewGroup) getView(), false);
                         View img = viewInflated1.findViewById(R.id.overhead_image);
-                        Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.overhead_image);
+
+                        //Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.overhead_image);
+                        byte[] roomLayout = getByteArrayFromPreferences("roomLayout");
+                        Log.d(TAG, "roomLayout size: "+roomLayout.length);
+
+                        Bitmap bmp = byteArrayToBitmap(roomLayout);
+                        bmp = Bitmap.createScaledBitmap(bmp, 321*3,231*3, true);
+
                         Drawable d = new BitmapDrawable(getResources(), bmp);
                         img.setBackground(d);
                         builder1.setView(viewInflated1);
@@ -203,17 +218,13 @@ public class Plant_Cards_Fragment extends Fragment {
                                 mProgress.show();
 
                                 List<Float> coordinates = PictureTagMain.getPointCoordinatesFromRoom(getActivity());
-                                Log.d("Coords", coordinates.toString());
+                                Log.d(TAG, "Coordinate X is: "+coordinates.get(0));
+                                Log.d(TAG, "Coordinate Y is: "+coordinates.get(1));
 
-                                if (coordinates.get(0) < 0f) coordinates.set(0, 0f);
-                                if (coordinates.get(0) > 1f) coordinates.set(0, 1f);
-                                if (coordinates.get(1) < 0f) coordinates.set(1, 0f);
-                                if (coordinates.get(1) > 1f) coordinates.set(1, 1f);
-
-                                float x = PictureTagLayout.returnX();
-                                float y = PictureTagLayout.returnY();
-
-                                Log.d("CoordsRaw", x + ", " + y);
+//                                if (coordinates.get(0) < 0f) coordinates.set(0, 0f);
+//                                if (coordinates.get(0) > 1f) coordinates.set(0, 1f);
+//                                if (coordinates.get(1) < 0f) coordinates.set(1, 0f);
+//                                if (coordinates.get(1) > 1f) coordinates.set(1, 1f);
 
                                 // TODO: Reject continuing if coords are incorrect!!!
 
@@ -284,7 +295,6 @@ public class Plant_Cards_Fragment extends Fragment {
                 dialog.setCanceledOnTouchOutside(false);
                 dialog.show();
                 //dialog.getWindow().setLayout(width, height);
-
             }
         });
 
@@ -390,6 +400,55 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // nothing happens
+                        materialDesignFAM.close(false);
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.setCanceledOnTouchOutside(false);
+                dialog.show();
+            }
+        });
+
+        fab_updateRoom.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                builder.setTitle("Update your room layout");
+                builder.setMessage("Do you want to update the room layout?");
+
+                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                        ProgressDialog mProgress;
+                        mProgress = new ProgressDialog(getContext(), R.style.spinner);
+                        mProgress.setMessage("Refreshing room layout...");
+                        mProgress.setCanceledOnTouchOutside(false);
+                        mProgress.show();
+
+                        DbOps.instance.requestRoomLayoutRefresh(new DbOps.onRequestRoomLayoutFinishedListener() {
+                            @Override
+                            public void onRequestRoomLayoutFinished(byte[] newRoomImage) {
+                                if (newRoomImage != null) {
+                                    saveByteArray(newRoomImage, "roomLayout");
+                                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                            "Successfully saved current room layout!", Snackbar.LENGTH_SHORT).show();
+                                }
+                                else {
+                                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                            "Could not update room layout. Please try again!", Snackbar.LENGTH_SHORT).show();
+                                }
+                                materialDesignFAM.close(false);
+                                mProgress.dismiss();
+                            }
+                        });
+                    }
+                });
+
+                builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // do nothing
                         materialDesignFAM.close(false);
                     }
                 });
@@ -561,21 +620,6 @@ public class Plant_Cards_Fragment extends Fragment {
 
     // Recyclerview Holders & Adapters:
 
-    private class ScheduleRVHolder extends RecyclerView.ViewHolder{
-        private TextView day;
-        private TextView time;
-        private TextView quantity;
-        private Button deleteWateringButton;
-
-        ScheduleRVHolder(@NonNull View itemView){
-            super(itemView);
-            day = itemView.findViewById(R.id.day);
-            time = itemView.findViewById(R.id.time);
-            quantity = itemView.findViewById(R.id.quantity);
-            deleteWateringButton = itemView.findViewById(R.id.deleteWateringButton);
-        }
-    }
-
     private class ScheduleRVAdapter extends RecyclerView.Adapter<ScheduleRVHolder> {
         ArrayList<ScheduleEntry> scheduleEntriesList;
 
@@ -656,6 +700,21 @@ public class Plant_Cards_Fragment extends Fragment {
                     dialog.show();
                 }
             });
+        }
+    }
+
+    private class ScheduleRVHolder extends RecyclerView.ViewHolder{
+        private TextView day;
+        private TextView time;
+        private TextView quantity;
+        private Button deleteWateringButton;
+
+        ScheduleRVHolder(@NonNull View itemView){
+            super(itemView);
+            day = itemView.findViewById(R.id.day);
+            time = itemView.findViewById(R.id.time);
+            quantity = itemView.findViewById(R.id.quantity);
+            deleteWateringButton = itemView.findViewById(R.id.deleteWateringButton);
         }
     }
 
@@ -815,7 +874,7 @@ public class Plant_Cards_Fragment extends Fragment {
         return result;
     }
     // https://stackoverflow.com/a/40886397
-    public List<Integer> bitmapToIntegerList(Bitmap bmp) {
+    public static List<Integer> bitmapToIntegerList(Bitmap bmp) {
 
         ByteArrayOutputStream bao = new ByteArrayOutputStream();
         bmp.compress(Bitmap.CompressFormat.PNG, 100, bao); // bmp is bitmap from user image file
@@ -829,7 +888,7 @@ public class Plant_Cards_Fragment extends Fragment {
         return integerList;
     }
     // http://ramsandroid4all.blogspot.com/2014/09/converting-byte-array-to-bitmap-in.html
-    public Bitmap byteArrayToBitmap(byte[] byteArray)
+    public static Bitmap byteArrayToBitmap(byte[] byteArray)
     {
         ByteArrayInputStream arrayInputStream = new ByteArrayInputStream(byteArray);
         Bitmap bitmap = BitmapFactory.decodeStream(arrayInputStream);
@@ -844,4 +903,41 @@ public class Plant_Cards_Fragment extends Fragment {
                 .getSystemService(Objects.requireNonNull(getActivity()).INPUT_METHOD_SERVICE);
         inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
+
+
+    // https://freakycoder.com/android-notes-40-how-to-save-and-get-arraylist-into-sharedpreference-7d1f044bc79a
+    public void saveByteArray(byte[] list, String key) {
+        String byteString = Base64.encodeToString(list, Base64.DEFAULT);
+        Log.d(TAG, "ByteString size is: "+byteString.length());
+
+        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(key, byteString);
+        editor.commit();
+
+//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+//        SharedPreferences.Editor editor = prefs.edit();
+//        Gson gson = new Gson();
+//        String json = gson.toJson(list);
+//        editor.putString(key, json);
+//        editor.apply();
+        Log.d(TAG, "Arrived at the end of saveByteArray");
+    }
+
+    public byte[] getByteArrayFromPreferences(String key){
+        SharedPreferences sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+        String string = sharedPref.getString(key, "");
+        Log.d(TAG, "Just about to return string of size: "+string.length());
+
+        byte[] result = Base64.decode(string, Base64.DEFAULT);
+        Log.d(TAG, "Just about to return byte[] of length: "+result.length);
+
+        return result;
+//        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+//        Gson gson = new Gson();
+//        String json = prefs.getString(key, null);
+//        Type type = new TypeToken<byte[]>() {}.getType();
+//        return gson.fromJson(json, type);
+    }
+
 }

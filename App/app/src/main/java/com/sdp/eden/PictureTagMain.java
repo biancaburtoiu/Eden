@@ -57,8 +57,8 @@ public class PictureTagMain extends Fragment {
         int height = displaymetrics.heightPixels;
         int width = displaymetrics.widthPixels;
 
-        float img_height= (float) (size.x*0.97);
-        float img_width=(float) (size.y*0.48);
+        float img_height= (float) (1920*0.387);
+        float img_width=(float) (1080*0.85);
 
         float currentX=  PictureTagLayout.returnX();
         Log.d("testing1", "x  is "+currentX);

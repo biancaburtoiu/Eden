@@ -45,4 +45,7 @@ dependencies {
 
     //fab dependency
     implementation 'com.github.clans:fab:1.6.2'
+
+    //saving image to sharedpreferences dependency
+    implementation 'com.google.code.gson:gson:2.8.5'
 }

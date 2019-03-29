@@ -81,8 +81,6 @@ public class PictureTagView extends RelativeLayout implements OnEditorActionList
         super.onLayout(changed, l, t, r, b);
         View parent = (View) getParent();
         //int halfParentW = (int) (parent.getWidth()*0.5);
-        Log.d("testing3","valueX" +  l);
-        Log.d("testing3","valueY" );
         if(l<=40){
             direction = Direction.Left;
         }
