@@ -65,6 +65,34 @@ class Movement:
         rel_angle = rel_from_abs_turn(degrees,self.angle)
         self.relative_turn(rel_angle)
     '''
+    def start_slow_turn(self,dir):
+        print("starting slow turn! %s"%dir)
+
+        if dir=='r':
+            # turn right
+            self.motors[0].run_forever(speed_sp=100)
+            self.motors[1].run_forever(speed_sp=-100)
+        else:
+            # turn left
+            self.motors[0].run_forever(speed_sp=-100)
+            self.motors[1].run_forever(speed_sp=100)
+
+    def do_timed_turn(self,dir,rotation_time):
+        print("turning %s for %s seconds"%(dir,rotation_time))
+
+        ms_time = rotation_time*1000
+        if dir=='r':
+            # turn right
+            self.motors[0].run_timed(speed_sp=300, time_sp=ms_time)
+            self.motors[1].run_timed(speed_sp=-300, time_sp=ms_time)
+        else:
+            # turn left
+            self.motors[0].run_timed(speed_sp=-300, time_sp=ms_time)
+            self.motors[1].run_timed(speed_sp=300, time_sp=ms_time)
+
+        time.sleep(rotation_time)
+
+        self.stop()
 
     def forward_forever(self,speed_modifier=1):
         speed_modifier = max(0,min(speed_modifier,1)) # clip to [0,1]
