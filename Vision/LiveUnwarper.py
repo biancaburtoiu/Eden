@@ -49,7 +49,7 @@ shift_amount = 1
 global reached_goal
 reached_goal = False
 global up_left_down_right
-up_left_down_right = [None, None, None, None]
+up_left_down_right = [None for i in range(8)]
 global current_goal_number
 current_goal_number = 0
 global initial_dist_to_target
@@ -59,9 +59,10 @@ connected = False
 global stopping_distance
 stopping_distance = 16
 global bad_node_ranges
-bad_node_ranges = [((0, 100), (99, 124)), ((100, 320), (93, 130)), ((154, 182), (0, 93)), ((98, 127), (124, 230))]
+bad_node_ranges = [((0, 100), (99, 124)), ((100, 320), (93, 130)), ((154, 182), (0, 93)), ((98, 127), (124, 230))] # Camera boundaires
 bad_node_ranges = [((x1 - stopping_distance, x2 + stopping_distance), (y1 - stopping_distance, y2 + stopping_distance))
                    for ((x1, x2), (y1, y2)) in bad_node_ranges]
+bad_node_ranges += [((193, 184), (236, 217))] # Overexposure as under light
 global final_turn
 final_turn = False
 global start_graph
@@ -155,6 +156,7 @@ def find_robot_dist_to_target(robot_pos, robot_target):
     elif robot_direction == 3:
         dist_to_target = robot_pos[0] - robot_target[0]
     return dist_to_target
+
 
 def burrow_out_graph(graph, frm):
     escape = False
@@ -583,9 +585,9 @@ class Unwarper:
         global current_goal_number
         global goal_pos
         global reached_goal
-        delta = [[0, -1], [-1, 0], [0, 1], [1, 0]]
-        up_left_down_right = [list(goal_pos) for x in range(4)]
-        found = [False, False, False, False]
+        delta = [[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]]
+        up_left_down_right = [list(goal_pos) for x in range(len(delta))]
+        found = [False for x in range(len(delta))]
         while not all(found):
             for i in range(len(found)):
                 if not found[i]:
@@ -624,7 +626,7 @@ class Unwarper:
         if new_goal_pos is not None:
             goal_pos = new_goal_pos
             print("FOUND SIDES AT %s" % str(up_left_down_right))
-        if goal_pos is None and current_goal_number == 3:
+        if goal_pos is None and current_goal_number == len(up_left_down_right) - 1:
             reached_goal = True
 
     # Unwarp all 4 cameras and merge them into a single image in real time
@@ -690,7 +692,7 @@ class Unwarper:
                             if new_goal and not first_iteration and goal_pos is not None:
                                 search_graphs = [
                                     Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
-                                                                  cell_length=cell_length) for x in range(4)]
+                                                                  cell_length=cell_length) for x in range(8)]
                                 self.find_nearest_free_cells(search_graphs,
                                                              tuple([round(i / shift_amount) for i in robot_pos_dec]))
                                 if up_left_down_right[current_goal_number] is not None:
