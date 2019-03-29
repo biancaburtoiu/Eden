@@ -32,7 +32,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -43,7 +42,6 @@ import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.common.primitives.Bytes;
@@ -69,7 +67,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private static final String TAG = "Plant_Cards_Fragment";
     private ArrayList<Plant> plants; // list of plants pulled from firebase
-    private ArrayList<ScheduleEntry> scheduleEntries;
+    private ArrayList<ScheduleEntry> schedules;
 
     private RecyclerView plantsRV;
     private RecyclerView schedulesRV;
@@ -356,6 +354,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                                 currentPlant.getXCoordinate(), currentPlant.getYCoordinate(),
                                                 true);
 
+                            // TODO: Progress spinner here
                             DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                 @Override
                                 public void onAddScheduleEntryFinished(boolean success) {
@@ -435,13 +434,13 @@ public class Plant_Cards_Fragment extends Fragment {
 
     }
 
-    private void populatePlantRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
+    private void populatePlantsRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
         RecyclerViewAdapter adapter = new RecyclerViewAdapter(plants);
         plantsRV.setAdapter(adapter);
         adapter.notifyDataSetChanged();
     }
 
-    private void populateSchedules(ArrayList<ScheduleEntry> schedules) {
+    private void populateSchedulesRecyclerView(ArrayList<ScheduleEntry> schedules) {
         ScheduleRVAdapter adapter = new ScheduleRVAdapter(schedules);
         schedulesRV.setAdapter(adapter);
         adapter.notifyDataSetChanged();
@@ -451,11 +450,13 @@ public class Plant_Cards_Fragment extends Fragment {
         DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
             @Override
             public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
-                if (scheduleEntries==null) return;
-                else
-                {
+                if (scheduleEntries==null) populateSchedulesRecyclerView(new ArrayList<>());
+                else {
                     Log.d(TAG, "Obtained schedules list of size: "+scheduleEntries.size());
-                    populateSchedules(new ArrayList<>(scheduleEntries));
+
+                    //Refreshes the recyclerview:
+                    schedules = new ArrayList<>(scheduleEntries);
+                    populateSchedulesRecyclerView(new ArrayList<>(scheduleEntries));
                 }
             }
         });
@@ -470,13 +471,13 @@ public class Plant_Cards_Fragment extends Fragment {
         mProgress.show();
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
-                    if (plantsFromDB==null) return;
+                    if (plantsFromDB==null) populatePlantsRecyclerView(new ArrayList<>());
 
                     Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
 
                     // Refreshes the recyclerview:
                     plants = new ArrayList<>(plantsFromDB);
-                    populatePlantRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
+                    populatePlantsRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
                     mProgress.dismiss();
                 });
     }
