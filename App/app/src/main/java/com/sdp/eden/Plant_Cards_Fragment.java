@@ -245,10 +245,12 @@ public class Plant_Cards_Fragment extends Fragment {
                                     @Override
                                     public void onUpdateFinished(boolean success) {
                                         //uploadImageToFirebase(); // completes the new plant
-                                        getLatestPlantList();
+                                        if (success) {
+                                            getLatestPlantList();
 
-                                        mProgress.dismiss();
-                                        materialDesignFAM.close(false);
+                                            mProgress.dismiss();
+                                            materialDesignFAM.close(false);
+                                        }
                                     }
                                 });
                             }
@@ -259,6 +261,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 // nothing happens
+                                materialDesignFAM.close(false);
                             }
                         });
 
@@ -274,6 +277,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // nothing happens
+                        materialDesignFAM.close(false);
                     }
                 });
                 AlertDialog dialog = builder.create();
@@ -366,13 +370,16 @@ public class Plant_Cards_Fragment extends Fragment {
                             DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                 @Override
                                 public void onAddScheduleEntryFinished(boolean success) {
-                                    if (success)
+                                    materialDesignFAM.close(false);
+                                    if (success) {
                                         Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                "Added watering schedule entry for "+ currentPlantName + " on "+selectedDay+ "s at "
-                                                        + scheduleEntry.getTime()+ "!", Snackbar.LENGTH_SHORT).show();
-                                    else
+                                                "Added watering schedule entry for " + currentPlantName + " on " + selectedDay + "s at "
+                                                        + scheduleEntry.getTime() + "!", Snackbar.LENGTH_SHORT).show();
+                                    }
+                                    else {
                                         Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                "Could not add watering schedule entry for "+ currentPlantName +".", Snackbar.LENGTH_SHORT).show();
+                                                "Could not add watering schedule entry for " + currentPlantName + ".", Snackbar.LENGTH_SHORT).show();
+                                    }
                                     mProgress.dismiss();
                                 }
                             });
@@ -383,6 +390,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // nothing happens
+                        materialDesignFAM.close(false);
                     }
                 });
                 AlertDialog dialog = builder.create();
@@ -538,6 +546,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             // nothing happens
+                            materialDesignFAM.close(false);
                         }
                     });
                     AlertDialog deleteDialog = deleteBuilder.create();
@@ -612,6 +621,9 @@ public class Plant_Cards_Fragment extends Fragment {
                     builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            String currentPlantName = scheduleEntriesList.get(i).getPlantName();
+                            Log.d(TAG, "CurrentPlantName is: "+currentPlantName);
+
                             DbOps.instance.deleteScheduleEntryOfPlant(scheduleEntriesList.get(i), new DbOps.onDeletePlantScheduleFinishedListener() {
                                 @Override
                                 public void onDeleteScheduleFinished(boolean success) {
@@ -619,9 +631,9 @@ public class Plant_Cards_Fragment extends Fragment {
                                         Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
                                                 "Successfully deleted schedule entry!", Snackbar.LENGTH_SHORT).show();
                                         Plant curPlant = plants.stream()
-                                                .findFirst()
-                                                .filter(plant -> plant.getName().equals(scheduleEntriesList.get(i).getPlantName()))
-                                                .orElse(null);
+                                                .filter(plant -> plant.getName().equals(currentPlantName))
+                                                .collect(Collectors.toList())
+                                                .get(0);
                                         getLatestSchedulesList(curPlant);
 
                                     }
@@ -636,6 +648,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             // do nothing
+                            materialDesignFAM.close(false);
                         }
                     });
                     AlertDialog dialog = builder.create();
