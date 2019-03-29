@@ -1,94 +1,149 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:orientation="vertical">
+
+
+<de.hdodenhof.circleimageview.CircleImageView
+    android:id="@+id/plantPic"
+    android:layout_width="70dp"
+    android:layout_height="70dp"
+    android:layout_gravity="center"
+    android:layout_marginBottom="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginTop="8dp"
+    android:elevation="7dp"
+    android:src="@drawable/ic_camera"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/colored_bar"
+    app:layout_constraintVertical_bias="0.110000014" />
+
+<TextView
+    android:id="@+id/textView3"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:background="#DAF7A6"
-    android:clickable="true"
-    android:focusableInTouchMode="true">
-    <!-- for the keyboard ^ -->
-    <!-- https://stackoverflow.com/a/19828165/7038747 -->
+    android:layout_marginBottom="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginTop="8dp"
+    android:paddingTop="10dp"
+    android:text="Tap to add a picture of the plant"
+    android:textAlignment="center"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintHorizontal_bias="0.0"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/plantPic"
+    app:layout_constraintVertical_bias="0.0" />
+
+<EditText
+    android:id="@+id/plantName"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:layout_marginEnd="32dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginTop="8dp"
+    android:backgroundTint="@color/black"
+    android:ems="10"
+    android:hint=" Plant Name"
+    android:inputType="textPersonName"
+    android:textColor="@color/black"
+    android:textColorHint="@color/black"
+    android:textCursorDrawable="@null"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/textView3"
+    app:layout_constraintVertical_bias="0.0" />
+
+<Spinner
+    android:id="@+id/plantSpecies"
+    style="@android:style/Widget.Holo.Light.Spinner"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:layout_marginEnd="32dp"
+    android:layout_marginStart="32dp"
+    android:layout_marginTop="8dp"
+    android:backgroundTint="@color/black"
+    android:popupBackground="@color/white"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintHorizontal_bias="0.4"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/plantName"
+    app:layout_constraintVertical_bias="0.0" />
 
     <TextView
-        android:id="@+id/textView"
+        android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@color/colorPrimary"
-        android:text="New Plant"
-        android:elevation="7dp"
-        android:textColor="@color/white"
-        android:textSize="24sp"/>
-
-    <de.hdodenhof.circleimageview.CircleImageView
-        android:id="@+id/plantPic"
-        android:layout_width="70dp"
-        android:layout_height="70dp"
         android:layout_gravity="center"
-        android:elevation="7dp"
-        android:src="@drawable/ic_camera"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"/>
-
-    <TextView
-        android:id="@+id/textView3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Tap to add a picture of the plant"
-        android:textAlignment="center"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"/>
-
-    <EditText
-        android:id="@+id/plantName"
-        android:layout_gravity="center"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:backgroundTint="@color/black"
-        android:ems="10"
-        android:hint="Enter plant name here"
-        android:inputType="textPersonName"
-        android:textColor="@color/black"
-        android:textColorHint="@color/black"
-        android:textCursorDrawable="@null"
         android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"/>
-
-    <Spinner
-        android:id="@+id/plantSpecies"
-        android:layout_gravity="center"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:layout_marginBottom="8dp"
-        android:backgroundTint="@color/black"
-        android:popupBackground="@color/white"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
         android:text="Select the number of red petals"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
-        android:layout_gravity="center"/>
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/plantSpecies"
+        app:layout_constraintVertical_bias="0.0" />
 
     <NumberPicker
         android:id="@+id/petalPicker"
-        android:layout_width="wrap_content"
-        android:layout_height="60dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
+        android:layout_width="85dp"
+        android:layout_height="83dp"
         android:layout_gravity="center"
-        android:theme="@style/AppTheme.Picker"/>
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:theme="@style/AppTheme.Picker"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView2" />
 
-</LinearLayout>
+
+<View
+    android:id="@+id/colored_bar"
+    android:layout_width="355dp"
+    android:layout_height="65dp"
+    android:layout_marginBottom="8dp"
+    android:background="@color/colorPrimary"
+    android:elevation="6dp"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintVertical_bias="0.0" />
+
+<TextView
+    android:id="@+id/textView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginTop="8dp"
+    android:background="@null"
+    android:elevation="7dp"
+    android:text="New Plant"
+    android:textColor="@color/white"
+    android:textSize="24sp"
+    app:layout_constraintBottom_toBottomOf="@+id/colored_bar"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintHorizontal_bias="0.0"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent" />
+
+
+</android.support.constraint.ConstraintLayout>
