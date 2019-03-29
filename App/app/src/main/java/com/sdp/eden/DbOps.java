@@ -5,6 +5,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
@@ -13,6 +15,8 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +28,7 @@ public class DbOps {
 
 
     FirebaseFirestore db = FirebaseFirestore.getInstance();
+    FirebaseStorage storage = FirebaseStorage.getInstance();
 
     public static final DbOps instance = new DbOps();
 
@@ -381,6 +386,61 @@ public class DbOps {
                 });
     }
 
+    void requestRoomLayoutRefresh(onRequestRoomLayoutFinishedListener listener) {
+        // Set parameter in database to request_pending
+        db.collection("overhead-image")
+                .document("overhead-image")
+                .update("status", "request_pending")
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if (task.isSuccessful()) {
+                            Log.d(TAG, "Successfully updated status to request_pending.");
+                            downloadNewRoomLayout(new onDownloadNewRoomLayoutFinishedListener() {
+                                @Override
+                                public void onDownloadNewRoomLayoutFinished(byte[] newRoomImage) {
+                                    if (newRoomImage != null) {
+                                        Log.d(TAG, "Found new layout, will return image!");
+                                        listener.onRequestRoomLayoutFinished(newRoomImage);
+                                    }
+                                    else {
+                                        Log.d(TAG, "Updated status but could not return image.");
+                                        listener.onRequestRoomLayoutFinished(null);
+                                    }
+                                }
+                            });
+                        }
+                        else {
+                            Log.d(TAG, "Could not even update status to request_pending.");
+                            listener.onRequestRoomLayoutFinished(null);
+                        }
+                    }
+                });
+    }
+
+    void downloadNewRoomLayout(onDownloadNewRoomLayoutFinishedListener listener)  {
+        StorageReference storageRef = storage.getReference();
+        StorageReference roomLayoutRef = storageRef.child("/overhead-image");
+
+        final long ONE_MEGABYTE = 1024 * 1024;
+        roomLayoutRef.getBytes(ONE_MEGABYTE).addOnSuccessListener(new OnSuccessListener<byte[]>() {
+            @Override
+            public void onSuccess(byte[] bytes) {
+                Log.d(TAG, "Successfully obtained room layout!");
+//                List<Integer> image = Plant_Cards_Fragment
+//                        .bitmapToIntegerList(Plant_Cards_Fragment.byteArrayToBitmap(bytes));
+                listener.onDownloadNewRoomLayoutFinished(bytes);
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                Log.d(TAG, "Could not obtain new room layout.");
+                listener.onDownloadNewRoomLayoutFinished(null);
+            }
+        });
+
+    }
+
     interface onAddPlantFinishedListener {
         void onUpdateFinished(boolean success);
     }
@@ -419,5 +479,13 @@ public class DbOps {
 
     interface onDeletePlantScheduleFinishedListener {
         void onDeleteScheduleFinished(boolean success);
+    }
+
+    interface onRequestRoomLayoutFinishedListener {
+        void onRequestRoomLayoutFinished(byte[] newRoomImage);
+    }
+
+    interface onDownloadNewRoomLayoutFinishedListener {
+        void onDownloadNewRoomLayoutFinished(byte[] newRoomImage);
     }
 }
