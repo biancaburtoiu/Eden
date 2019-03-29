@@ -1,6 +1,7 @@
 package com.sdp.eden;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -13,6 +14,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -20,6 +22,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+
+import java.util.Objects;
 
 public class Signin extends AppCompatActivity {
     private static final String TAG = "SignInActivity";
@@ -49,6 +53,24 @@ public class Signin extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 register(v);
+            }
+        });
+
+        mEmailField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    hideKeyboard(v);
+                }
+            }
+        });
+
+        mPasswordField.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    hideKeyboard(v);
+                }
             }
         });
     }
@@ -182,6 +204,11 @@ public class Signin extends AppCompatActivity {
     }
 
 
-
+    // https://stackoverflow.com/a/19828165/7038747
+    public void hideKeyboard(View view) {
+        InputMethodManager inputMethodManager =(InputMethodManager) getSystemService
+                (Objects.requireNonNull(Activity.INPUT_METHOD_SERVICE));
+        inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
 
 }
