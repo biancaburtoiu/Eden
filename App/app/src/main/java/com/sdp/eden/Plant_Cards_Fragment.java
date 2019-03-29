@@ -108,6 +108,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
         materialDesignFAM.setClosedOnTouchOutside(true);
 
+
         fab_addPlant.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 Log.d(TAG, "User input: click on Add");
@@ -247,6 +248,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                         getLatestPlantList();
 
                                         mProgress.dismiss();
+                                        materialDesignFAM.close(false);
                                     }
                                 });
                             }
@@ -283,7 +285,6 @@ public class Plant_Cards_Fragment extends Fragment {
         });
 
         fab_addSchedule.setOnClickListener(new View.OnClickListener() {
-
             public void onClick(View v) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                 View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant_schedule,
@@ -358,9 +359,9 @@ public class Plant_Cards_Fragment extends Fragment {
                             int quantity = Integer.parseInt(quantityPicker.getDisplayedValues()[quantityPicker.getValue()]);
 
                             ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
-                                                currentPlant.getNoOfPetals(),
-                                                currentPlant.getXCoordinate(), currentPlant.getYCoordinate(),
-                                                true);
+                                    currentPlant.getNoOfPetals(),
+                                    currentPlant.getXCoordinate(), currentPlant.getYCoordinate(),
+                                    true);
 
                             DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                 @Override
@@ -479,13 +480,16 @@ public class Plant_Cards_Fragment extends Fragment {
         mProgress.show();
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
-                    if (plantsFromDB==null) populatePlantsRecyclerView(new ArrayList<>());
+                    if (plantsFromDB==null) {
+                        populatePlantsRecyclerView(new ArrayList<>());
+                    }
+                    else {
+                        Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
 
-                    Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
-
-                    // Refreshes the recyclerview:
-                    plants = new ArrayList<>(plantsFromDB);
-                    populatePlantsRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
+                        // Refreshes the recyclerview:
+                        plants = new ArrayList<>(plantsFromDB);
+                        populatePlantsRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
+                    }
                     mProgress.dismiss();
                 });
     }
