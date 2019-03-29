@@ -199,6 +199,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         Log.d(TAG, "roomLayout size: "+roomLayout.length);
 
                         Bitmap bmp = byteArrayToBitmap(roomLayout);
+                        bmp = Bitmap.createScaledBitmap(bmp, 321*3,231*3, true);
 
                         Drawable d = new BitmapDrawable(getResources(), bmp);
                         img.setBackground(d);
@@ -431,7 +432,6 @@ public class Plant_Cards_Fragment extends Fragment {
                             @Override
                             public void onRequestRoomLayoutFinished(byte[] newRoomImage) {
                                 if (newRoomImage != null) {
-                                    // TODO: Save image somewhere appropriate
                                     saveByteArray(newRoomImage, "roomLayout");
                                     Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
                                             "Successfully saved current room layout!", Snackbar.LENGTH_SHORT).show();
