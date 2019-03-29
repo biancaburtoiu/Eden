@@ -1,5 +1,6 @@
 package com.sdp.eden;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -8,6 +9,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.VectorDrawable;
@@ -32,6 +34,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -215,17 +218,13 @@ public class Plant_Cards_Fragment extends Fragment {
                                 mProgress.show();
 
                                 List<Float> coordinates = PictureTagMain.getPointCoordinatesFromRoom(getActivity());
-                                Log.d("Coords", coordinates.toString());
+                                Log.d(TAG, "Coordinate X is: "+coordinates.get(0));
+                                Log.d(TAG, "Coordinate Y is: "+coordinates.get(1));
 
-                                if (coordinates.get(0) < 0f) coordinates.set(0, 0f);
-                                if (coordinates.get(0) > 1f) coordinates.set(0, 1f);
-                                if (coordinates.get(1) < 0f) coordinates.set(1, 0f);
-                                if (coordinates.get(1) > 1f) coordinates.set(1, 1f);
-
-                                float x = PictureTagLayout.returnX();
-                                float y = PictureTagLayout.returnY();
-
-                                Log.d("CoordsRaw", x + ", " + y);
+//                                if (coordinates.get(0) < 0f) coordinates.set(0, 0f);
+//                                if (coordinates.get(0) > 1f) coordinates.set(0, 1f);
+//                                if (coordinates.get(1) < 0f) coordinates.set(1, 0f);
+//                                if (coordinates.get(1) > 1f) coordinates.set(1, 1f);
 
                                 // TODO: Reject continuing if coords are incorrect!!!
 
@@ -296,7 +295,6 @@ public class Plant_Cards_Fragment extends Fragment {
                 dialog.setCanceledOnTouchOutside(false);
                 dialog.show();
                 //dialog.getWindow().setLayout(width, height);
-
             }
         });
 
