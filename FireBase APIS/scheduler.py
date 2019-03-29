@@ -15,13 +15,18 @@ q=queue.PriorityQueue()
 stoplisteners={}
 lock=threading.Condition()
 
+
+
+
 def plant_processor(doc_snapshot):
     print("snapshot",doc_snapshot)
     global t
-    if doc_snapshot.to_dict()!=None:
+    a=doc_snapshot.to_dict()
+    if a!=None and a["valid"]:
         a=doc_snapshot.to_dict()
         print(doc_snapshot)
-        b=ScheduleEntry(a['plantXCoordinate'],a['plantYCoordinate'],a['day'],a['time'],a['plantName'],doc_snapshot)
+        b=ScheduleEntry(doc_snapshot.id,a['plantXCoordinate'],a['plantYCoordinate'],a['day'],a['time'],a['plantNoOfPetals'],doc_snapshot)
+
         if b.datetime< dt.datetime(1999,1,1).now():
             b.datetime=b.datetime+dt.timedelta(7)
 
@@ -75,7 +80,8 @@ def on_message(client,userdata,message):
         print("navigate finished")
 
 class ScheduleEntry:
-    def __init__(self, xcoord,ycoord,day,time,plant,docid):
+    def __init__(self,docname, xcoord,ycoord,day,time,plant,docid):
+        self.docname=docname
         self.xcoord=xcoord 
         self.ycoord=ycoord
         rn=dt.datetime(2019,1,1).today().weekday()
@@ -91,8 +97,24 @@ class ScheduleEntry:
 
 
         self.plant=plant
+        
+    def send_if_ok(self):
+        doc=db.collection(u'Users').document(u'test@gmail.com').collection(u'Schedules').document(self.docname).get()
+        loc=doc.to_dict()
+        if loc!=None:
+            if loc['valid']:
+                client.publish('navigate-start',(str(self.xcoord)+","+str(self.ycoord)), qos=2)
+                print("going")
+                with lock:
+                    lock.wait()
+                self.datetime+=dt.timedelta(7)
+                q.put(self)
+                client.publish('close-navigate',str(self.plant), qos=2)
+
+    
+        
     def __repr__(self):
-        return "ScheduleEntry("+self.plant+str(self.datetime)+"::"+str(self.xcoord) +","+ str(self.ycoord)+")"
+        return "ScheduleEntry("+str(self.plant)+str(self.datetime)+"::"+str(self.xcoord) +","+ str(self.ycoord)+")"
 
     def __lt__(self, other):
         return self.datetime<other.datetime
@@ -114,12 +136,10 @@ while True:
     now=dt.datetime(1999,1,1).now()
     while not q.empty() and q.queue[0].datetime<now:
         loc=q.get()
-        print("going")# make this work
-        client.publish('navigate-start',(str(loc.xcoord)+","+str(loc.ycoord)), qos=2)
         
-        with lock:
-            lock.wait()
+        loc.send_if_ok()
 
+        
         if q.empty() or q.queue[0].datetime>now:
             print("going home")
     time.sleep(1)
