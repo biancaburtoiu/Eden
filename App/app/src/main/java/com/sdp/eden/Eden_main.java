@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TableLayout;
 import android.widget.TextView;
@@ -38,6 +39,7 @@ public class Eden_main extends AppCompatActivity {
     TextView batText;
     private ProgressBar mProgressBat;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,6 +47,7 @@ public class Eden_main extends AppCompatActivity {
 
         //set up toolbar at top, and setting listener for home button (back arrow)
         toolbar = findViewById(R.id.toolbar);
+        ImageView battery = toolbar.findViewById(R.id.battery);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(false);
         getSupportActionBar().setDisplayShowHomeEnabled(false);
@@ -53,6 +56,38 @@ public class Eden_main extends AppCompatActivity {
         //the frame layout in eden_main will show the MainFragment layout inside it
         getSupportFragmentManager().beginTransaction().replace(R.id.MainFrameLayout,
                 new MainFragment()).commit();
+
+        DbOps.instance.getBatteryStatus(new DbOps.OnGetBatteryStatusFinishedListener() {
+            @Override
+            public void onGetBatteryStatusFinished(List<BatteryStatus> statuses) {
+                Log.d(TAG, "Returned from database call");
+                if (statuses == null) {
+                    Log.d(TAG, "Statuses is null");
+                    battery.setImageDrawable(getResources().getDrawable(R.drawable.ic_battery_full));
+                    return;
+                }
+                else {
+                    Log.d(TAG, "Statuses is NOT null!");
+
+                    BatteryStatus status = statuses.get(0);
+                    double voltage = Double.parseDouble(status.getVoltage());
+                    Log.d(TAG, "Voltage is: "+voltage);
+
+                    // 8 - 2.5 = 5.5
+                    int calculatedPercentage = (int) Math.round((voltage - 2.5) * 100.0 / 5.5);
+                    Log.d(TAG, "percentage is: "+calculatedPercentage);
+                    if (calculatedPercentage > 90){
+                        battery.setImageDrawable(getResources().getDrawable(R.drawable.ic_battery_full));
+                    }else if (calculatedPercentage > 50){
+                        battery.setImageDrawable(getResources().getDrawable(R.drawable.ic_battery_high));
+                    }else if (calculatedPercentage >= 25){
+                        battery.setImageDrawable(getResources().getDrawable(R.drawable.ic_battery_mid));
+                    }else{
+                        battery.setImageDrawable(getResources().getDrawable(R.drawable.ic_battery_low));
+                    }
+                }
+            }
+        });
 
 
     }

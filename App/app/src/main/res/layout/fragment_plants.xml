@@ -8,13 +8,11 @@ android:layout_height="match_parent"
 android:background="@color/white"
 android:id="@+id/fragment_plants">
 
-    <android.support.v7.widget.RecyclerView
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:background="@color/white"
+    <android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/Plants_Recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-    </android.support.v7.widget.RecyclerView>
+        android:layout_height="match_parent"
+        android:background="@color/white"></android.support.v7.widget.RecyclerView>
 
     <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:fab="http://schemas.android.com/apk/res-auto"
@@ -25,11 +23,11 @@ android:id="@+id/fragment_plants">
             android:id="@+id/material_design_android_floating_action_menu"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_alignParentBottom="true"
             android:layout_alignParentEnd="true"
-            android:layout_marginBottom="11dp"
+            android:layout_alignParentBottom="true"
             android:layout_marginLeft="11dp"
             android:layout_marginRight="11dp"
+            android:layout_marginBottom="11dp"
             fab:menu_animationDelayPerItem="55"
             fab:menu_backgroundColor="@android:color/transparent"
             fab:menu_buttonSpacing="0dp"
@@ -65,24 +63,22 @@ android:id="@+id/fragment_plants">
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/default_plant"
-                fab:fab_label="New Plant"
-                fab:fab_size="mini"
                 app:fab_colorNormal="@color/white"
                 app:fab_colorPressed="#99FFFFFF"
                 app:fab_colorRipple="#99FFFFFF"
-                />
+                fab:fab_label="New Plant"
+                fab:fab_size="mini" />
 
             <com.github.clans.fab.FloatingActionButton
                 android:id="@+id/material_design_floating_action_menu_item2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_calendar"
-                fab:fab_size="mini"
-                fab:fab_label="Add Schedule"
                 app:fab_colorNormal="@color/white"
                 app:fab_colorPressed="#99FFFFFF"
                 app:fab_colorRipple="#99FFFFFF"
-                />
+                fab:fab_label="Add Schedule"
+                fab:fab_size="mini" />
         </com.github.clans.fab.FloatingActionMenu>
     </RelativeLayout>
 
