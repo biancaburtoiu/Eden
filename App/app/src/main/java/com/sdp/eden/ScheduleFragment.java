@@ -43,9 +43,12 @@ public class ScheduleFragment extends Fragment {
         DbOps.instance.getAllScheduleEntries(new DbOps.OnGetAllSchedulesFinishedListener() {
             @Override
             public void onGetAllSchedulesFinished(List<ScheduleEntry> scheduleEntries) {
-                if (scheduleEntries==null) return;
                 ScheduleAdapter adapter = (ScheduleAdapter) scheduleRV.getAdapter();
-                adapter.setSchedules(scheduleEntries);
+
+                if (scheduleEntries==null) adapter.setSchedules(new ArrayList<>());
+                else {
+                    adapter.setSchedules(scheduleEntries);
+                }
             }
         });
     }

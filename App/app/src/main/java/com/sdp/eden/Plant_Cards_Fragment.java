@@ -32,7 +32,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -43,7 +42,6 @@ import android.widget.PopupMenu;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.common.primitives.Bytes;
@@ -69,7 +67,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private static final String TAG = "Plant_Cards_Fragment";
     private ArrayList<Plant> plants; // list of plants pulled from firebase
-    private ArrayList<ScheduleEntry> scheduleEntries;
+    private ArrayList<ScheduleEntry> schedules;
 
     private RecyclerView plantsRV;
     private RecyclerView schedulesRV;
@@ -109,6 +107,7 @@ public class Plant_Cards_Fragment extends Fragment {
         height = (int)(getResources().getDisplayMetrics().heightPixels*0.70);
 
         materialDesignFAM.setClosedOnTouchOutside(true);
+
 
         fab_addPlant.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -246,9 +245,12 @@ public class Plant_Cards_Fragment extends Fragment {
                                     @Override
                                     public void onUpdateFinished(boolean success) {
                                         //uploadImageToFirebase(); // completes the new plant
-                                        getLatestPlantList();
+                                        if (success) {
+                                            getLatestPlantList();
 
-                                        mProgress.dismiss();
+                                            mProgress.dismiss();
+                                            materialDesignFAM.close(false);
+                                        }
                                     }
                                 });
                             }
@@ -259,6 +261,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 // nothing happens
+                                materialDesignFAM.close(false);
                             }
                         });
 
@@ -274,6 +277,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // nothing happens
+                        materialDesignFAM.close(false);
                     }
                 });
                 AlertDialog dialog = builder.create();
@@ -316,6 +320,13 @@ public class Plant_Cards_Fragment extends Fragment {
                 builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+
+                        ProgressDialog mProgress;
+                        mProgress = new ProgressDialog(getContext(), R.style.spinner);
+                        mProgress.setMessage("Planning a watering...");
+                        mProgress.setCanceledOnTouchOutside(false);
+                        mProgress.show();
+
                         String currentPlantName = plantSelect.getSelectedItem().toString();
                         Plant currentPlant = plants.stream().filter(p -> p.getName() == currentPlantName)
                                 .findFirst().orElse(null);
@@ -352,20 +363,24 @@ public class Plant_Cards_Fragment extends Fragment {
                             int quantity = Integer.parseInt(quantityPicker.getDisplayedValues()[quantityPicker.getValue()]);
 
                             ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
-                                                currentPlant.getNoOfPetals(),
-                                                currentPlant.getXCoordinate(), currentPlant.getYCoordinate(),
-                                                true);
+                                    currentPlant.getNoOfPetals(),
+                                    currentPlant.getXCoordinate(), currentPlant.getYCoordinate(),
+                                    true);
 
                             DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
                                 @Override
                                 public void onAddScheduleEntryFinished(boolean success) {
-                                    if (success)
+                                    materialDesignFAM.close(false);
+                                    if (success) {
                                         Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                "Added watering schedule entry for "+ currentPlantName + " on "+selectedDay+ "s at "
-                                                        + scheduleEntry.getTime()+ "!", Snackbar.LENGTH_SHORT).show();
-                                    else
+                                                "Added watering schedule entry for " + currentPlantName + " on " + selectedDay + "s at "
+                                                        + scheduleEntry.getTime() + "!", Snackbar.LENGTH_SHORT).show();
+                                    }
+                                    else {
                                         Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                "Could not add watering schedule entry for "+ currentPlantName +".", Snackbar.LENGTH_SHORT).show();
+                                                "Could not add watering schedule entry for " + currentPlantName + ".", Snackbar.LENGTH_SHORT).show();
+                                    }
+                                    mProgress.dismiss();
                                 }
                             });
                         }
@@ -375,6 +390,7 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // nothing happens
+                        materialDesignFAM.close(false);
                     }
                 });
                 AlertDialog dialog = builder.create();
@@ -435,13 +451,13 @@ public class Plant_Cards_Fragment extends Fragment {
 
     }
 
-    private void populatePlantRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
+    private void populatePlantsRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
         RecyclerViewAdapter adapter = new RecyclerViewAdapter(plants);
         plantsRV.setAdapter(adapter);
         adapter.notifyDataSetChanged();
     }
 
-    private void populateSchedules(ArrayList<ScheduleEntry> schedules) {
+    private void populateSchedulesRecyclerView(ArrayList<ScheduleEntry> schedules) {
         ScheduleRVAdapter adapter = new ScheduleRVAdapter(schedules);
         schedulesRV.setAdapter(adapter);
         adapter.notifyDataSetChanged();
@@ -451,11 +467,13 @@ public class Plant_Cards_Fragment extends Fragment {
         DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
             @Override
             public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
-                if (scheduleEntries==null) return;
-                else
-                {
+                if (scheduleEntries==null) populateSchedulesRecyclerView(new ArrayList<>());
+                else {
                     Log.d(TAG, "Obtained schedules list of size: "+scheduleEntries.size());
-                    populateSchedules(new ArrayList<>(scheduleEntries));
+
+                    //Refreshes the recyclerview:
+                    schedules = new ArrayList<>(scheduleEntries);
+                    populateSchedulesRecyclerView(new ArrayList<>(scheduleEntries));
                 }
             }
         });
@@ -470,13 +488,16 @@ public class Plant_Cards_Fragment extends Fragment {
         mProgress.show();
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
-                    if (plantsFromDB==null) return;
+                    if (plantsFromDB==null) {
+                        populatePlantsRecyclerView(new ArrayList<>());
+                    }
+                    else {
+                        Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
 
-                    Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
-
-                    // Refreshes the recyclerview:
-                    plants = new ArrayList<>(plantsFromDB);
-                    populatePlantRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
+                        // Refreshes the recyclerview:
+                        plants = new ArrayList<>(plantsFromDB);
+                        populatePlantsRecyclerView(new ArrayList<>(plantsFromDB)); // calling method to display the list
+                    }
                     mProgress.dismiss();
                 });
     }
@@ -500,6 +521,12 @@ public class Plant_Cards_Fragment extends Fragment {
                     deleteBuilder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            ProgressDialog mProgress;
+                            mProgress = new ProgressDialog(getContext(), R.style.spinner);
+                            mProgress.setMessage("Deleting the plant...");
+                            mProgress.setCanceledOnTouchOutside(false);
+                            mProgress.show();
+
                             DbOps.instance.deletePlant(plants.get(position), success -> {
                                 if (success) {
                                     Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
@@ -511,6 +538,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                             "Could not delete plant. Please try again!", Snackbar.LENGTH_SHORT).show();
                                     getLatestPlantList();
                                 }
+                                mProgress.dismiss();
                             });
                         }
                     });
@@ -518,6 +546,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             // nothing happens
+                            materialDesignFAM.close(false);
                         }
                     });
                     AlertDialog deleteDialog = deleteBuilder.create();
@@ -592,6 +621,9 @@ public class Plant_Cards_Fragment extends Fragment {
                     builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
+                            String currentPlantName = scheduleEntriesList.get(i).getPlantName();
+                            Log.d(TAG, "CurrentPlantName is: "+currentPlantName);
+
                             DbOps.instance.deleteScheduleEntryOfPlant(scheduleEntriesList.get(i), new DbOps.onDeletePlantScheduleFinishedListener() {
                                 @Override
                                 public void onDeleteScheduleFinished(boolean success) {
@@ -599,9 +631,9 @@ public class Plant_Cards_Fragment extends Fragment {
                                         Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
                                                 "Successfully deleted schedule entry!", Snackbar.LENGTH_SHORT).show();
                                         Plant curPlant = plants.stream()
-                                                .findFirst()
-                                                .filter(plant -> plant.getName().equals(scheduleEntriesList.get(i).getPlantName()))
-                                                .orElse(null);
+                                                .filter(plant -> plant.getName().equals(currentPlantName))
+                                                .collect(Collectors.toList())
+                                                .get(0);
                                         getLatestSchedulesList(curPlant);
 
                                     }
@@ -616,6 +648,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             // do nothing
+                            materialDesignFAM.close(false);
                         }
                     });
                     AlertDialog dialog = builder.create();
