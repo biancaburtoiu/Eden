@@ -5,8 +5,10 @@ from __future__ import absolute_import
 import numpy as np
 import time
 import imutils
+import paho.mqtt.client as mqtt
 import cv2
 from itertools import izip
+from picamera import PiCamera
 
 import argparse
 
@@ -21,156 +23,177 @@ template = cv2.imread("/home/student/logo.jpg")
 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
 template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
+left_time=0
+rigt_time=0
+count=0
+camera=PiCamera()
+camera.resolution=(360,240)
+location= np.zeros(7)
+logo_number=0
+
+def start_capture():
+    curt=time.time()
+    bf_wr =time.time()
+    camera.capture("image.jpg")
+    image= cv2.imread("/home/student/image.jpg")
+    cv2.imshow('Camera',image)
+    af_wr = time.time()
+    time.sleep(0.05)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    found = None
+    all_found = None
+    final_result = None
+    global location
+    location = np.zeros(7)
 
 
-class Toddler:
 
-    def __init__(self,IO):
-        print('[Toddler] I am toddler playing in a sandbox')
-        self.camera=IO.camera.initCamera('pi','low')
 
-    def control(self):
-        time.sleep(0.05)
+    # loop over the scales of the image
+    for scale in np.linspace(0.1, 1.0, 30)[::-1]:
+        # resize the image according to the scale, and keep track
+        # of the ratio of the resizing
+        resized = imutils.resize(gray, width=int(gray.shape[1] * scale))
+        r = gray.shape[1] / float(resized.shape[1])
 
-    def vision(self):
-        image = self.camera.getFrame()
-        self.camera.imshow('Camera',image)
-        time.sleep(1)
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        found = None
-        all_found = None
-        final_result = None
-        location = np.zeros(7)
+        # if the resized image is smaller than the template, then break
+        # from the loop
+        if resized.shape[0] < tH or resized.shape[1] < tW:
+            break
+        # detect edges in the resized, grayscale image and apply template
+        # matching to find the template in the image
+        edged = cv2.Canny(resized, 50, 200)
+        result = cv2.matchTemplate(edged, template, cv2.TM_CCOEFF)
 
-        # loop over the scales of the image
-        for scale in np.linspace(0.1, 1.0, 30)[::-1]:
-            # resize the image according to the scale, and keep track
-            # of the ratio of the resizing
-            resized = imutils.resize(gray, width=int(gray.shape[1] * scale))
-            r = gray.shape[1] / float(resized.shape[1])
+        (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
+        threshold = 0.20*maxVal
+        loc = np.where(result >= threshold)
 
-            # if the resized image is smaller than the template, then break
-            # from the loop
-            if resized.shape[0] < tH or resized.shape[1] < tW:
-                break
-            # detect edges in the resized, grayscale image and apply template
-            # matching to find the template in the image
-            edged = cv2.Canny(resized, 50, 200)
-            result = cv2.matchTemplate(edged, template, cv2.TM_CCOEFF)
+        # if we have found a new maximum correlation value, then update
+        # the bookkeeping variable
 
-            (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
-            threshold = 0.20*maxVal
-            loc = np.where(result >= threshold)
+        if found is None or maxVal > found[0]:
+            found = (maxVal, maxLoc, r)
+            all_found = loc
+            final_result = result
 
-            # if we have found a new maximum correlation value, then update
-            # the bookkeeping variable
+    # unpack the bookkeeping variable and compute the (x, y) coordinates
+    # of the bounding box based on the resized ratio
+    previous = None  # previous possible template place
+    ps_X = None
+    ps_Y = None
+    pe_X = None
+    pe_Y = None
+    p_logo = None
 
-            if found is None or maxVal > found[0]:
-                found = (maxVal, maxLoc, r)
-                all_found = loc
-                final_result = result
+    (_, maxLoc, r) = found
+    Y, X = all_found
 
-        # unpack the bookkeeping variable and compute the (x, y) coordinates
-        # of the bounding box based on the resized ratio
-        previous = None  # previous possible template place
-        ps_X = None
-        ps_Y = None
-        pe_X = None
-        pe_Y = None
-        p_logo = None
+    indice = np.argsort(X)
+    all_found = (Y[indice], sorted(X))
 
-        (_, maxLoc, r) = found
-        Y, X = all_found
+    total = len(all_found[0])
+    counter = 0
 
-        indice = np.argsort(X)
-        all_found = (Y[indice], sorted(X))
+    image3 = image.copy()
 
-        total = len(all_found[0])
-        counter = 0
+    for pt in izip(*all_found[::-1]):
+        counter = counter + 1
+        (startX, startY) = (int(pt[0] * r), int(pt[1] * r))
+        (endX, endY) = (int((pt[0] + tW) * r), int((pt[1] + tH) * r))
 
-        image3 = image.copy()
+        # at corner
+        if (pt[0] <= 1 or pt[0] >= final_result.shape[1] - 1) or (pt[1] <= 1 or pt[1] >= final_result.shape[0] - 1):
+            continue
 
-        for pt in izip(*all_found[::-1]):
-            counter = counter + 1
-            (startX, startY) = (int(pt[0] * r), int(pt[1] * r))
-            (endX, endY) = (int((pt[0] + tW) * r), int((pt[1] + tH) * r))
-
-            # at corner
-            if (pt[0] <= 1 or pt[0] >= final_result.shape[1] - 1) or (pt[1] <= 1 or pt[1] >= final_result.shape[0] - 1):
-                continue
-
-            # only one logo
-            if total == 1:
-                detected, Logo = color_detection(image3[startY:endY, startX: endX])
-                if detected:
-                    mark_logo(Logo, startX, endX, location)
-                continue
-            # get local infomation
-            img = final_result[pt[1]-1: pt[1] + 1, pt[0] - 1: pt[0] + 1]
-            if previous is None:
-                detected, Logo = color_detection(image3[startY:endY, startX: endX])
-                if detected:
-                    previous = np.argmax(img)
-                    (ps_X, ps_Y) = (startX, startY)
-                    (pe_X, pe_Y) = (endX, endY)
-                    p_logo = Logo
-                    continue
-                continue
-
-            if ps_X - 2 <= startX <= ps_X + 2:
-                if counter < total:
-                    continue
-                else:
-                    detected, Logo = color_detection(image3[ps_Y:pe_Y, ps_X: pe_X])
-                    if detected:
-                        mark_logo( Logo, ps_X, pe_X, location)
-                    continue
-
-            if ps_X - int(tW) * r <= startX <= ps_X + int(tW) * r:
-                current = np.argmax(img)
-                if current < previous:
-                    if counter == total:
-                        mark_logo(p_logo, ps_X, pe_X, location)
-                    continue
-                else:
-                    detected, Logo = color_detection(image3[startY:endY, startX: endX])
-                    if detected:
-                        if counter == total:
-                            mark_logo(Logo, startX, endX, location)
-                            continue
-                        else:
-                            previous = np.argmax(img)
-                            (ps_X, ps_Y) = (startX, startY)
-                            (pe_X, pe_Y) = (endX, endY)
-                            p_logo = Logo
-                            continue
-                    else:
-                        if counter == total:
-                            detected, Logo = color_detection(image3[ps_Y:pe_Y, ps_X: pe_X])
-                            if detected:
-                                mark_logo(Logo, ps_X, pe_X, location)
-                        else:
-                            continue
-
-            # draw a bounding box around the detected result and display the image
-            detected, Logo = color_detection(image3[ps_Y:pe_Y, ps_X: pe_X])
-
+        # only one logo
+        if total == 1:
+            detected, Logo = color_detection(image3[startY:endY, startX: endX])
             if detected:
-                mark_logo(Logo, ps_X, pe_X, location)
-
+                mark_logo(Logo, startX, endX, location)
+            continue
+        # get local infomation
+        img = final_result[pt[1]-1: pt[1] + 1, pt[0] - 1: pt[0] + 1]
+        if previous is None:
             detected, Logo = color_detection(image3[startY:endY, startX: endX])
             if detected:
                 previous = np.argmax(img)
                 (ps_X, ps_Y) = (startX, startY)
                 (pe_X, pe_Y) = (endX, endY)
                 p_logo = Logo
+                continue
+            continue
+
+        if ps_X - 2 <= startX <= ps_X + 2:
+            if counter < total:
+                continue
             else:
-                previous = None
-            if counter == total:
+                detected, Logo = color_detection(image3[ps_Y:pe_Y, ps_X: pe_X])
+                if detected:
+                    mark_logo( Logo, ps_X, pe_X, location)
+                continue
+
+        if ps_X - int(tW) * r <= startX <= ps_X + int(tW) * r:
+            current = np.argmax(img)
+            if current < previous:
+                if counter == total:
+                    mark_logo(p_logo, ps_X, pe_X, location)
+                continue
+            else:
                 detected, Logo = color_detection(image3[startY:endY, startX: endX])
                 if detected:
-                    mark_logo(Logo, startX, startY, location)
-        print(location)
+                    if counter == total:
+                        mark_logo(Logo, startX, endX, location)
+                        continue
+                    else:
+                        previous = np.argmax(img)
+                        (ps_X, ps_Y) = (startX, startY)
+                        (pe_X, pe_Y) = (endX, endY)
+                        p_logo = Logo
+                        continue
+                else:
+                    if counter == total:
+                        detected, Logo = color_detection(image3[ps_Y:pe_Y, ps_X: pe_X])
+                        if detected:
+                            mark_logo(Logo, ps_X, pe_X, location)
+                    else:
+                        continue
+
+        # draw a bounding box around the detected result and display the image
+        detected, Logo = color_detection(image3[ps_Y:pe_Y, ps_X: pe_X])
+
+        if detected:
+            mark_logo(Logo, ps_X, pe_X, location)
+
+        detected, Logo = color_detection(image3[startY:endY, startX: endX])
+        if detected:
+            previous = np.argmax(img)
+            (ps_X, ps_Y) = (startX, startY)
+            (pe_X, pe_Y) = (endX, endY)
+            p_logo = Logo
+        else:
+            previous = None
+        if counter == total:
+            detected, Logo = color_detection(image3[startY:endY, startX: endX])
+            if detected:
+                mark_logo(Logo, startX, startY, location)
+
+    timexx=time.time()
+    print(af_wr-bf_wr)
+    print(timexx-curt)
+    print(location)
+    return (location)
+
+
+
+
+
+def vision():
+    while(1):
+        start_capture()
+
+
+
 
 
 
@@ -264,3 +287,62 @@ def mark_logo(Logo, startX, endX, location):
         location[5] = (startX + endX)/2
     if Logo == 7:
         location[6] = (startX + endX)/2
+
+def setup_mqtt():
+    client = mqtt.Client("Pi")
+    client.on_connect=onConnect
+    client.on_message=onMessage
+    client.connect("129.215.3.65")
+
+    return client
+
+def onConnect(client,userdata,flags,rc):
+    print("connected with result code %i" % rc)
+    client.subscribe("pi-finish-instruction")
+
+
+def onMessage(client,userdata,msg):
+    global location
+    global logo_number
+    if msg.topic=="pi-finish-instruction":
+        if(location[logo_number]==0 | location[logo_number]<130 | location[logo_number]>190):
+            send_message()
+        else:
+            stop()
+
+
+
+
+def send_message():
+    global logo_number
+    global count
+    global left_time
+    global rigt_time
+    if (location[logo_number]==0):
+        count = count +1
+
+        if count % 2 == 0 :
+            left_time = right_time+2
+            client.publish("pi-start-instruction","rt,l,"+str(left_time),qos=2)
+
+        else:
+            rigt_time = left_time+2
+            client.publish("pi-start-instruction","rt,r,"+str(rigt_time),qos=2)
+
+    else:
+        if (location[logo_number]<130):
+
+            client.publish("pi-start-instruction","rc,r",qos=2)
+
+        if (location[logo_number]>190):
+            client.publish("pi-start-instruction","rc,l",qos=2)
+
+
+def stop():
+    return 0
+
+
+client = setup_mqtt()
+location=start_capture()
+send_message()
+vision()
