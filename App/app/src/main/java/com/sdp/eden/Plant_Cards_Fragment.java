@@ -28,8 +28,11 @@ import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -129,6 +132,25 @@ public class Plant_Cards_Fragment extends Fragment {
                 petalPicker.setMinValue(1);
                 petalPicker.setMaxValue(7);
                 petalPicker.setWrapSelectorWheel(false);
+
+                // Disables keyboard on clicks outside the EditText
+                // https://stackoverflow.com/a/19828165/7038747
+                plantName.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                    @Override
+                    public void onFocusChange(View v, boolean hasFocus) {
+                        if (!hasFocus) {
+                            hideKeyboard(v);
+                        }
+                    }
+                });
+                plantSpecies.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        hideKeyboard(v);
+                        return false;
+                    }
+                });
+
 
                 plantPic.setOnClickListener(new View.OnClickListener() {
                     @Override
@@ -781,5 +803,12 @@ public class Plant_Cards_Fragment extends Fragment {
 
         Log.d(TAG, "Result of byteArrayToBitmap is: "+bitmap);
         return bitmap;
+    }
+
+    // https://stackoverflow.com/a/19828165/7038747
+    public void hideKeyboard(View view) {
+        InputMethodManager inputMethodManager =(InputMethodManager) getActivity()
+                .getSystemService(Objects.requireNonNull(getActivity()).INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 }

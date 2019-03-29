@@ -6,7 +6,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="#DAF7A6">
+    android:background="#DAF7A6"
+    android:clickable="true"
+    android:focusableInTouchMode="true">
+    <!-- for the keyboard ^ -->
+    <!-- https://stackoverflow.com/a/19828165/7038747 -->
 
     <TextView
         android:id="@+id/textView"
