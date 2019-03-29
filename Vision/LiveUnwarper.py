@@ -49,7 +49,7 @@ shift_amount = 1
 global reached_goal
 reached_goal = False
 global up_left_down_right
-up_left_down_right = [None, None, None, None]
+up_left_down_right = [None for i in range(8)]
 global current_goal_number
 current_goal_number = 0
 global initial_dist_to_target
@@ -155,6 +155,7 @@ def find_robot_dist_to_target(robot_pos, robot_target):
     elif robot_direction == 3:
         dist_to_target = robot_pos[0] - robot_target[0]
     return dist_to_target
+
 
 def burrow_out_graph(graph, frm):
     escape = False
@@ -583,8 +584,8 @@ class Unwarper:
         global current_goal_number
         global goal_pos
         global reached_goal
-        delta = [[0, -1], [-1, 0], [0, 1], [1, 0]]
-        up_left_down_right = [list(goal_pos) for x in range(4)]
+        delta = [[0, -1], [-1, -1], [-1, 0], [-1, 1], [0, 1], [1, 1], [1, 0], [1, -1]]
+        up_left_down_right = [list(goal_pos) for x in range(len(delta))]
         found = [False, False, False, False]
         while not all(found):
             for i in range(len(found)):
@@ -624,7 +625,7 @@ class Unwarper:
         if new_goal_pos is not None:
             goal_pos = new_goal_pos
             print("FOUND SIDES AT %s" % str(up_left_down_right))
-        if goal_pos is None and current_goal_number == 3:
+        if goal_pos is None and current_goal_number == len(up_left_down_right) - 1:
             reached_goal = True
 
     # Unwarp all 4 cameras and merge them into a single image in real time
