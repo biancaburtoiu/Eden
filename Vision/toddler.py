@@ -306,7 +306,11 @@ def onMessage(client,userdata,msg):
     global location
     global logo_number
     if msg.topic=="pi-finish-instruction":
-        if(location[logo_number]==0 | location[logo_number]<130 | location[logo_number]>190):
+        if location[logo_number].__len__() == 0:
+            loc = 0
+        else:
+            loc = np.average(location[logo_number])
+        if(loc==0 | loc <130 | loc>190):
             send_message()
         else:
             stop()
@@ -319,7 +323,7 @@ def send_message():
     global count
     global left_time
     global rigt_time
-    if (location[logo_number]==0):
+    if (location[logo_number].__len__()==0):
         count = count +1
 
         if count % 2 == 0 :
@@ -331,11 +335,12 @@ def send_message():
             client.publish("pi-start-instruction","rt,r,"+str(rigt_time),qos=2)
 
     else:
-        if (location[logo_number]<130):
+        loc = np.average(location[logo_number])
+        if (loc<130):
 
             client.publish("pi-start-instruction","rc,r",qos=2)
 
-        if (location[logo_number]>190):
+        if (loc>190):
             client.publish("pi-start-instruction","rc,l",qos=2)
 
 
