@@ -867,7 +867,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                             else
                                             {
                                                 Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                        "Database error. Try again!", Snackbar.LENGTH_SHORT);
+                                                        "Could not trigger event. Please try again!", Snackbar.LENGTH_SHORT);
                                                 View snackbarView = s.getView();
                                                 snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
                                                 s.show();

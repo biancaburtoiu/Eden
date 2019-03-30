@@ -21,6 +21,7 @@ import com.google.firebase.storage.StorageReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class DbOps {
@@ -364,23 +365,27 @@ public class DbOps {
     }
 
     void setWaterNowTrigger(Plant plant, onSetWaterNowFinishedListener listener) {
+        String triggerString = plant.getName()+","+
+                String.format(Locale.UK,"%.3f", plant.getXCoordinate())+","+
+                String.format(Locale.UK,"%.3f", plant.getYCoordinate());
+
         Map<String, Boolean> trigger = new HashMap<>();
-        trigger.put(plant.getName(), true);
+        trigger.put(triggerString, true);
 
         db.collection("Users")
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Trigger")
-                .document("Trigger").set(trigger)
+                .document("Trigger").set(trigger, SetOptions.merge())
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()) {
                             listener.onSetWaterFinished(true);
-                            Log.d(TAG, "Trigger set to True");
+                            Log.d(TAG, "Trigger for "+plant.getName()+" set to True");
                         }
                         else {
                             listener.onSetWaterFinished(false);
-                            Log.d(TAG, "Trigger set to False");
+                            Log.d(TAG, "Could not set trigger.");
                         }
                     }
                 });
