@@ -101,6 +101,10 @@ def start_capture():
         counter = counter + 1
         (startX, startY) = (int(pt[0] * r), int(pt[1] * r))
         (endX, endY) = (int((pt[0] + tW) * r), int((pt[1] + tH) * r))
+        W = startX - endX
+        F = 0 # need measure
+        H = 0.08
+        D = H * F / W
 
         # at corner
         if (pt[0] <= 1 or pt[0] >= final_result.shape[1] - 1) or (pt[1] <= 1 or pt[1] >= final_result.shape[0] - 1):
@@ -183,7 +187,7 @@ def start_capture():
     print(af_wr-bf_wr)
     print(timexx-curt)
     print(location)
-    return (location)
+    return (location, D)
 
 
 
@@ -349,6 +353,6 @@ def stop():
 
 
 client = setup_mqtt()
-location=start_capture()
+location, distance=start_capture()
 send_message()
 vision()
