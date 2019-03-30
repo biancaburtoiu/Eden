@@ -116,6 +116,8 @@ public class Plant_Cards_Fragment extends Fragment {
 
         fab_addPlant.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                materialDesignFAM.close(false);
+
                 Log.d(TAG, "User input: click on Add");
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
@@ -288,7 +290,6 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // nothing happens
-                        materialDesignFAM.close(false);
                     }
                 });
                 AlertDialog dialog = builder.create();
@@ -300,6 +301,8 @@ public class Plant_Cards_Fragment extends Fragment {
 
         fab_addSchedule.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                materialDesignFAM.close(false);
+
                 AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                 View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant_schedule,
                         (ViewGroup) getView(), false);
@@ -400,7 +403,6 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // nothing happens
-                        materialDesignFAM.close(false);
                     }
                 });
                 AlertDialog dialog = builder.create();
@@ -412,6 +414,8 @@ public class Plant_Cards_Fragment extends Fragment {
         fab_updateRoom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                materialDesignFAM.close(false);
+
                 AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                 builder.setTitle("Update your room layout");
                 builder.setMessage("Do you want to update the room layout?");
@@ -449,7 +453,6 @@ public class Plant_Cards_Fragment extends Fragment {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // do nothing
-                        materialDesignFAM.close(false);
                     }
                 });
                 AlertDialog dialog = builder.create();
