@@ -21,6 +21,7 @@ from enum import Enum
 
 template = cv2.imread("/home/student/logo.jpg")
 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+template = imutils.resize(template, width=int(template.shape[1] * 0.5))
 template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
 left_time=0
