@@ -10,7 +10,7 @@
 
     <TextView
         android:id="@+id/day"
-        android:layout_width="wrap_content"
+        android:layout_width="30dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -18,7 +18,7 @@
         android:layout_marginBottom="8dp"
         android:layout_weight="1"
         android:paddingBottom="4dp"
-        android:text="Monday"
+        android:text="Wednesday"
         android:textColor="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -28,7 +28,7 @@
 
     <TextView
         android:id="@+id/time"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
@@ -36,7 +36,7 @@
         android:layout_marginBottom="8dp"
         android:layout_weight="1"
         android:paddingBottom="4dp"
-        android:text="1:30"
+        android:text="23:59"
         android:textColor="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -46,7 +46,7 @@
 
     <TextView
         android:id="@+id/quantity"
-        android:layout_width="34dp"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
@@ -54,7 +54,7 @@
         android:layout_marginBottom="8dp"
         android:layout_weight="1"
         android:paddingBottom="4dp"
-        android:text="20ml"
+        android:text="175 ml"
         android:textColor="@color/black"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -64,14 +64,13 @@
 
     <Button
         android:id="@+id/deleteWateringButton"
-        android:layout_width="20dp"
-        android:layout_height="24dp"
-        android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
-        android:layout_weight="1"
-        android:background="@drawable/ic_action_delete"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="12dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:background="@drawable/delete"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
