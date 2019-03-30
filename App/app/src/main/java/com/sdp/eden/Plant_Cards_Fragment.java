@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -181,11 +182,21 @@ public class Plant_Cards_Fragment extends Fragment {
                     // Sanity checks before continuing
                     if (plantName.getText().toString().trim().length() == 0) {
                         Log.d(TAG, "Plant name format incorrect. Rejected further operations.");
-                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must enter a plant name!", Snackbar.LENGTH_SHORT).show();
+
+                        Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                "You must enter a plant name!", Snackbar.LENGTH_SHORT);
+                        View snackbarView = s.getView();
+                        snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                        s.show();
                     }
                     else if (plantSpecies.getSelectedItem().toString().equals("Select Species")){
                         Log.d(TAG, "Empty plant species selection. Rejected further operations.");
-                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must select a species!", Snackbar.LENGTH_SHORT).show();
+
+                        Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                "You must select a species!", Snackbar.LENGTH_SHORT);
+                        View snackbarView = s.getView();
+                        snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                        s.show();
                     }
                     else {
                         Log.d(TAG, "Plant name format correct.");
@@ -366,10 +377,18 @@ public class Plant_Cards_Fragment extends Fragment {
 
                         // Sanity checks before continuing
                         if(currentPlantName.equals("Select Plant")){
-                            Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must select a plant!", Snackbar.LENGTH_SHORT).show();
+                            Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                    "You must select a plant!", Snackbar.LENGTH_SHORT);
+                            View snackbarView = s.getView();
+                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                            s.show();
                         }
                         else if (selectedDay.equals("Select Day")) {
-                            Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack), "You must select the day of week!", Snackbar.LENGTH_SHORT).show();
+                            Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                    "You must select the day of week!", Snackbar.LENGTH_SHORT);
+                            View snackbarView = s.getView();
+                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                            s.show();
                         }
                         else {
                             Log.d(TAG, "Quantity picker result: "+quantityPicker.getValue());
@@ -385,13 +404,22 @@ public class Plant_Cards_Fragment extends Fragment {
                                 public void onAddScheduleEntryFinished(boolean success) {
                                     materialDesignFAM.close(false);
                                     if (success) {
-                                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                "Added watering schedule entry for " + currentPlantName + " on " + selectedDay + "s at "
-                                                        + scheduleEntry.getTime() + "!", Snackbar.LENGTH_SHORT).show();
+                                        Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                "Added watering schedule entry for " + currentPlantName + " on "
+                                                        + selectedDay + "s at "
+                                                        + scheduleEntry.getTime() + "!", Snackbar.LENGTH_SHORT);
+                                        View snackbarView = s.getView();
+                                        snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                        s.show();
                                     }
                                     else {
-                                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                "Could not add watering schedule entry for " + currentPlantName + ".", Snackbar.LENGTH_SHORT).show();
+                                        Snackbar s = Snackbar.make(Objects.requireNonNull(getView())
+                                                        .findViewById(R.id.viewSnack),
+                                                "Could not add watering schedule entry for " +
+                                                        currentPlantName + ".", Snackbar.LENGTH_SHORT);
+                                        View snackbarView = s.getView();
+                                        snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                        s.show();
                                     }
                                     mProgress.dismiss();
                                 }
@@ -435,12 +463,18 @@ public class Plant_Cards_Fragment extends Fragment {
                             public void onRequestRoomLayoutFinished(byte[] newRoomImage) {
                                 if (newRoomImage != null) {
                                     saveByteArray(newRoomImage, "roomLayout");
-                                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                            "Successfully saved current room layout!", Snackbar.LENGTH_SHORT).show();
+                                    Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                            "Successfully saved current room layout!", Snackbar.LENGTH_SHORT);
+                                    View snackbarView = s.getView();
+                                    snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                    s.show();
                                 }
                                 else {
-                                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                            "Could not update room layout. Please try again!", Snackbar.LENGTH_SHORT).show();
+                                    Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                            "Could not update room layout. Please try again!", Snackbar.LENGTH_SHORT);
+                                    View snackbarView = s.getView();
+                                    snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                    s.show();
                                 }
                                 materialDesignFAM.close(false);
                                 mProgress.dismiss();
@@ -591,13 +625,21 @@ public class Plant_Cards_Fragment extends Fragment {
 
                             DbOps.instance.deletePlant(plants.get(position), success -> {
                                 if (success) {
-                                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                            "Successfully deleted plant!", Snackbar.LENGTH_SHORT).show();
+                                    Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                            "Successfully deleted plant!", Snackbar.LENGTH_SHORT);
+                                    View snackbarView = s.getView();
+                                    snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                    s.show();
+
                                     getLatestPlantList();
                                 }
                                 else {
-                                    Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                            "Could not delete plant. Please try again!", Snackbar.LENGTH_SHORT).show();
+                                    Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                            "Could not delete plant. Please try again!", Snackbar.LENGTH_SHORT);
+                                    View snackbarView = s.getView();
+                                    snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                    s.show();
+
                                     getLatestPlantList();
                                 }
                                 mProgress.dismiss();
@@ -675,8 +717,13 @@ public class Plant_Cards_Fragment extends Fragment {
                                 @Override
                                 public void onDeleteScheduleFinished(boolean success) {
                                     if (success) {
-                                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                "Successfully deleted schedule entry!", Snackbar.LENGTH_SHORT).show();
+                                        Snackbar s = Snackbar.make(Objects.requireNonNull(getView())
+                                                        .findViewById(R.id.viewSnack), "Successfully deleted schedule entry!",
+                                                        Snackbar.LENGTH_SHORT);
+                                        View snackbarView = s.getView();
+                                        snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                        s.show();
+
                                         Plant curPlant = plants.stream()
                                                 .filter(plant -> plant.getName().equals(currentPlantName))
                                                 .collect(Collectors.toList())
@@ -684,8 +731,14 @@ public class Plant_Cards_Fragment extends Fragment {
                                         getLatestSchedulesList(curPlant);
                                     }
                                     else
-                                        Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                "Could not delete schedule entry. Please retry!", Snackbar.LENGTH_SHORT).show();
+                                    {
+                                        Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                "Could not delete schedule entry. Please retry!", Snackbar.LENGTH_SHORT);
+                                        View snackbarView = s.getView();
+                                        snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                        s.show();
+                                    }
+
                                 }
                             });
                         }
@@ -796,11 +849,23 @@ public class Plant_Cards_Fragment extends Fragment {
                                         @Override
                                         public void onSetWaterFinished(boolean success) {
                                             if (success)
-                                                Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                        "Eden will water "+curPlant.getName()+" now!", Snackbar.LENGTH_SHORT).show();
+                                            {
+                                                Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                        "Eden will water "+curPlant.getName()+" now!", Snackbar.LENGTH_SHORT);
+                                                View snackbarView = s.getView();
+                                                snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                                s.show();
+                                            }
+
                                             else
-                                                Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                        "Database error. Try again!", Snackbar.LENGTH_SHORT).show();
+                                            {
+                                                Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                        "Database error. Try again!", Snackbar.LENGTH_SHORT);
+                                                View snackbarView = s.getView();
+                                                snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                                s.show();
+                                            }
+
                                         }
                                     });
                                 }

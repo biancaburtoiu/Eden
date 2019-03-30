@@ -62,6 +62,10 @@
         <item name="android:textColorPrimary">@android:color/black</item>
     </style>
 
+    <style name="Snackbar" parent="android:TextAppearance">
+        <item name="android:textColor">#A9A9A9</item>
+        <item name="android:textSize">50sp</item>
+    </style>
 
 
 </resources>
