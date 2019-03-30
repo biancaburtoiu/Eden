@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -13,6 +14,7 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
 import android.graphics.drawable.VectorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -71,8 +73,7 @@ import static android.app.Activity.RESULT_OK;
 public class Plant_Cards_Fragment extends Fragment {
 
     private static final String TAG = "Plant_Cards_Fragment";
-    private ArrayList<Plant> plants; // list of plants pulled from firebase
-    private ArrayList<ScheduleEntry> schedules;
+    private ArrayList<Plant> plants = new ArrayList<>(); // list of plants pulled from firebase
 
     private RecyclerView plantsRV;
     private RecyclerView schedulesRV;
@@ -226,7 +227,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             public void onClick(DialogInterface dialog, int which) {
                                 ProgressDialog mProgress;
                                 mProgress = new ProgressDialog(getContext(), R.style.spinner);
-                                mProgress.setMessage("Creating the plant ...");
+                                mProgress.setMessage("Creating your plant ...");
                                 mProgress.setCanceledOnTouchOutside(false);
                                 mProgress.show();
 
@@ -320,128 +321,145 @@ public class Plant_Cards_Fragment extends Fragment {
             public void onClick(View v) {
                 materialDesignFAM.close(false);
 
-                AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
-                View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant_schedule,
-                        (ViewGroup) getView(), false);
-
-                final TimePicker timePicker = viewInflated.findViewById(R.id.timePicker);
-                timePicker.setIs24HourView(true);
-
-                final Spinner plantSelect = viewInflated.findViewById(R.id.plantSelect);
-                List<String> plantArray = (plants.stream().map(plant -> plant.getName()).collect(Collectors.toList()));
-                plantArray.add(0, "Select Plant");
-
-                ArrayAdapter<String> plantsAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.spinner_style, plantArray.toArray(new String[]{}));
-                plantSelect.setAdapter(plantsAdapter);
-
-                final Spinner dayOfWeekPicker = viewInflated.findViewById(R.id.dayOfWeek);
-                String[] days = new String[]{"Select Day","Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-                ArrayAdapter<String> daysAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.spinner_style, days);
-                dayOfWeekPicker.setAdapter(daysAdapter); // creates the drop down selection
-
-                final NumberPicker quantityPicker = viewInflated.findViewById(R.id.quantityPicker);
-                quantityPicker.setWrapSelectorWheel(false);
-                quantityPicker.setMinValue(0);
-                quantityPicker.setMaxValue(6);
-                quantityPicker.setDisplayedValues(new String[] {"10","25","50","75","100","125","150"});
-
-                builder.setView(viewInflated);
-
-                builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                        ProgressDialog mProgress;
-                        mProgress = new ProgressDialog(getContext(), R.style.spinner);
-                        mProgress.setMessage("Planning a watering...");
-                        mProgress.setCanceledOnTouchOutside(false);
-                        mProgress.show();
-
-                        String currentPlantName = plantSelect.getSelectedItem().toString();
-                        Plant currentPlant = plants.stream().filter(p -> p.getName() == currentPlantName)
-                                .findFirst().orElse(null);
-
-                        String time;
-                        if (timePicker.getMinute()<10)
-                            time = timePicker.getHour()+":0"+timePicker.getMinute();
-                        else
-                            time = timePicker.getHour()+":"+timePicker.getMinute();
-
-                        if (timePicker.getHour()<10) time = "0"+time;
-
-                        String selectedDay = dayOfWeekPicker.getSelectedItem().toString();
-                        int dayToNumber;
-                        switch (selectedDay) {
-                            case "Monday": dayToNumber=0; break;
-                            case "Tuesday": dayToNumber=1; break;
-                            case "Wednesday": dayToNumber=2; break;
-                            case "Thursday": dayToNumber=3; break;
-                            case "Friday": dayToNumber=4; break;
-                            case "Saturday": dayToNumber=5; break;
-                            default: dayToNumber=6; break;
+                if (plants.size()==0) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                    builder.setTitle("No plants to water!");
+                    builder.setMessage("Please add a plant before planning an event.");
+                    builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // do nothing
                         }
+                    });
+                    AlertDialog dialog = builder.create();
+                    dialog.setCanceledOnTouchOutside(false);
+                    dialog.show();
+                }
+                else {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                    View viewInflated = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_plant_schedule,
+                            (ViewGroup) getView(), false);
 
-                        // Sanity checks before continuing
-                        if(currentPlantName.equals("Select Plant")){
-                            Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                    "You must select a plant!", Snackbar.LENGTH_SHORT);
-                            View snackbarView = s.getView();
-                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                            s.show();
-                        }
-                        else if (selectedDay.equals("Select Day")) {
-                            Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                    "You must select the day of week!", Snackbar.LENGTH_SHORT);
-                            View snackbarView = s.getView();
-                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                            s.show();
-                        }
-                        else {
-                            Log.d(TAG, "Quantity picker result: "+quantityPicker.getValue());
-                            int quantity = Integer.parseInt(quantityPicker.getDisplayedValues()[quantityPicker.getValue()]);
+                    final TimePicker timePicker = viewInflated.findViewById(R.id.timePicker);
+                    timePicker.setIs24HourView(true);
 
-                            ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
-                                    currentPlant.getNoOfPetals(),
-                                    currentPlant.getXCoordinate(), currentPlant.getYCoordinate(),
-                                    true);
+                    final Spinner plantSelect = viewInflated.findViewById(R.id.plantSelect);
+                    List<String> plantArray = (plants.stream().map(plant -> plant.getName()).collect(Collectors.toList()));
+                    plantArray.add(0, "Select Plant");
 
-                            DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
-                                @Override
-                                public void onAddScheduleEntryFinished(boolean success) {
-                                    materialDesignFAM.close(false);
-                                    if (success) {
-                                        Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                "Added watering schedule entry for " + currentPlantName + " on "
-                                                        + selectedDay + "s at "
-                                                        + scheduleEntry.getTime() + "!", Snackbar.LENGTH_SHORT);
-                                        View snackbarView = s.getView();
-                                        snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                                        s.show();
+                    ArrayAdapter<String> plantsAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.spinner_style, plantArray.toArray(new String[]{}));
+                    plantSelect.setAdapter(plantsAdapter);
+
+                    final Spinner dayOfWeekPicker = viewInflated.findViewById(R.id.dayOfWeek);
+                    String[] days = new String[]{"Select Day","Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+                    ArrayAdapter<String> daysAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.spinner_style, days);
+                    dayOfWeekPicker.setAdapter(daysAdapter); // creates the drop down selection
+
+                    final NumberPicker quantityPicker = viewInflated.findViewById(R.id.quantityPicker);
+                    quantityPicker.setWrapSelectorWheel(false);
+                    quantityPicker.setMinValue(0);
+                    quantityPicker.setMaxValue(6);
+                    quantityPicker.setDisplayedValues(new String[] {"10","25","50","75","100","125","150"});
+
+                    builder.setView(viewInflated);
+
+                    builder.setPositiveButton("Set", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+
+                            ProgressDialog mProgress;
+                            mProgress = new ProgressDialog(getContext(), R.style.spinner);
+                            mProgress.setMessage("Planning a watering...");
+                            mProgress.setCanceledOnTouchOutside(false);
+                            mProgress.show();
+
+                            String currentPlantName = plantSelect.getSelectedItem().toString();
+                            Plant currentPlant = plants.stream().filter(p -> p.getName() == currentPlantName)
+                                    .findFirst().orElse(null);
+
+                            String time;
+                            if (timePicker.getMinute()<10)
+                                time = timePicker.getHour()+":0"+timePicker.getMinute();
+                            else
+                                time = timePicker.getHour()+":"+timePicker.getMinute();
+
+                            if (timePicker.getHour()<10) time = "0"+time;
+
+                            String selectedDay = dayOfWeekPicker.getSelectedItem().toString();
+                            int dayToNumber;
+                            switch (selectedDay) {
+                                case "Monday": dayToNumber=0; break;
+                                case "Tuesday": dayToNumber=1; break;
+                                case "Wednesday": dayToNumber=2; break;
+                                case "Thursday": dayToNumber=3; break;
+                                case "Friday": dayToNumber=4; break;
+                                case "Saturday": dayToNumber=5; break;
+                                default: dayToNumber=6; break;
+                            }
+
+                            // Sanity checks before continuing
+                            if(currentPlantName.equals("Select Plant")){
+                                Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                        "You must select a plant!", Snackbar.LENGTH_SHORT);
+                                View snackbarView = s.getView();
+                                snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                s.show();
+                            }
+                            else if (selectedDay.equals("Select Day")) {
+                                Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                        "You must select the day of week!", Snackbar.LENGTH_SHORT);
+                                View snackbarView = s.getView();
+                                snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                s.show();
+                            }
+                            else {
+                                Log.d(TAG, "Quantity picker result: "+quantityPicker.getValue());
+                                int quantity = Integer.parseInt(quantityPicker.getDisplayedValues()[quantityPicker.getValue()]);
+
+                                ScheduleEntry scheduleEntry = new ScheduleEntry(dayToNumber, currentPlantName, quantity, time,
+                                        currentPlant.getNoOfPetals(),
+                                        currentPlant.getXCoordinate(), currentPlant.getYCoordinate(),
+                                        true);
+
+                                DbOps.instance.addScheduleEntry(scheduleEntry, new DbOps.onAddScheduleEntryFinishedListener() {
+                                    @Override
+                                    public void onAddScheduleEntryFinished(boolean success) {
+                                        materialDesignFAM.close(false);
+                                        if (success) {
+                                            Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                    "Added watering schedule entry for " + currentPlantName + " on "
+                                                            + selectedDay + "s at "
+                                                            + scheduleEntry.getTime() + "!", Snackbar.LENGTH_SHORT);
+                                            View snackbarView = s.getView();
+                                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                            s.show();
+                                        }
+                                        else {
+                                            Snackbar s = Snackbar.make(Objects.requireNonNull(getView())
+                                                            .findViewById(R.id.viewSnack),
+                                                    "Could not add watering schedule entry for " +
+                                                            currentPlantName + ".", Snackbar.LENGTH_SHORT);
+                                            View snackbarView = s.getView();
+                                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                            s.show();
+                                        }
+                                        mProgress.dismiss();
                                     }
-                                    else {
-                                        Snackbar s = Snackbar.make(Objects.requireNonNull(getView())
-                                                        .findViewById(R.id.viewSnack),
-                                                "Could not add watering schedule entry for " +
-                                                        currentPlantName + ".", Snackbar.LENGTH_SHORT);
-                                        View snackbarView = s.getView();
-                                        snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                                        s.show();
-                                    }
-                                    mProgress.dismiss();
-                                }
-                            });
+                                });
+                            }
                         }
-                    }
-                });
-                builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // nothing happens
-                    }
-                });
-                AlertDialog dialog = builder.create();
-                dialog.setCanceledOnTouchOutside(false);
-                dialog.show();
+                    });
+                    builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            // nothing happens
+                        }
+                    });
+                    AlertDialog dialog = builder.create();
+                    dialog.setCanceledOnTouchOutside(false);
+                    dialog.show();
+                }
+
             }
         });
 
@@ -574,7 +592,6 @@ public class Plant_Cards_Fragment extends Fragment {
                     Log.d(TAG, "Obtained schedules list of size: "+scheduleEntries.size());
 
                     //Refreshes the recyclerview:
-                    schedules = new ArrayList<>(scheduleEntries);
                     populateSchedulesRecyclerView(new ArrayList<>(scheduleEntries));
                 }
             }
@@ -590,8 +607,8 @@ public class Plant_Cards_Fragment extends Fragment {
         mProgress.show();
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
-                    if (plantsFromDB==null) {
-                        populatePlantsRecyclerView(new ArrayList<>());
+                    if (plantsFromDB.size()==0) {
+                        populatePlantsRecyclerView(new ArrayList<>(plantsFromDB));
                     }
                     else {
                         Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
