@@ -76,13 +76,14 @@ public class Eden_main extends AppCompatActivity {
                     // 8 - 2.5 = 5.5
                     int calculatedPercentage = (int) Math.round((voltage - 2.5) * 100.0 / 5.5);
                     Log.d(TAG, "percentage is: "+calculatedPercentage);
-                    if (calculatedPercentage > 90){
+
+                    if (calculatedPercentage >= 80){
                         battery.setImageDrawable(getResources().getDrawable(R.drawable.ic_battery_full));
-                    }else if (calculatedPercentage > 50){
+                    }else if (calculatedPercentage >= 50){
                         battery.setImageDrawable(getResources().getDrawable(R.drawable.ic_battery_high));
                     }else if (calculatedPercentage >= 25){
                         battery.setImageDrawable(getResources().getDrawable(R.drawable.ic_battery_mid));
-                    }else{
+                    }else {
                         battery.setImageDrawable(getResources().getDrawable(R.drawable.ic_battery_low));
                     }
                 }
