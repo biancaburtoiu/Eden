@@ -657,7 +657,7 @@ public class Plant_Cards_Fragment extends Fragment {
             }
             scheduleRVHolder.day.setText(dayAsText);
             scheduleRVHolder.time.setText(scheduleEntriesList.get(i).getTime());
-            scheduleRVHolder.quantity.setText(scheduleEntriesList.get(i).getQuantity()+"ml");
+            scheduleRVHolder.quantity.setText(scheduleEntriesList.get(i).getQuantity()+" ml");
             scheduleRVHolder.deleteWateringButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -682,7 +682,6 @@ public class Plant_Cards_Fragment extends Fragment {
                                                 .collect(Collectors.toList())
                                                 .get(0);
                                         getLatestSchedulesList(curPlant);
-
                                     }
                                     else
                                         Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
@@ -695,7 +694,6 @@ public class Plant_Cards_Fragment extends Fragment {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             // do nothing
-                            materialDesignFAM.close(false);
                         }
                     });
                     AlertDialog dialog = builder.create();
