@@ -272,6 +272,12 @@ public class Plant_Cards_Fragment extends Fragment {
                                         if (success) {
                                             getLatestPlantList();
 
+                                            Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                    "Successfully added a new plant!", Snackbar.LENGTH_SHORT);
+                                            View snackbarView = s.getView();
+                                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                            s.show();
+
                                             mProgress.dismiss();
                                             materialDesignFAM.close(false);
                                         }
