@@ -11,9 +11,22 @@
         android:id="@+id/overhead_image"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@+id/colored_bar"
-        app:layout_constraintVertical_bias="0.110000014"/>
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@+id/instructions"
+        app:layout_constraintVertical_bias="0.4"/>
 
+    <TextView
+        android:id="@+id/instructions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:textColor="#A9A9A9"
+        android:text="Click on the image to activate the black dot, then drag it on top of the plant."
+        app:layout_constraintBottom_toTopOf="@id/overhead_image"
+        app:layout_constraintTop_toBottomOf="@id/colored_bar"/>
     <View
         android:id="@+id/colored_bar"
         android:layout_width="355dp"

@@ -16,7 +16,7 @@
         android:id="@+id/battery"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:src="@drawable/ic_battery_high"
-        tools:srcCompat="@drawable/ic_battery_high" />
+        android:src="@drawable/ic_battery_full"
+        tools:srcCompat="@drawable/ic_battery_full" />
 
 </android.support.v7.widget.Toolbar>

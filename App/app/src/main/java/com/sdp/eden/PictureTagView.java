@@ -25,6 +25,8 @@ public class PictureTagView extends RelativeLayout implements OnEditorActionList
     private static final int ViewWidth = 80;
     private static final int ViewHeight = 50;
 
+    public static boolean accessTest = false;
+
     public PictureTagView(Context context,Direction direction) {
         super(context);
         this.context = context;
@@ -36,6 +38,7 @@ public class PictureTagView extends RelativeLayout implements OnEditorActionList
 
 
     protected void initViews(){
+        accessTest = true;
         LayoutInflater.from(context).inflate(R.layout.picturetagview, this,true);
         tvPictureTagLabel = (TextView) findViewById(R.id.tvPictureTagLabel);
         etPictureTagLabel = (EditText) findViewById(R.id.etPictureTagLabel);
