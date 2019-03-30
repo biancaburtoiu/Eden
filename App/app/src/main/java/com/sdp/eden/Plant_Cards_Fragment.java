@@ -200,7 +200,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         s.show();
                     }
                     else {
-                        // To show layout just loading
+                        // Everything is fine. We can continue to room layout
                         ProgressDialog mProgress;
                         mProgress = new ProgressDialog(getContext(), R.style.spinner);
                         mProgress.setMessage("Loading room layout...");
@@ -249,6 +249,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                             s.show();
                                         }
                                         else {
+                                            // Everything is fine. We can continue to create a plant
                                             ProgressDialog mProgress;
                                             mProgress = new ProgressDialog(getContext(), R.style.spinner);
                                             mProgress.setMessage("Creating your plant ...");
@@ -324,6 +325,7 @@ public class Plant_Cards_Fragment extends Fragment {
                         // nothing happens
                     }
                 });
+
                 AlertDialog dialog = builder.create();
                 dialog.setCanceledOnTouchOutside(false);
                 dialog.show();
@@ -381,12 +383,6 @@ public class Plant_Cards_Fragment extends Fragment {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
 
-                            ProgressDialog mProgress;
-                            mProgress = new ProgressDialog(getContext(), R.style.spinner);
-                            mProgress.setMessage("Planning a watering...");
-                            mProgress.setCanceledOnTouchOutside(false);
-                            mProgress.show();
-
                             String currentPlantName = plantSelect.getSelectedItem().toString();
                             Plant currentPlant = plants.stream().filter(p -> p.getName() == currentPlantName)
                                     .findFirst().orElse(null);
@@ -427,6 +423,13 @@ public class Plant_Cards_Fragment extends Fragment {
                                 s.show();
                             }
                             else {
+                                // Everything is fine. Will create entry now
+                                ProgressDialog mProgress;
+                                mProgress = new ProgressDialog(getContext(), R.style.spinner);
+                                mProgress.setMessage("Planning a watering...");
+                                mProgress.setCanceledOnTouchOutside(false);
+                                mProgress.show();
+
                                 Log.d(TAG, "Quantity picker result: "+quantityPicker.getValue());
                                 int quantity = Integer.parseInt(quantityPicker.getDisplayedValues()[quantityPicker.getValue()]);
 
@@ -441,7 +444,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                         materialDesignFAM.close(false);
                                         if (success) {
                                             Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                    "Added watering schedule entry for " + currentPlantName + " on "
+                                                    "Planned a watering for " + currentPlantName + " on "
                                                             + selectedDay + "s at "
                                                             + scheduleEntry.getTime() + "!", Snackbar.LENGTH_SHORT);
                                             View snackbarView = s.getView();
@@ -451,7 +454,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                         else {
                                             Snackbar s = Snackbar.make(Objects.requireNonNull(getView())
                                                             .findViewById(R.id.viewSnack),
-                                                    "Could not add watering schedule entry for " +
+                                                    "Could not plan watering for " +
                                                             currentPlantName + ".", Snackbar.LENGTH_SHORT);
                                             View snackbarView = s.getView();
                                             snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
@@ -469,6 +472,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             // nothing happens
                         }
                     });
+
                     AlertDialog dialog = builder.create();
                     dialog.setCanceledOnTouchOutside(false);
                     dialog.show();
@@ -755,7 +759,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                 public void onDeleteScheduleFinished(boolean success) {
                                     if (success) {
                                         Snackbar s = Snackbar.make(Objects.requireNonNull(getView())
-                                                        .findViewById(R.id.viewSnack), "Successfully deleted schedule entry!",
+                                                        .findViewById(R.id.viewSnack), "Successfully deleted watering plan!",
                                                         Snackbar.LENGTH_SHORT);
                                         View snackbarView = s.getView();
                                         snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));

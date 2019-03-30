@@ -132,51 +132,7 @@ public class Eden_main extends AppCompatActivity {
             finish();
             return true;
         }
-        else if (id == R.id.action_batteryStatus) {
-            Log.d(TAG, "Entered action_batteryStatus");
-
-            final AlertDialog.Builder builder = new AlertDialog.Builder(Eden_main.this);
-            final View view = getLayoutInflater().inflate(R.layout.fragment_robot, null);
-            builder.setView(view);
-
-            mProgressBat = view.findViewById(R.id.circularProgressbar);
-            batPer = view.findViewById(R.id.batPer);
-            batText = view.findViewById(R.id.batteryText);
-
-            DbOps.instance.getBatteryStatus(new DbOps.OnGetBatteryStatusFinishedListener() {
-                @Override
-                public void onGetBatteryStatusFinished(List<BatteryStatus> statuses) {
-                    Log.d(TAG, "Returned from database call");
-                    if (statuses == null) {
-                        Log.d(TAG, "Statuses is null");
-                        mProgressBat.setProgress(0);
-                        return;
-                    }
-                    else {
-                        Log.d(TAG, "Statuses is NOT null!");
-
-                        BatteryStatus status = statuses.get(0);
-                        double voltage = Double.parseDouble(status.getVoltage());
-                        Log.d(TAG, "Voltage is: "+voltage);
-
-                        // 8 - 2.5 = 5.5
-                        int calculatedPercentage = (int) Math.round((voltage - 2.5) * 100.0 / 5.5);
-                        mProgressBat.setProgress(calculatedPercentage);
-                        batPer.setText(calculatedPercentage + "%");
-                        batText.setText("Eden currently has "+calculatedPercentage+"% battery.");
-                        mProgressBat.setMax(100);
-
-                        AlertDialog editdialog = builder.create();
-                        editdialog.show();
-                    }
-                }
-            });
-
-            return true;
-        }
 
         return super.onOptionsItemSelected(item);
     }
-
-
 }
