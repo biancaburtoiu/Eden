@@ -848,6 +848,7 @@ public class Plant_Cards_Fragment extends Fragment {
                             AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
                             builder.setTitle("Water "+curPlant.getName()+" now!");
                             builder.setMessage("This will trigger Eden to water "+curPlant.getName()+" now. Continue?");
+
                             builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
@@ -876,10 +877,20 @@ public class Plant_Cards_Fragment extends Fragment {
                                     });
                                 }
                             });
+
+                            builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // do nothing
+                                }
+                            });
+
                             AlertDialog viewdialog = builder.create();
+                            viewdialog.setCanceledOnTouchOutside(false);
                             viewdialog.show();
                         }
                     });
+
                     AlertDialog viewdialog = viewbuilder.create();
                     viewdialog.show();
                 }
