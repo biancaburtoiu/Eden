@@ -29,7 +29,7 @@ def debugfunc():
         inputi = input("e:").strip().split("\n")
 
         ##check input format, and perform action
-        client.publish("navigate-start",inputi[0].encode())
+        client.publish("navigate-finish",inputi[0].encode())
 
 if __name__ == "__main__":
     debugfunc()
