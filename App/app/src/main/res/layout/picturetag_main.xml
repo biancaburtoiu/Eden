@@ -24,7 +24,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         android:textColor="#A9A9A9"
-        android:text="Click on the image to activate the black dot, then drag it on top of the plant."
+        android:text="Click on the plant to mark its location. Tap on the black circle again to cancel your selection."
         app:layout_constraintBottom_toTopOf="@id/overhead_image"
         app:layout_constraintTop_toBottomOf="@id/colored_bar"/>
     <View
