@@ -11,8 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +21,10 @@ public class ScheduleFragment extends Fragment {
     private static final String TAG = "ScheduleFragment";
     private RecyclerView scheduleRV;
     private TextView noEntriesText;
+
+//    public static Fragment newInstance() {
+//        return new ScheduleFragment();
+//    }
 
 
     @Nullable
@@ -43,10 +45,10 @@ public class ScheduleFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        refresh();
+        refreshSchedules();
     }
 
-    public void refresh() {
+    public void refreshSchedules() {
         DbOps.instance.getAllScheduleEntries(new DbOps.OnGetAllSchedulesFinishedListener() {
             @Override
             public void onGetAllSchedulesFinished(List<ScheduleEntry> scheduleEntries) {

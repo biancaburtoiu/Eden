@@ -1,8 +1,5 @@
 package com.sdp.eden;
 
-
-import com.google.firebase.firestore.Exclude;
-
 import java.util.List;
 
 public class Plant {
@@ -14,6 +11,7 @@ public class Plant {
     private Float YCoordinate;
 
     private Integer NoOfPetals;
+
 
 
     public Plant(){
@@ -63,4 +61,5 @@ public class Plant {
 
     //@Exclude
     public void setYCoordinate(float yCoordinate) { YCoordinate = yCoordinate; }
+
 }

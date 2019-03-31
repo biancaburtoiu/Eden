@@ -38,7 +38,7 @@ public class MainFragment extends Fragment {
             @Override
             public void onTabSelected(TabLayout.Tab tab) {
                 if (tab.getPosition() == 1) {
-                    TabPagerAdapter.scheduleFragmentInstance.refresh();
+                    TabPagerAdapter.scheduleFragmentInstance.refreshSchedules();
                 }
             }
 

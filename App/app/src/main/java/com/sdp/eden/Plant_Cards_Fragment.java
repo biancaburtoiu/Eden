@@ -91,7 +91,8 @@ public class Plant_Cards_Fragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        getLatestPlantList();    // Query the database to get latest list
+        Log.d(TAG, "I'm on onResume()");
+        //getLatestPlantList();    // Query the database to get latest list
     }
 
     public static Fragment newInstance() {
@@ -101,7 +102,9 @@ public class Plant_Cards_Fragment extends Fragment {
 
     public View onCreateView (@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState){
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
-        getLatestPlantList();    // Query the database to get latest list
+
+        Log.d(TAG, "Doing it here!");
+        //getLatestPlantList();    // Query the database to get latest list
         plantsRV = view.findViewById(R.id.Plants_Recycler_view);
         emptyRV = view.findViewById(R.id.emptyRV);
         
@@ -487,6 +490,7 @@ public class Plant_Cards_Fragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        getLatestPlantList();
     }
 
 
