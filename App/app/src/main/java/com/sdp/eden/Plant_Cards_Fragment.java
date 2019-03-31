@@ -651,6 +651,8 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private class ScheduleRVAdapter extends RecyclerView.Adapter<ScheduleRVHolder> {
         ArrayList<ScheduleEntry> scheduleEntriesList;
+        private static final int VIEW_TYPE_EMPTY_LIST_PLACEHOLDER = 0;
+        private static final int VIEW_TYPE_OBJECT_VIEW = 1;
 
         ScheduleRVAdapter(ArrayList<ScheduleEntry> list) {
             this.scheduleEntriesList = list;
@@ -664,9 +666,16 @@ public class Plant_Cards_Fragment extends Fragment {
         @NonNull
         @Override
         public ScheduleRVHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-            View v = LayoutInflater.from(viewGroup.getContext())
-                    .inflate(R.layout.individual_schedule_view_item, viewGroup, false);
-            return new ScheduleRVHolder(v);
+            switch (i) {
+                case VIEW_TYPE_EMPTY_LIST_PLACEHOLDER:
+                    Log.d(TAG, "Entered view_type_empty_list");
+                    return new ScheduleRVHolder(LayoutInflater.from(viewGroup.getContext())
+                            .inflate(R.layout.no_entries_layout, viewGroup, false));
+                default:
+                    Log.d(TAG, "Entered individual_schedule_view_item");
+                    return new ScheduleRVHolder(LayoutInflater.from(viewGroup.getContext())
+                            .inflate(R.layout.individual_schedule_view_item, viewGroup, false));
+            }
         }
 
         @Override
@@ -681,6 +690,7 @@ public class Plant_Cards_Fragment extends Fragment {
                 case 5: dayAsText="Saturday"; break;
                 default: dayAsText="Sunday"; break;
             }
+
             scheduleRVHolder.day.setText(dayAsText);
             scheduleRVHolder.time.setText(scheduleEntriesList.get(i).getTime());
             scheduleRVHolder.quantity.setText(scheduleEntriesList.get(i).getQuantity()+" ml");
@@ -738,6 +748,17 @@ public class Plant_Cards_Fragment extends Fragment {
                     dialog.show();
                 }
             });
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            if (scheduleEntriesList.size()==0) {
+                Log.d(TAG, "getItemViewType returned empty");
+                return VIEW_TYPE_EMPTY_LIST_PLACEHOLDER;
+            } else {
+                Log.d(TAG, "getItemViewType returned NOT empty");
+                return VIEW_TYPE_OBJECT_VIEW;
+            }
         }
     }
 
