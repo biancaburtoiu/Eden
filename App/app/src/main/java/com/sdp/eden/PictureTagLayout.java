@@ -25,6 +25,7 @@ public class PictureTagLayout extends RelativeLayout implements OnTouchListener{
     int startTouchViewLeft = 0;
     int startTouchViewTop = 0;
     int count=0;
+    View view = null;
     private View touchView,clickView;
     public PictureTagLayout(Context context) {
         super(context, null);
@@ -60,24 +61,28 @@ public class PictureTagLayout extends RelativeLayout implements OnTouchListener{
                 startY = (int) event.getY();
 
                 if(hasView(startX,startY)){
-                    startTouchViewLeft = touchView.getLeft();
-                    startTouchViewTop = touchView.getTop();
+                    //startTouchViewLeft = touchView.getLeft();
+                    //startTouchViewTop = touchView.getTop();
+                    this.removeView(view);
+                    count = 0;
                 }else if(count==1){
                     break;
                 }
                 else{
                     addItem(startX,startY);
+                    xcoord=startX;
+                    ycoord=startY;
+                    Log.d("testing2","valueX" +  xcoord);
+                    Log.d("testing2","valueY" +  ycoord);
                     count =1;
                 }
                 break;
-            case MotionEvent.ACTION_MOVE:
+/*            case MotionEvent.ACTION_MOVE:
                 moveView((int) event.getX(),
                         (int) event.getY());
                 xcoord=(int) event.getX();
                 ycoord=(int) event.getY();
-                Log.d("testing2","valueX" +  xcoord);
-                Log.d("testing2","valueY" +  ycoord);
-                break;
+                break;*/
             case MotionEvent.ACTION_UP:
                 int endX = (int) event.getX();
                 int endY = (int) event.getY();
@@ -95,18 +100,18 @@ public class PictureTagLayout extends RelativeLayout implements OnTouchListener{
 
 
     private void addItem(int x,int y){
-        View view = null;
         RelativeLayout.LayoutParams params=new RelativeLayout.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT);
         if(x>getWidth()*0.5){
-            params.leftMargin = x - PictureTagView.getViewWidth();
+            params.leftMargin = x-40;
             view = new PictureTagView(getContext(),Direction.Right);
+            Log.d("testing2","width" +  PictureTagView.getViewWidth());
         }
         else{
-            params.leftMargin = x;
+            params.leftMargin = x-40;
             view = new PictureTagView(getContext(),Direction.Left);
         }
 
-        params.topMargin = y;
+        params.topMargin = y-40;
         if(params.topMargin<0)params.topMargin =0;
         else if((params.topMargin+PictureTagView.getViewHeight())>getHeight())params.topMargin = getHeight() - PictureTagView.getViewHeight();
 
