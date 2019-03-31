@@ -22,12 +22,16 @@ public class ScheduleFragment extends Fragment {
 
     private static final String TAG = "ScheduleFragment";
     private RecyclerView scheduleRV;
+    private TextView noEntriesText;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v =  inflater.inflate(R.layout.fragment_schedule,container,false);
         scheduleRV = v.findViewById(R.id.schedule);
+
+        noEntriesText = v.findViewById(R.id.emptySV);
+
         scheduleRV.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         scheduleRV.setAdapter(new ScheduleAdapter());
         return v;
@@ -45,8 +49,17 @@ public class ScheduleFragment extends Fragment {
             public void onGetAllSchedulesFinished(List<ScheduleEntry> scheduleEntries) {
                 ScheduleAdapter adapter = (ScheduleAdapter) scheduleRV.getAdapter();
 
-                if (scheduleEntries==null) adapter.setSchedules(new ArrayList<>());
+                if (scheduleEntries==null) {
+                    //adapter.setSchedules(new ArrayList<>());
+
+                    scheduleRV.setVisibility(View.GONE);
+                    noEntriesText.setVisibility(View.VISIBLE);
+
+                }
                 else {
+                    noEntriesText.setVisibility(View.GONE);
+                    scheduleRV.setVisibility(View.VISIBLE);
+
                     adapter.setSchedules(scheduleEntries);
                 }
             }
