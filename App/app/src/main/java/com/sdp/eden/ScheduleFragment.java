@@ -30,6 +30,9 @@ public class ScheduleFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v =  inflater.inflate(R.layout.fragment_schedule,container,false);
         scheduleRV = v.findViewById(R.id.schedule);
+
+        noEntriesText = v.findViewById(R.id.emptySV);
+
         scheduleRV.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false));
         scheduleRV.setAdapter(new ScheduleAdapter());
 

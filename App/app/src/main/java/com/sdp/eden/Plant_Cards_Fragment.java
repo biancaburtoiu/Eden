@@ -75,6 +75,7 @@ public class Plant_Cards_Fragment extends Fragment {
     private static final String TAG = "Plant_Cards_Fragment";
     private ArrayList<Plant> plants = new ArrayList<>(); // list of plants pulled from firebase
 
+    private TextView emptyRV;
     private RecyclerView plantsRV;
     private RecyclerView schedulesRV;
 
@@ -82,7 +83,6 @@ public class Plant_Cards_Fragment extends Fragment {
     private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
     private String enteredPlantName; // this will hopefully be temp
     private Uri takenImage; // once again hopeful;ly this will be temp!
-    private int width, height;
 
 
     FloatingActionMenu materialDesignFAM;
@@ -103,14 +103,13 @@ public class Plant_Cards_Fragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
         getLatestPlantList();    // Query the database to get latest list
         plantsRV = view.findViewById(R.id.Plants_Recycler_view);
+        emptyRV = view.findViewById(R.id.emptyRV);
         
         // https://www.viralandroid.com/2016/02/android-floating-action-menu-example.html
         materialDesignFAM = (FloatingActionMenu) view.findViewById(R.id.material_design_android_floating_action_menu);
         fab_addPlant = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
 
-        width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
-        height = (int)(getResources().getDisplayMetrics().heightPixels*0.70);
 
         materialDesignFAM.setClosedOnTouchOutside(true);
 
@@ -518,19 +517,7 @@ public class Plant_Cards_Fragment extends Fragment {
         return Uri.parse(path);
     }
 
-    public void uploadImageToFirebase(){ // uploads the image to firebase
-        ProgressDialog mProgress;
-        mProgress = new ProgressDialog(getContext());
-        mProgress.setMessage("Creating Plant ...");
-        mProgress.setCanceledOnTouchOutside(false);
-        mProgress.show();
-        StorageReference filepath = mStorage.child("PlantPhotos").child(FirebaseAuth.getInstance().getCurrentUser().getEmail().toString()).child(enteredPlantName);
-        filepath.putFile(takenImage).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) { mProgress.dismiss(); }
-        });
 
-    }
 
     private void populatePlantsRecyclerView(ArrayList<Plant> plants){ // Bianca - changed this to accept a list parameter
         RecyclerViewAdapter adapter = new RecyclerViewAdapter(plants);
@@ -548,7 +535,10 @@ public class Plant_Cards_Fragment extends Fragment {
         DbOps.instance.getScheduleEntriesForPlant(plant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
             @Override
             public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
-                if (scheduleEntries==null) populateSchedulesRecyclerView(new ArrayList<>());
+                if (scheduleEntries==null) {
+                    populateSchedulesRecyclerView(new ArrayList<>());
+
+                }
                 else {
                     Log.d(TAG, "Obtained schedules list of size: "+scheduleEntries.size());
 
@@ -569,9 +559,17 @@ public class Plant_Cards_Fragment extends Fragment {
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
                     if (plantsFromDB.size()==0) {
-                        populatePlantsRecyclerView(new ArrayList<>(plantsFromDB));
+                        //populatePlantsRecyclerView(new ArrayList<>(plantsFromDB));
+
+                        plants = new ArrayList<>();
+                        // Added this here
+                        plantsRV.setVisibility(View.GONE);
+                        emptyRV.setVisibility(View.VISIBLE);
                     }
                     else {
+                        plantsRV.setVisibility(View.VISIBLE);
+                        emptyRV.setVisibility(View.GONE);
+
                         Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
 
                         // Refreshes the recyclerview:
@@ -664,9 +662,8 @@ public class Plant_Cards_Fragment extends Fragment {
         @NonNull
         @Override
         public ScheduleRVHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-            View v = LayoutInflater.from(viewGroup.getContext())
-                    .inflate(R.layout.individual_schedule_view_item, viewGroup, false);
-            return new ScheduleRVHolder(v);
+            return new ScheduleRVHolder(LayoutInflater.from(viewGroup.getContext())
+                    .inflate(R.layout.individual_schedule_view_item, viewGroup, false));
         }
 
         @Override
@@ -681,6 +678,7 @@ public class Plant_Cards_Fragment extends Fragment {
                 case 5: dayAsText="Saturday"; break;
                 default: dayAsText="Sunday"; break;
             }
+
             scheduleRVHolder.day.setText(dayAsText);
             scheduleRVHolder.time.setText(scheduleEntriesList.get(i).getTime());
             scheduleRVHolder.quantity.setText(scheduleEntriesList.get(i).getQuantity()+" ml");
@@ -799,20 +797,30 @@ public class Plant_Cards_Fragment extends Fragment {
                     plantpic.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
                     plantpic.bringToFront();
 
+                    TextView noEntriesText = scheduleViewInflated.findViewById(R.id.textViewEmpty);
 
                     DbOps.instance.getScheduleEntriesForPlant(curPlant, new DbOps.OnGetSchedulesForPlantFinishedListener() {
                         @Override
                         public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
                             if (scheduleEntries==null) {
-                                ScheduleRVAdapter scheduleRVAdapter = new ScheduleRVAdapter(new ArrayList<>());
-                                schedulesRV.setAdapter(scheduleRVAdapter);
+//                                ScheduleRVAdapter scheduleRVAdapter = new ScheduleRVAdapter(new ArrayList<>());
+//                                schedulesRV.setAdapter(scheduleRVAdapter);
+
+                                // Reasonable fix to show nothing when no entries: https://stackoverflow.com/a/28352183/7038747
+                                noEntriesText.setVisibility(View.VISIBLE);
+                                schedulesRV.setVisibility(View.GONE);
                             }
                             else {
+
+                                noEntriesText.setVisibility(View.GONE);
+                                schedulesRV.setVisibility(View.VISIBLE);
+
                                 // for safety. not necessary
                                 List<ScheduleEntry> correctEntries = scheduleEntries.stream()
                                                     .filter(entry -> entry.getValid()).collect(Collectors.toList());
                                 ScheduleRVAdapter scheduleRVAdapter = new ScheduleRVAdapter(new ArrayList<>(correctEntries));
                                 schedulesRV.setAdapter(scheduleRVAdapter);
+
                             }
                         }
                     });
@@ -913,6 +921,9 @@ public class Plant_Cards_Fragment extends Fragment {
     }
 
 
+
+
+
     // Bitmap image helper methods:
     private static Bitmap getBitmap(VectorDrawable vectorDrawable) {
         Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
@@ -999,6 +1010,22 @@ public class Plant_Cards_Fragment extends Fragment {
 //        String json = prefs.getString(key, null);
 //        Type type = new TypeToken<byte[]>() {}.getType();
 //        return gson.fromJson(json, type);
+    }
+
+
+    // Not using this right now:
+    public void uploadImageToFirebase(){ // uploads the image to firebase
+        ProgressDialog mProgress;
+        mProgress = new ProgressDialog(getContext());
+        mProgress.setMessage("Creating Plant ...");
+        mProgress.setCanceledOnTouchOutside(false);
+        mProgress.show();
+        StorageReference filepath = mStorage.child("PlantPhotos").child(FirebaseAuth.getInstance().getCurrentUser().getEmail().toString()).child(enteredPlantName);
+        filepath.putFile(takenImage).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) { mProgress.dismiss(); }
+        });
+
     }
 
 }
