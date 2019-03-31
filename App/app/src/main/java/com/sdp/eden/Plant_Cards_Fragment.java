@@ -130,7 +130,8 @@ public class Plant_Cards_Fragment extends Fragment {
                 plantPic = viewInflated.findViewById(R.id.plantPic);
                 builder.setView(viewInflated);
 
-                String[] species = new String[]{"Select Species","cacti","daisy","lily","orchid"};
+                String[] species = new String[]{"Select Species",
+                "Anthurium", "Aloe", "Bamboo", "Croton", "Dracaena", "Fern", "Orchid", "Rubber plant", "Spider plant", "Yucca", "Other"};
                 ArrayAdapter<String> speciesAdapter = new ArrayAdapter<>(Objects.requireNonNull(getContext()), R.layout.species_option, species);
                 plantSpecies.setAdapter(speciesAdapter); // creates the drop down selection
 
