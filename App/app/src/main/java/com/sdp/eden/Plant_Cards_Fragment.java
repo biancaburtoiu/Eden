@@ -212,7 +212,6 @@ public class Plant_Cards_Fragment extends Fragment {
                         // Closing fam in the background
                         materialDesignFAM.close(false);
 
-                        // TODO: Go to the fragment
                         AlertDialog.Builder builder1 = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
                         View viewInflated1 = LayoutInflater.from(getActivity()).inflate(R.layout.picturetag_main, (ViewGroup) getView(), false);
                         View img = viewInflated1.findViewById(R.id.overhead_image);
