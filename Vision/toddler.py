@@ -21,11 +21,11 @@ from enum import Enum
 
 template = cv2.imread("/home/student/logo.jpg")
 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-template = imutils.resize(template, width=int(template.shape[1] * 0.5))
+# template = imutils.resize(template, width=int(template.shape[1] * 0.5))
 template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
 left_time=0
-rigt_time=0
+right_time=0
 count=0
 camera=PiCamera()
 camera.resolution=(360,240)
@@ -102,8 +102,8 @@ def start_capture():
         counter = counter + 1
         (startX, startY) = (int(pt[0] * r), int(pt[1] * r))
         (endX, endY) = (int((pt[0] + tW) * r), int((pt[1] + tH) * r))
-        W = startX - endX
-        F = 0 # need measure
+        W = endX - startX
+        F = 192 # need measure
         H = 0.08
         D = H * F / W
 
@@ -185,9 +185,10 @@ def start_capture():
                 mark_logo(Logo, startX, startY, location)
 
     timexx=time.time()
-    print(af_wr-bf_wr)
-    print(timexx-curt)
+    #print(af_wr-bf_wr)
+    #print(timexx-curt)
     print(location)
+    print(D)
     return (location, D)
 
 
@@ -207,7 +208,7 @@ def color_detection(image):
     img_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
     x = image.shape[0]
     y = image.shape[1]
-    e = 5
+    e = 3
     d = 1
     k = None
     lower_blue = np.array([75, 50, 50])
@@ -305,6 +306,7 @@ def setup_mqtt():
 def onConnect(client,userdata,flags,rc):
     print("connected with result code %i" % rc)
     client.subscribe("pi-finish-instruction")
+    client.subscribe("close-navigate")
 
 
 def onMessage(client,userdata,msg):
@@ -320,6 +322,9 @@ def onMessage(client,userdata,msg):
         else:
             stop()
 
+    if msg.topic =="close-navigate":
+        return 0
+
 
 
 
@@ -327,11 +332,11 @@ def send_message():
     global logo_number
     global count
     global left_time
-    global rigt_time
+    global right_time
     if (location[logo_number].__len__()==0):
         count = count +1
 
-        if count % 2 == 0 :
+        if count % 2 != 0 :
             left_time = right_time+2
             client.publish("pi-start-instruction","rt,l,"+str(left_time),qos=2)
 
