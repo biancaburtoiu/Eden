@@ -75,15 +75,14 @@ public class Plant_Cards_Fragment extends Fragment {
     private static final String TAG = "Plant_Cards_Fragment";
     private ArrayList<Plant> plants = new ArrayList<>(); // list of plants pulled from firebase
 
+    private TextView emptyRV;
     private RecyclerView plantsRV;
     private RecyclerView schedulesRV;
-    private RecyclerView sampleRV;
 
     private ImageView plantPic;
     private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
     private String enteredPlantName; // this will hopefully be temp
     private Uri takenImage; // once again hopeful;ly this will be temp!
-    private int width, height;
 
 
     FloatingActionMenu materialDesignFAM;
@@ -104,14 +103,13 @@ public class Plant_Cards_Fragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_plants, container, false);
         getLatestPlantList();    // Query the database to get latest list
         plantsRV = view.findViewById(R.id.Plants_Recycler_view);
+        emptyRV = view.findViewById(R.id.emptyRV);
         
         // https://www.viralandroid.com/2016/02/android-floating-action-menu-example.html
         materialDesignFAM = (FloatingActionMenu) view.findViewById(R.id.material_design_android_floating_action_menu);
         fab_addPlant = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
 
-        width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
-        height = (int)(getResources().getDisplayMetrics().heightPixels*0.70);
 
         materialDesignFAM.setClosedOnTouchOutside(true);
 
@@ -560,9 +558,17 @@ public class Plant_Cards_Fragment extends Fragment {
         DbOps.instance.getPlantList(Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getEmail(),
                 plantsFromDB -> {
                     if (plantsFromDB.size()==0) {
-                        populatePlantsRecyclerView(new ArrayList<>(plantsFromDB));
+                        //populatePlantsRecyclerView(new ArrayList<>(plantsFromDB));
+
+                        plants = new ArrayList<>();
+                        // Added this here
+                        plantsRV.setVisibility(View.GONE);
+                        emptyRV.setVisibility(View.VISIBLE);
                     }
                     else {
+                        plantsRV.setVisibility(View.VISIBLE);
+                        emptyRV.setVisibility(View.GONE);
+
                         Log.d(TAG, "Obtained list of plants from DB of size: "+plantsFromDB.size());
 
                         // Refreshes the recyclerview:
