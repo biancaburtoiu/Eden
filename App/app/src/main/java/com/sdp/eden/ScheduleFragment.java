@@ -102,7 +102,7 @@ public class ScheduleFragment extends Fragment {
                 //Do schedule layout.
 
                 vh.plant.setText(schedule.getPlantName());
-                vh.quantity.setText(schedule.getQuantity()+"ml");
+                vh.quantity.setText(schedule.getQuantity()+" ml");
                 vh.time.setText(schedule.getTime());
             }
         }
