@@ -108,7 +108,6 @@ public class Plant_Cards_Fragment extends Fragment {
         materialDesignFAM = (FloatingActionMenu) view.findViewById(R.id.material_design_android_floating_action_menu);
         fab_addPlant = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item1);
         fab_addSchedule = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item2);
-        fab_updateRoom = (FloatingActionButton) view.findViewById(R.id.material_design_floating_action_menu_item3);
 
         width = (int)(getResources().getDisplayMetrics().widthPixels*0.90);
         height = (int)(getResources().getDisplayMetrics().heightPixels*0.70);
@@ -478,62 +477,6 @@ public class Plant_Cards_Fragment extends Fragment {
                     dialog.show();
                 }
 
-            }
-        });
-
-        fab_updateRoom.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                materialDesignFAM.close(false);
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
-                builder.setTitle("Update your room layout");
-                builder.setMessage("Do you want to update the room layout?");
-
-                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-
-                        ProgressDialog mProgress;
-                        mProgress = new ProgressDialog(getContext(), R.style.spinner);
-                        mProgress.setMessage("Refreshing room layout...");
-                        mProgress.setCanceledOnTouchOutside(false);
-                        mProgress.show();
-
-                        DbOps.instance.requestRoomLayoutRefresh(new DbOps.onRequestRoomLayoutFinishedListener() {
-                            @Override
-                            public void onRequestRoomLayoutFinished(byte[] newRoomImage) {
-                                if (newRoomImage != null) {
-                                    saveByteArray(newRoomImage, "roomLayout");
-                                    Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                            "Successfully saved current room layout!", Snackbar.LENGTH_SHORT);
-                                    View snackbarView = s.getView();
-                                    snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                                    s.show();
-                                }
-                                else {
-                                    Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                            "Could not update room layout. Please try again!", Snackbar.LENGTH_SHORT);
-                                    View snackbarView = s.getView();
-                                    snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                                    s.show();
-                                }
-                                materialDesignFAM.close(false);
-                                mProgress.dismiss();
-                            }
-                        });
-                    }
-                });
-
-                builder.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        // do nothing
-                    }
-                });
-                AlertDialog dialog = builder.create();
-                dialog.setCanceledOnTouchOutside(false);
-                dialog.show();
             }
         });
 
