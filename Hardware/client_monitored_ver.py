@@ -17,6 +17,7 @@ def onConnect(client,userdata,flags,rc):
     client.subscribe("pi-start-instruction")
     client.subscribe("arm")
     client.subscribe("ping-pong")
+    client.subscribe("close-navigate")
 
     ###garbage###
     ev3.Sound.speak("EDEN")
@@ -49,6 +50,11 @@ def onMessage(client,userdata,msg):
                 on_vision_death()
             else:
                 print("useless pong: %s"%pl)
+        if msg.topic=="close-navigate":
+            print("creeping")
+            sonar_based_creeping()
+            print("crept")
+            ev3.Sound.speak("woooosshhhhhhhhhhhh")
 
     except:
         # catch any errors to stop alertless crashing
@@ -156,22 +162,22 @@ def follow_one_instruction(instruction_as_string, self_stop=False, local=False):
                 # start checking sonar regularly while we're moving
                 #polling_sonar = True
                 #poll_sonar_mainthread()
-            elif inst_type=='-m':
+            elif inst_type =='-m':
                 # we must reverse!
                 # no sonars when we're reversing
 
                 currently_moving = True
                 audible_warning_mp3()
                 movement_controller.forward_forever(-0.2)
-            elif inst_type=='r':
+            elif inst_type =='r':
                 currently_moving=True
                 movement_controller.relative_turn(int(inst[1]))
                 ask_for_next_inst(local)
-            elif inst_type='rc':
+            elif inst_type == 'rc':
                 # begins a slow turn either left or right. Will not stop until receives s
                 currently_moving=True
                 movement_controller.start_slow_turn(inst[1])
-            elif inst_type = 'rt':
+            elif inst_type == 'rt':
                 # turns for a specified number of seconds
                 # (rt,[dir],[time])
                 currently_moving = True
@@ -240,6 +246,122 @@ def poll_sonar_mainthread():
         else:
             time.sleep(0.2)
 
+# this method slowly moves forward towards a plant pot, ensuring the centre
+# sonar has the smallest value of the three
+def sonar_based_creeping():
+    print("~~starting to creep~~")
+    # continue until centre sonar is close enough to pot, or until side sonars are very very
+    # close to the pot (as a failsafe)
+
+    sonar_vals = movement_controller.sonar_value()
+    min_sonar_vals = -1
+    prev_sonar_vals = []
+    print("inital vals: %s"%sonar_vals)
+    while not sonar_closeness_check(min_sonar_vals,sonar_vals,prev_sonar_vals):
+        print("\n-----------\n")
+
+        # compare sonar values
+        prev_sonar_vals = sonar_vals
+        left_val_larger, right_val_larger, sonar_vals = get_sonar_comparisons()
+        min_sonar_vals = update_mins(min_sonar_vals,sonar_vals,prev_sonar_vals)
+
+        # if at least one of the side sonars has a smaller value, we must turn
+        if not left_val_larger or not right_val_larger:
+            face_plant_by_sonar(left_val_larger,right_val_larger,min_sonar_vals,sonar_vals,prev_sonar_vals)
+        
+        # now we are facing plant, move forward until this stops being true, or we get
+        # too close to the pot
+        print("FORWARD---")
+        movement_controller.forward_forever(0.2)
+
+        while left_val_larger and right_val_larger \
+            and not sonar_closeness_check(min_sonar_vals, sonar_vals):
+            time.sleep(0.2)
+            prev_sonar_vals = sonar_vals
+            left_val_larger, right_val_larger, sonar_vals = get_sonar_comparisons()
+            min_sonar_vals = update_mins(min_sonar_vals,sonar_vals,prev_sonar_vals)
+        
+        # stop robot and either continue or finish if we're close enough
+        print("STOP\n")
+        movement_controller.stop()
+
+def sonar_closeness_check(min_vals,new_vals,prev_vals=[]):
+    if min_vals == -1:
+        return (new_vals[1]<60 or new_vals[1]>1000 \
+            or new_vals[0] < 10 or new_vals[2] < 10)
+    else:
+        return  min_vals[1]<50 and (new_vals[1]<100 or new_vals[1]>1000 \
+            or new_vals[0] < 10 or new_vals[2] < 10)
+
+def update_mins(current_mins, new_vals, prev_vals):
+    if current_mins == -1:
+        return new_vals
+
+    print("mins: %s \t vals: %s"%(current_mins, new_vals))
+
+    length = min(len(current_mins),len(new_vals),len(prev_vals))
+    new_mins = []
+
+    for i in range(0,length):
+        # update min if new val is less than current min and consistent with most recent vals
+        if new_vals[i]<current_mins[i] and prev_vals!= [] and abs(new_vals[i]-prev_vals[i])<15:
+            new_mins.append(new_vals[i])
+        else:
+            new_mins.append(current_mins[i])
+
+    return new_mins
+
+
+
+# returns whether left sonar is larger than middle, and same with right sonar
+def get_sonar_comparisons():
+    sonar_vals = movement_controller.sonar_value()
+    left_val_larger = sonar_vals[0]>sonar_vals[1]
+    right_val_larger = sonar_vals[2]>sonar_vals[1]
+    return left_val_larger, right_val_larger, sonar_vals
+
+def remove_big_vals(sonar_vals):
+    new_sonar_vals = []
+    for val in sonar_vals:
+        if val>1500:
+            new_sonar_vals.append(0)
+        else:
+            new_sonar_vals.append(val)
+    return new_sonar_vals
+
+# turns left if needed, until sonars agree, then does the same turning right
+def face_plant_by_sonar(left_val_larger,right_val_larger, min_sonar_vals, sonar_vals, prev_sonar_vals):
+    # first do lefts
+    if not left_val_larger:
+        print("LEFT---")
+        movement_controller.start_slow_turn('l')
+
+        while not left_val_larger and not sonar_closeness_check(min_sonar_vals,sonar_vals):
+            time.sleep(0.2)
+            prev_sonar_vals = sonar_vals
+            left_val_larger,right_val_larger,sonar_vals = get_sonar_comparisons()
+            min_sonar_vals = update_mins(min_sonar_vals, sonar_vals,prev_sonar_vals)
+
+        print("STOP\n")
+        movement_controller.stop()
+
+    # then do rights
+    elif not right_val_larger:
+        print("RIGHT---")
+        movement_controller.start_slow_turn('r')   
+
+        while not right_val_larger and not sonar_closeness_check(min_sonar_vals, sonar_vals):
+            time.sleep(0.2)
+            prev_sonar_vals = sonar_vals
+            left_val_larger,right_val_larger,sonar_vals = get_sonar_comparisons()
+            min_sonar_vals = update_mins(min_sonar_vals, sonar_vals,prev_sonar_vals)
+
+        print("STOP\n")
+        movement_controller.stop()
+
+    return min_sonar_vals
+
+
 #= DEPRECATED - Now we just listen for pongs, we don't send pings =
 def send_ping():
     print("ping")
@@ -303,6 +425,7 @@ detect_pot_interrupted = False
 #connect client and make it wait for inputs
 client.connect(ips.ip)
 read_battery_status(client) # battery reading thread is started here
+
 client.loop_forever()
 
 ################

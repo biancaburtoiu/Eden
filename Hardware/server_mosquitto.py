@@ -11,11 +11,14 @@ client = mqtt.Client("desktopMachine")
 
 client.on_connect = onConnect
 client.connect("129.215.3.65")
+
+
 client.subscribe("navigate-finish")
 
 
 def on_message(cl, ud, fl):
     print("FINISHED UWU")
+
 
 
 client.loop_start()
