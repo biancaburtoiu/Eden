@@ -21,7 +21,7 @@ from enum import Enum
 
 template = cv2.imread("/home/student/logo.jpg")
 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-# template = imutils.resize(template, width=int(template.shape[1] * 0.5))
+template = imutils.resize(template, width=int(template.shape[1] * 0.5))
 template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
 left_time=0
@@ -103,7 +103,7 @@ def start_capture():
         (startX, startY) = (int(pt[0] * r), int(pt[1] * r))
         (endX, endY) = (int((pt[0] + tW) * r), int((pt[1] + tH) * r))
         W = endX - startX
-        F = 192 # need measure
+        F = 110 # need measure
         H = 0.08
         D = H * F / W
 
