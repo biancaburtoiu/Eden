@@ -77,6 +77,7 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private RecyclerView plantsRV;
     private RecyclerView schedulesRV;
+    private RecyclerView sampleRV;
 
     private ImageView plantPic;
     private StorageReference mStorage = FirebaseStorage.getInstance().getReference();
@@ -651,8 +652,6 @@ public class Plant_Cards_Fragment extends Fragment {
 
     private class ScheduleRVAdapter extends RecyclerView.Adapter<ScheduleRVHolder> {
         ArrayList<ScheduleEntry> scheduleEntriesList;
-        private static final int VIEW_TYPE_EMPTY_LIST_PLACEHOLDER = 0;
-        private static final int VIEW_TYPE_OBJECT_VIEW = 1;
 
         ScheduleRVAdapter(ArrayList<ScheduleEntry> list) {
             this.scheduleEntriesList = list;
@@ -666,16 +665,8 @@ public class Plant_Cards_Fragment extends Fragment {
         @NonNull
         @Override
         public ScheduleRVHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-            switch (i) {
-                case VIEW_TYPE_EMPTY_LIST_PLACEHOLDER:
-                    Log.d(TAG, "Entered view_type_empty_list");
-                    return new ScheduleRVHolder(LayoutInflater.from(viewGroup.getContext())
-                            .inflate(R.layout.no_entries_layout, viewGroup, false));
-                default:
-                    Log.d(TAG, "Entered individual_schedule_view_item");
-                    return new ScheduleRVHolder(LayoutInflater.from(viewGroup.getContext())
-                            .inflate(R.layout.individual_schedule_view_item, viewGroup, false));
-            }
+            return new ScheduleRVHolder(LayoutInflater.from(viewGroup.getContext())
+                    .inflate(R.layout.individual_schedule_view_item, viewGroup, false));
         }
 
         @Override
@@ -749,17 +740,6 @@ public class Plant_Cards_Fragment extends Fragment {
                 }
             });
         }
-
-        @Override
-        public int getItemViewType(int position) {
-            if (scheduleEntriesList.size()==0) {
-                Log.d(TAG, "getItemViewType returned empty");
-                return VIEW_TYPE_EMPTY_LIST_PLACEHOLDER;
-            } else {
-                Log.d(TAG, "getItemViewType returned NOT empty");
-                return VIEW_TYPE_OBJECT_VIEW;
-            }
-        }
     }
 
     private class ScheduleRVHolder extends RecyclerView.ViewHolder{
@@ -812,6 +792,10 @@ public class Plant_Cards_Fragment extends Fragment {
                     schedulesRV = scheduleViewInflated.findViewById(R.id.individualScheduleRecyclerView);
                     schedulesRV.setLayoutManager(new LinearLayoutManager(getActivity()));
 
+                    // The empty RV:
+//                    sampleRV = scheduleViewInflated.findViewById(R.id.sampleRecyclerView);
+//                    sampleRV.setLayoutManager(new LinearLayoutManager(getActivity()));
+
                     TextView name = scheduleViewInflated.findViewById(R.id.plantName);
                     TextView spec = scheduleViewInflated.findViewById(R.id.species);
                     ImageView plantpic = scheduleViewInflated.findViewById(R.id.plantPic);
@@ -826,7 +810,9 @@ public class Plant_Cards_Fragment extends Fragment {
                         public void onGetSchedulesForPlantFinished(List<ScheduleEntry> scheduleEntries) {
                             if (scheduleEntries==null) {
                                 ScheduleRVAdapter scheduleRVAdapter = new ScheduleRVAdapter(new ArrayList<>());
-                                schedulesRV.setAdapter(scheduleRVAdapter);
+                                schedulesRV.setAdapter(new SampleRecycler());
+                                // Changed here!
+//                                sampleRV.setAdapter(new SampleRecycler());
                             }
                             else {
                                 // for safety. not necessary
@@ -932,6 +918,37 @@ public class Plant_Cards_Fragment extends Fragment {
             plantImage = itemView.findViewById(R.id.card_plant_image);
         }
     }
+
+
+    // Blank recyclerview
+
+    public class SampleRecycler extends RecyclerView.Adapter<SampleRVHolder> {
+        @Override
+        public SampleRVHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            return new SampleRVHolder(LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.no_entries_layout, parent, false));
+        }
+
+        @Override
+        public void onBindViewHolder(SampleRVHolder holder, int position) {
+            holder.text.setText("No entries available!");
+        }
+
+        @Override
+        public int getItemCount() {
+            return 0;
+        }
+    }
+
+    private class SampleRVHolder extends RecyclerView.ViewHolder {
+        private TextView text;
+        private SampleRVHolder(@NonNull View itemView) {
+            super(itemView);
+            text = itemView.findViewById(R.id.noEntriesText);
+        }
+    }
+
+
 
 
     // Bitmap image helper methods:
