@@ -59,18 +59,24 @@ connected = False
 global stopping_distance
 stopping_distance = 16
 global bad_node_ranges
-bad_node_ranges = [((0, 100), (99, 124)), ((100, 320), (93, 130)), ((154, 182), (0, 93)), ((98, 127), (124, 230))] # Camera boundaires
-bad_node_ranges = [((x1 - stopping_distance, x2 + stopping_distance), (y1 - stopping_distance, y2 + stopping_distance))
+bad_node_ranges = [((0, 100), (99, 124)), ((100, 320), (93, 130)), ((154, 182), (0, 93)),
+                   ((98, 127), (124, 230))]  # Camera boundaires
+bad_node_ranges += [((193, 184), (236, 217)), ((1, 186), (32, 221))]  # Overexposure as under light
+bad_node_ranges = [((x1 - (stopping_distance * 1.5), x2 + (stopping_distance * 1.5)),
+                    (y1 - (stopping_distance * 1.5), y2 + (stopping_distance * 1.5)))
                    for ((x1, x2), (y1, y2)) in bad_node_ranges]
-bad_node_ranges += [((193, 184), (236, 217))] # Overexposure as under light
 global final_turn
 final_turn = False
 global start_graph
 start_graph = None
-global new_goal
-new_goal = True
+global new_plant_goal
+new_plant_goal = True
 global plant_pos
 plant_pos = None
+global home
+home = None
+global going_home
+going_home = False
 
 # QA vars
 global start_pos
@@ -191,6 +197,28 @@ def burrow_out_graph(graph, frm):
     return graph
 
 
+def find_closest_goal():
+    global up_left_down_right
+    global current_goal_number
+    global goal_pos
+    global global_robot_pos
+    if global_robot_pos is not None and goal_pos in up_left_down_right:
+        current_goal_number = 0
+        new_plant_goal_pos = None
+        goal_dist = float('inf')
+        for i in range(len(up_left_down_right)):
+            if up_left_down_right[i] is not None:
+                local_goal_dist = math.sqrt(
+                    (up_left_down_right[i][0] - global_robot_pos[0]) ** 2 + (
+                            up_left_down_right[i][1] - global_robot_pos[1]) ** 2)
+                if local_goal_dist < goal_dist:
+                    current_goal_number = i
+                    goal_dist = local_goal_dist
+                    new_plant_goal_pos = up_left_down_right[i]
+        if new_plant_goal_pos is not None:
+            goal_pos = new_plant_goal_pos
+
+
 def on_message(client, userdata, msg):
     global robot_moving
     global robot_rotating
@@ -209,15 +237,22 @@ def on_message(client, userdata, msg):
     global current_goal_number
     global initial_dist_to_target
     global final_turn
-    global new_goal
+    global new_plant_goal
     global stopping_distance
     global plant_pos
+    global home
+    global going_home
     try:
         if msg.topic == "navigate-start":
-            goal_pos = tuple([int(i) for i in msg.payload.decode().split(",")])
-            plant_pos = goal_pos
-            new_goal = True
-            print("SET COORDINATE %s" % str(goal_pos))
+            if msg.payload.decode() == "home":
+                print("GOT HOME")
+                goal_pos = home
+                going_home = True
+            else:
+                goal_pos = tuple([int(i) for i in msg.payload.decode().split(",")])
+                plant_pos = goal_pos
+                new_plant_goal = True
+                print("SET COORDINATE %s" % str(goal_pos))
         elif msg.topic == "finish-instruction":
             robot_was_moving = robot_moving
             robot_was_rotating = robot_rotating
@@ -231,18 +266,21 @@ def on_message(client, userdata, msg):
                     path = None
                     goal_pos = None
                     initial_dist_to_target = None
-                    x = plant_pos[0] - global_robot_pos[0]
-                    y = global_robot_pos[1] - plant_pos[1]
-                    angle_to_turn = math.degrees(math.atan2(x, y))
-                    angle_to_turn = (angle_to_turn - robot_angle) % 360
-                    if angle_to_turn > 180:
-                        angle_to_turn -= 360
-                    print("TOLD TO FINAL TURN - r,%s" % round(angle_to_turn))
-                    print("ROBOT ANGLE IS: %s, GOAL POS IS: %s, ROBOT POS IS: %s" % (
-                        robot_angle, goal_pos, global_robot_pos))
-                    robot_was_rotating = True
-                    client.publish("start-instruction", "r,%s" % round(angle_to_turn), qos=2)
-                    final_turn = True
+                    if going_home:
+                        going_home = False
+                    else:
+                        x = plant_pos[0] - global_robot_pos[0]
+                        y = global_robot_pos[1] - plant_pos[1]
+                        angle_to_turn = math.degrees(math.atan2(x, y))
+                        angle_to_turn = (angle_to_turn - robot_angle) % 360
+                        if angle_to_turn > 180:
+                            angle_to_turn -= 360
+                        print("TOLD TO FINAL TURN - r,%s" % round(angle_to_turn))
+                        print("ROBOT ANGLE IS: %s, GOAL POS IS: %s, ROBOT POS IS: %s" % (
+                            robot_angle, goal_pos, global_robot_pos))
+                        robot_was_rotating = True
+                        client.publish("start-instruction", "r,%s" % round(angle_to_turn), qos=2)
+                        final_turn = True
                     return
             if robot_was_moving:
                 initial_dist_to_target = None
@@ -260,8 +298,11 @@ def on_message(client, userdata, msg):
                 # print("CLOSEST IS %s" % closest)
                 frm = tuple([round(i) for i in grid_robot_pos])
                 if closest > 6:
+                    find_closest_goal()
                     if search_graph[frm[1]][frm[0]] == 1:
                         search_graph = burrow_out_graph(search_graph, frm)
+                    if going_home and search_graph[goal_pos[1]][goal_pos[0]]==1:
+                        search_graph = burrow_out_graph(search_graph, goal_pos)
                     _, path, _, insts = getInstructionsFromGrid(search_graph, target=goal_pos, start=frm,
                                                                 upside_down=True, bad_node_ranges=bad_node_ranges)
 
@@ -272,15 +313,16 @@ def on_message(client, userdata, msg):
                     angle_to_turn -= 360
                 if abs(round(angle_to_turn)) > 5:
                     robot_rotating = True
-                    # print("TOLD TO TURN %s" % round(angle_to_turn))
+                    print("TOLD TO TURN %s" % round(angle_to_turn))
                     # print(insts)
                     client.publish("start-instruction", "%s,%s" % ("r", round(angle_to_turn)), qos=2)
                     return
 
             if final_turn:
                 final_turn = False
-                # print("FINISHED FINAL TURN")
-                client.publish("navigate-finish", "DONE", qos=2)
+                print("FINISHED FINAL TURN")
+                # client.publish("navigate-finish", "DONE", qos=2)
+                client.publish("close-navigate", "", qos=2)
                 '''
                 current_goal_number += 1
                 while current_goal_number < 3 and up_left_down_right[current_goal_number] is None:
@@ -303,7 +345,7 @@ def on_message(client, userdata, msg):
                         next_inst = convert_orientation_inst_to_rotation(next_inst)
                         if abs(int(next_inst.split(",")[1])) > 5:
                             robot_rotating = True
-                            # print("1. TOLD TO DO %s" % str(next_inst))
+                            print("1. TOLD TO DO %s" % str(next_inst))
                             # print(insts)
                             client.publish("start-instruction", next_inst, qos=2)
                             got_valid_inst = True
@@ -385,7 +427,6 @@ class Unwarper:
         self.mqtt.connect("129.215.3.65")
         self.mqtt.loop_start()
         self.overhead_image = None
-        fbi.start_script(self)
         self.overlap_area = None
 
         # TESTING VARIABLES
@@ -471,8 +512,11 @@ class Unwarper:
         global robot_target
         global stopping_distance
         if goal_pos is not None:
+            find_closest_goal()
             if graph[frm[1]][frm[0]] == 1:
                 graph = burrow_out_graph(graph, frm)
+            if going_home and graph[to[1]][to[0]]==1:
+                graph = burrow_out_graph(graph, goal_pos)
             _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True,
                                                         bad_node_ranges=bad_node_ranges)
             if not robot_rotating and not robot_moving and insts != []:
@@ -502,16 +546,17 @@ class Unwarper:
                     robot_target = tuple(robot_target)
                     robot_moving = True
                     dist_to_target = find_robot_dist_to_target(global_robot_pos, robot_target)
-                    if dist_to_target < 16:
-                        next_inst = list(next_inst)
-                        next_inst.append("%.2f" % ((dist_to_target / 2) / stopping_distance))
-                        next_inst = tuple(next_inst)
-                    print("4. TOLD TO DO %s" % str(next_inst))
-                    # print(insts)
-                    if len(next_inst) == 2:
-                        client.publish("start-instruction", "%s,%s" % next_inst, qos=2)
-                    elif len(next_inst) == 3:
-                        client.publish("start-instruction", "%s,%s,%s" % next_inst, qos=2)
+                    if dist_to_target is not None:
+                        if dist_to_target < 16:
+                            next_inst = list(next_inst)
+                            next_inst.append("%.2f" % ((dist_to_target / 2) / stopping_distance))
+                            next_inst = tuple(next_inst)
+                        print("4. TOLD TO DO %s" % str(next_inst))
+                        # print(insts)
+                        if len(next_inst) == 2:
+                            self.mqtt.publish("start-instruction", "%s,%s" % next_inst, qos=2)
+                        elif len(next_inst) == 3:
+                            self.mqtt.publish("start-instruction", "%s,%s,%s" % next_inst, qos=2)
 
     def check_robot_at_target(self, robot_pos, local_robot_angle):
         global robot_target
@@ -605,8 +650,11 @@ class Unwarper:
                             found[i] = True
                         # If the cell is empty then this is the closest we can reach to the left/right/up/down of the goal
                         elif search_graph[local_goal[1]][local_goal[0]] == 0:
+                            find_closest_goal()
                             if search_graphs[i][robot_pos[1]][robot_pos[0]] == 1:
                                 search_graphs[i] = burrow_out_graph(search_graphs[i], robot_pos)
+                            if going_home and search_graphs[i][to[1]][to[0]] == 1:
+                                search_graphs[i] = burrow_out_graph(search_graphs[i], local_goal)
                             _, path, _, _ = getInstructionsFromGrid(search_graphs[i], target=local_goal,
                                                                     start=robot_pos,
                                                                     upside_down=True, bad_node_ranges=bad_node_ranges)
@@ -617,14 +665,18 @@ class Unwarper:
                                 up_left_down_right[i] = None
                                 found[i] = True
         current_goal_number = 0
-        new_goal_pos = None
+        new_plant_goal_pos = None
+        goal_dist = float('inf')
         for i in range(len(up_left_down_right)):
-            current_goal_number = i
             if up_left_down_right[i] is not None:
-                new_goal_pos = up_left_down_right[i]
-                break
-        if new_goal_pos is not None:
-            goal_pos = new_goal_pos
+                local_goal_dist = math.sqrt(
+                    (up_left_down_right[i][0] - robot_pos[0]) ** 2 + (up_left_down_right[i][1] - robot_pos[1]) ** 2)
+                if local_goal_dist < goal_dist:
+                    current_goal_number = i
+                    goal_dist = local_goal_dist
+                    new_plant_goal_pos = up_left_down_right[i]
+        if new_plant_goal_pos is not None:
+            goal_pos = new_plant_goal_pos
             print("FOUND SIDES AT %s" % str(up_left_down_right))
         if goal_pos is None and current_goal_number == len(up_left_down_right) - 1:
             reached_goal = True
@@ -637,8 +689,9 @@ class Unwarper:
             global search_graph
             global global_robot_pos
             global robot_angle
-            global new_goal
+            global new_plant_goal
             global start_graph
+            global home
             count = 6
             # goal_pos = (272, 34) #UNCOMMENT FOR TESTING ONLY
             cam = cv2.VideoCapture(0)
@@ -666,6 +719,9 @@ class Unwarper:
                             robot_angle = local_robot_angle
                         if robot_pos_dec[0] is not None and robot_pos_dec[1] is not None:
                             global_robot_pos = robot_pos_dec
+                            if home is None:
+                                home = tuple([round(i) for i in robot_pos_dec])
+                                print("HOME IS %s" % str(home))
                         if global_robot_pos is not None:
                             lower_i = max(round(global_robot_pos[1] - 24), 0)
                             upper_i = round(global_robot_pos[1] + 24)
@@ -689,14 +745,14 @@ class Unwarper:
                         search_graph_copy = Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                           cell_length=cell_length)
                         if robot_pos_dec[0] is not None and robot_pos_dec[1] is not None:
-                            if new_goal and not first_iteration and goal_pos is not None:
+                            if new_plant_goal and not first_iteration and goal_pos is not None:
                                 search_graphs = [
                                     Gridify.convert_thresh_to_map(thresh_merged_img, shift_amount=shift_amount,
                                                                   cell_length=cell_length) for x in range(8)]
                                 self.find_nearest_free_cells(search_graphs,
                                                              tuple([round(i / shift_amount) for i in robot_pos_dec]))
                                 if up_left_down_right[current_goal_number] is not None:
-                                    new_goal = False
+                                    new_plant_goal = False
                         self.count_visibility(robot_pos_dec[0] is not None)
                         self.check_robot_at_target(robot_pos_dec, local_robot_angle)
                         if robot_pos_dec[0] is not None:
@@ -722,6 +778,7 @@ class Unwarper:
                             cv2.imwrite("Vision/record_output/%s.jpg" % count, merged_img)
                             count += 1
                         if first_iteration:
+                            fbi.start_script(self)
                             first_iteration = False
                 i += 1
         except:
