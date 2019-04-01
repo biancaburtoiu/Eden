@@ -21,16 +21,44 @@ from enum import Enum
 
 template = cv2.imread("/home/student/logo.jpg")
 template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-template = imutils.resize(template, width=int(template.shape[1] * 0.5))
+template = imutils.resize(template, width=int(template.shape[1] * 0.4))
 template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
 left_time=0
 right_time=0
-count=1
+count=0
 camera=PiCamera()
 camera.resolution=(360,240)
 location= [[],[],[],[],[],[],[]]
+new_location= [[],[],[],[],[],[],[]]
 logo_number=0
+is_centre= False
+is_rotating= False
+loc=0
+got_result =0
+running=False
+
+def init():
+    global location
+    global logo_number
+    global is_centre
+    global is_rotating
+    global loc
+    global got_result
+    global running
+    global new_location
+    left_time=0
+    right_time=0
+
+    location= [[],[],[],[],[],[],[]]
+    new_location= [[],[],[],[],[],[],[]]
+    logo_number=0
+    is_centre= False
+    is_rotating= False
+    loc=0
+    got_result =False
+    running=False
+
 
 def start_capture():
     curt=time.time()
@@ -45,6 +73,11 @@ def start_capture():
     all_found = None
     final_result = None
     global location
+    global is_centre
+    global is_rotating
+    global got_result
+    global running
+    global new_location
     location = [[],[],[],[],[],[],[]]
 
 
@@ -103,7 +136,7 @@ def start_capture():
         (startX, startY) = (int(pt[0] * r), int(pt[1] * r))
         (endX, endY) = (int((pt[0] + tW) * r), int((pt[1] + tH) * r))
         W = endX - startX
-        F = 110 # need measure
+        F = 100 # need measure
         H = 0.08
         D = H * F / W
 
@@ -184,17 +217,44 @@ def start_capture():
             if detected:
                 mark_logo(Logo, startX, startY, location)
 
-    timexx=time.time()
+
     #print(af_wr-bf_wr)
     #print(timexx-curt
-    if((location[logo_number].__len__()!= 0 && D>25):
-        client.publish("pi-start-instruction","m,0,0.1",qos=2)
-
-    else(((location[logo_number].__len__()!= 0 && D<12)):
-        client.publish("pi-start-instruction","s",qos=2)
-
-    print(location)
+    new_location= location
+    print(new_location)
     print(D)
+    if running:
+        if  len(location[logo_number])!=0:
+            loc = np.average(location[logo_number])
+            if(loc>140 and loc<200):
+                is_centre=True
+
+        if is_centre and (not is_rotating):
+            if len(location[logo_number])!= 0 and D>0.17 :
+                client.publish("pi-start-instruction","m,0,0.03",qos=2)
+                print("forward")
+
+            elif len(location[logo_number])!= 0 and D<0.15 :
+                client.publish("pi-start-instruction","s",qos=2)
+                client.publish("sonar-creeping","1",qos=2)
+                print("stop forward")
+                running=False
+                print("everything is fine")
+                
+        elif(loc>140 and loc<200):
+            is_centre=True
+            client.publish("pi-start-instruction","s",qos=2)
+            time.sleep(0.1)
+            is_rotating=False
+            print("turn stop")
+
+        if is_rotating and is_centre:
+            is_rotating=False
+            client.publish("pi-start-instruction","s",qos=2)
+    if len(location[logo_number])!=0:
+        got_result =2
+    else:
+        got_result = min(2,got_result+1)
     return location
 
 
@@ -202,7 +262,7 @@ def start_capture():
 
 
 def vision():
-    while(1):
+    while (1):
         start_capture()
 
 
@@ -286,6 +346,7 @@ def color_detection(image):
 
 
 def mark_logo(Logo, startX, endX, location):
+
     if Logo == 1:
         location[0].append((startX + endX)/2)
     if Logo == 2:
@@ -315,22 +376,42 @@ def onConnect(client,userdata,flags,rc):
     client.subscribe("close-navigate")
 
 
+
+
 def onMessage(client,userdata,msg):
-    global location
+    global new_location
     global logo_number
-    if msg.topic=="pi-finish-instruction":
-        if location[logo_number].__len__() == 0:
-            send_message()
-        else:
-            loc = np.average(location[logo_number])
-
-        if(loc==0 | loc <130 | loc>190):
-            send_message()
-        else:
-            stop()
-
+    global running
     if msg.topic =="close-navigate":
-        return 0
+        global running
+        logo_number=int(msg.payload.decode())
+        init()
+        running=True
+        send_message()
+
+    elif running:
+        if msg.topic=="pi-finish-instruction":
+            while got_result!=2:
+                time.sleep(0.1)
+            if len(new_location[logo_number]) == 0:
+                send_message()
+                print("finish-instruction 1")
+                print(new_location)
+
+            else:
+                loc = np.average(new_location[logo_number])
+                print("finish-instruction 2")
+
+            if(loc <140 or loc>200):
+                send_message()
+                print("finish-instruction 3")
+            #else:
+                #is_centre=True
+                #print("finish-instruction 4")
+
+
+
+
 
 
 
@@ -340,32 +421,47 @@ def send_message():
     global count
     global left_time
     global right_time
-    if (location[logo_number].__len__()==0):
+    global is_centre
+    global is_rotating
+    global got_result
+    if len(new_location[logo_number])==0:
         count = count +1
 
         if count % 2 != 0 :
-            left_time = right_time+2
+            left_time = right_time+400
             client.publish("pi-start-instruction","rt,l,"+str(left_time),qos=2)
+            print("turn left"+str(left_time))
+            got_result=False
+
 
         else:
-            rigt_time = left_time+2
-            client.publish("pi-start-instruction","rt,r,"+str(rigt_time),qos=2)
+            right_time = left_time+400
+            client.publish("pi-start-instruction","rt,r,"+str(right_time),qos=2)
+            print("turn right"+str(right_time))
+            got_result=False
+
 
     else:
-        loc = np.average(location[logo_number])
+        loc = np.average(new_location[logo_number])
 
-        if (loc<130):
+        if (loc<140):
             client.publish("pi-start-instruction","rc,r",qos=2)
+            print("turn constantly right")
+            is_rotating=True
 
-        if (loc>190):
+        if (loc>200):
             client.publish("pi-start-instruction","rc,l",qos=2)
+            print("turn constantly left")
+            is_rotating=True
 
 
-def stop():
-    return 0
+
+
+
 
 
 client = setup_mqtt()
-location=start_capture()
-send_message()
+client.loop_start()
+start_capture()
+time.sleep(3)
 vision()
