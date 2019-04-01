@@ -272,7 +272,7 @@ public class DbOps {
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
                 .document(newName);
-        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto(), oldPlant.getNoOfPetals()));
+        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto(), oldPlant.getNoOfPetals(), oldPlant.getLastWatered()));
 
         // Remove current plant document
         DocumentReference remover = db.collection("Users")
@@ -445,6 +445,8 @@ public class DbOps {
         });
 
     }
+
+
 
     interface onAddPlantFinishedListener {
         void onUpdateFinished(boolean success);

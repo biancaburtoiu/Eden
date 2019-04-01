@@ -13,6 +13,8 @@ public class Plant {
     private Float XCoordinate;
     private Float YCoordinate;
 
+    private String LastWatered;
+
     private Integer NoOfPetals;
 
 
@@ -20,20 +22,22 @@ public class Plant {
 
     }
 
-    public Plant(String name, String species, List<Integer> photo, Integer noOfPetals){
+    public Plant(String name, String species, List<Integer> photo, Integer noOfPetals, String lastWatered){
         Name=name;
         Species=species;
         Photo=photo;
         NoOfPetals=noOfPetals;
+        LastWatered = LastWatered;
     }
 
-    public Plant(String name, String species, List<Integer> photo, Integer noOfPetals, Float xcoordinate, Float ycoordinate){
+    public Plant(String name, String species, List<Integer> photo, Integer noOfPetals, Float xcoordinate, Float ycoordinate, String lastWatered){
         Name=name;
         Species=species;
         Photo=photo;
         NoOfPetals=noOfPetals;
         XCoordinate=xcoordinate;
         YCoordinate=ycoordinate;
+        LastWatered = lastWatered;
     }
 
     public String getName() {
@@ -51,6 +55,14 @@ public class Plant {
 
     public Integer getNoOfPetals() { return NoOfPetals; }
     public void setNoOfPetals(Integer noOfPetals) { NoOfPetals = noOfPetals; }
+
+    public String getLastWatered() {
+        return LastWatered;
+    }
+
+    public void setLastWatered(String lastWatered) {
+        LastWatered = lastWatered;
+    }
 
     //@Exclude
     public Float getXCoordinate() { return XCoordinate; }
