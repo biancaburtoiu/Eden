@@ -14,7 +14,7 @@ import threading
 q=queue.PriorityQueue()
 
 lock=threading.Condition()
-
+username=u's1614973@sms.ed.ac.uk'
 
 def water_writer(doc_snapshot, changes,read_time):
     print("!!!!!!!!!!change made!!!!!!!!!!!!")
@@ -27,11 +27,11 @@ def water_writer(doc_snapshot, changes,read_time):
         edited=change.to_dict()
         for key in edited:
             if edited[key]:
-                plant,x,y=key.split(",")[0],key.split(",")[1],key.split(",")[2]
+                plant,plant_petals,x,y=key.split(",")[0],key.split(",")[1],key.split(",")[2],key.split(",")[3]
                 today,now=dt.datetime(1999,1,1).now().weekday(), str(dt.datetime(1999,1,1).now().hour) + ":" + str(dt.datetime(1999,1,1).now().minute)
 
-                b=ScheduleEntry(change.id,x,y,today,now,plant,doc_snapshot,False)
-                db.collection(u'Users').document(u'test@gmail.com').collection(u'Trigger').document(u'Trigger').set({key:False}, merge=True)
+                b=ScheduleEntry(plant,x,y,today,now,plant_petals,doc_snapshot,False,plant)
+                db.collection(u'Users').document(username).collection(u'Trigger').document(u'Trigger').set({key:False}, merge=True)
                 print(b)
                 print("SHOULD BE ON THE QUEUE")
                 q.put(b)
@@ -43,7 +43,7 @@ def plant_processor(doc_snapshot):
     if a!=None and a["valid"]:
         a=doc_snapshot.to_dict()
         print(doc_snapshot)
-        b=ScheduleEntry(doc_snapshot.id,a['plantXCoordinate'],a['plantYCoordinate'],a['day'],a['time'],a['plantNoOfPetals'],doc_snapshot,True)
+        b=ScheduleEntry(doc_snapshot.id,a['plantXCoordinate'],a['plantYCoordinate'],a['day'],a['time'],a['plantNoOfPetals'],doc_snapshot,True,a["plantName"])
 
         if b.datetime< dt.datetime(1999,1,1).now():
             b.datetime=b.datetime+dt.timedelta(7)
@@ -58,15 +58,19 @@ def plant_processor(doc_snapshot):
 
 def schedule_adder(doc_snapshot, changes,read_time):
     global q
+    if not doc_snapshot:
+        return
     docnames1=doc_snapshot[0]
     docnames2=docnames1.to_dict()
+    if not "names"  in docnames2:
+        return
     docnames=docnames2['names']
     print(docnames)
     print(read_time)
     q=queue.PriorityQueue()
     for docname in docnames:
             print(docname)
-            doc=db.collection(u'Users').document(u'test@gmail.com').collection(u'Schedules').document(docname).get()
+            doc=db.collection(u'Users').document(username).collection(u'Schedules').document(docname).get()
             print(doc)
             plant_processor(doc)
 
@@ -76,30 +80,35 @@ def schedule_adder(doc_snapshot, changes,read_time):
     #        if edited[key]:
     #            print(key)
     #            self.client.publish("water","please")
-    #            self.db.collection(u'Users').document(u'test@gmail.com').collection(u'Trigger').document(u'Trigger').set({key:False}, merge=True)
+    #            self.db.collection(u'Users').document(username).collection(u'Trigger').document(u'Trigger').set({key:False}, merge=True)
 
 def init_fb():
     cred = fba.credentials.Certificate("eden-34f6a-firebase-adminsdk-yigr5-b66d22fc0b.json")
     fba.initialize_app(cred,{'storageBucket': "eden-34f6a.appspot.com"})
     db = firestore.client()
-    db.collection(u'Users').document(u'test@gmail.com').collection(u'Schedules').document(u'Schedules').on_snapshot(schedule_adder)
-    db.collection(u'Users').document(u'test@gmail.com').collection(u'Trigger').document(u'Trigger').on_snapshot(water_writer)
+    db.collection(u'Users').document(username).collection(u'Schedules').document(u'Schedules').on_snapshot(schedule_adder)
+    db.collection(u'Users').document(username).collection(u'Trigger').document(u'Trigger').on_snapshot(water_writer)
     return db
 
 def on_connect(client, userdata, flacgs, rc):
     print("mqtt connected")
     client.subscribe("navigate-finish")
+    client.subscribe("plant-watered")
+
 
 def on_message(client,userdata,message):
+
     global lock
-    print("message")
-    if message.topic=="navigate-finish":
+
+
+    if message.topic=="navigate-finish" or message.topic=="plant-watered":
         with lock:
             lock.notify()
         print("navigate finished")
 
+
 class ScheduleEntry:
-    def __init__(self,docname, xcoord,ycoord,day,time,plant,docid,repeats):
+    def __init__(self,docname, xcoord,ycoord,day,time,plant,docid,repeats,plant_name):
         self.docname=docname
         self.xcoord=xcoord
         self.ycoord=ycoord
@@ -118,24 +127,27 @@ class ScheduleEntry:
 
         self.plant=plant
         self.repeats=repeats
-
+        self.plant_name=plant_name
 
 
     def send_if_ok(self):
 
-        doc=db.collection(u'Users').document(u'test@gmail.com').collection(u'Schedules').document(self.docname).get()
+        doc=db.collection(u'Users').document(username).collection(u'Schedules').document(self.docname).get()
         loc=doc.to_dict()
         if not self.repeats or ( loc!=None and loc['valid']):
             client.publish('navigate-start',(str(self.xcoord)+","+str(self.ycoord)), qos=2)
             print("going")
             with lock:
                 lock.wait()
-            if self.repeats:
-                self.datetime+=dt.timedelta(7)
-                q.put(self)
+
             client.publish('close-navigate',str(self.plant), qos=2)
             with lock:
                 lock.wait()
+            db.collection(u'Users').document(username).collection(u'Plants').document(self.docname).set({u'last_watered':self.datetime},merge=True)
+            if self.repeats:
+                self.datetime+=dt.timedelta(7)
+                q.put(self)
+
 
 
 
@@ -166,7 +178,7 @@ while True:
         loc.send_if_ok()
 
 
-        if q.empty() or q.queue[0].datetime>now:
+        if q.empty() or q.queue[0].datetime>dt.datetime(1999,1,1).now():
             print("going home")
             client.publish('navigate-start',"home", qos=2)
             with lock:
