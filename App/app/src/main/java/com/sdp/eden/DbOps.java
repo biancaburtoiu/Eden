@@ -365,7 +365,7 @@ public class DbOps {
     }
 
     void setWaterNowTrigger(Plant plant, onSetWaterNowFinishedListener listener) {
-        String triggerString = plant.getNoOfPetals()+","+
+        String triggerString = plant.getName() + "," + plant.getNoOfPetals()+","+
                 String.format(Locale.UK,"%.3f", plant.getXCoordinate())+","+
                 String.format(Locale.UK,"%.3f", plant.getYCoordinate());
 
