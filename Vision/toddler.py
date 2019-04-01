@@ -26,7 +26,7 @@ template = cv2.Canny(template, 50, 200)
 (tH, tW) = template.shape[:2]
 left_time=0
 right_time=0
-count=0
+count=1
 camera=PiCamera()
 camera.resolution=(360,240)
 location= [[],[],[],[],[],[],[]]
@@ -186,10 +186,16 @@ def start_capture():
 
     timexx=time.time()
     #print(af_wr-bf_wr)
-    #print(timexx-curt)
+    #print(timexx-curt
+    if((location[logo_number].__len__()!= 0 && D>25):
+        client.publish("pi-start-instruction","m,0,0.1",qos=2)
+
+    else(((location[logo_number].__len__()!= 0 && D<12)):
+        client.publish("pi-start-instruction","s",qos=2)
+
     print(location)
     print(D)
-    return (location, D)
+    return location
 
 
 
@@ -314,9 +320,10 @@ def onMessage(client,userdata,msg):
     global logo_number
     if msg.topic=="pi-finish-instruction":
         if location[logo_number].__len__() == 0:
-            loc = 0
+            send_message()
         else:
             loc = np.average(location[logo_number])
+
         if(loc==0 | loc <130 | loc>190):
             send_message()
         else:
@@ -346,8 +353,8 @@ def send_message():
 
     else:
         loc = np.average(location[logo_number])
-        if (loc<130):
 
+        if (loc<130):
             client.publish("pi-start-instruction","rc,r",qos=2)
 
         if (loc>190):
@@ -359,6 +366,6 @@ def stop():
 
 
 client = setup_mqtt()
-location, distance=start_capture()
+location=start_capture()
 send_message()
 vision()
