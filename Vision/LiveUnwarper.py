@@ -249,7 +249,9 @@ def on_message(client, userdata, msg):
                 goal_pos = home
                 going_home = True
             else:
-                goal_pos = tuple([int(i) for i in msg.payload.decode().split(",")])
+                goal_pos = tuple([float(i) for i in msg.payload.decode().split(",")])
+                img_dims = [321, 231]
+                goal_pos = [round(goal_pos[i] * img_dims[i]) for i in range(0, 2)]
                 plant_pos = goal_pos
                 new_plant_goal = True
                 print("SET COORDINATE %s" % str(goal_pos))
@@ -268,6 +270,7 @@ def on_message(client, userdata, msg):
                     initial_dist_to_target = None
                     if going_home:
                         going_home = False
+                        client.publish("navigate-finish", "DONE", qos=2)
                     else:
                         x = plant_pos[0] - global_robot_pos[0]
                         y = global_robot_pos[1] - plant_pos[1]
@@ -301,7 +304,7 @@ def on_message(client, userdata, msg):
                     find_closest_goal()
                     if search_graph[frm[1]][frm[0]] == 1:
                         search_graph = burrow_out_graph(search_graph, frm)
-                    if going_home and search_graph[goal_pos[1]][goal_pos[0]]==1:
+                    if going_home and search_graph[goal_pos[1]][goal_pos[0]] == 1:
                         search_graph = burrow_out_graph(search_graph, goal_pos)
                     _, path, _, insts = getInstructionsFromGrid(search_graph, target=goal_pos, start=frm,
                                                                 upside_down=True, bad_node_ranges=bad_node_ranges)
@@ -321,8 +324,8 @@ def on_message(client, userdata, msg):
             if final_turn:
                 final_turn = False
                 print("FINISHED FINAL TURN")
-                # client.publish("navigate-finish", "DONE", qos=2)
-                client.publish("close-navigate", "", qos=2)
+                client.publish("navigate-finish", "DONE", qos=2)
+                # client.publish("close-navigate", "", qos=2)
                 '''
                 current_goal_number += 1
                 while current_goal_number < 3 and up_left_down_right[current_goal_number] is None:
@@ -515,7 +518,7 @@ class Unwarper:
             find_closest_goal()
             if graph[frm[1]][frm[0]] == 1:
                 graph = burrow_out_graph(graph, frm)
-            if going_home and graph[to[1]][to[0]]==1:
+            if going_home and graph[to[1]][to[0]] == 1:
                 graph = burrow_out_graph(graph, goal_pos)
             _, path, _, insts = getInstructionsFromGrid(graph, target=goal_pos, start=frm, upside_down=True,
                                                         bad_node_ranges=bad_node_ranges)
