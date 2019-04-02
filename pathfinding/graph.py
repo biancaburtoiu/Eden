@@ -34,6 +34,7 @@ class Graph:
 
             if current.getPos() == goal_pos:
                 # in this case, this is our goal
+
                 return self.constructPath(parent, current, start)
 
             else:
@@ -48,9 +49,11 @@ class Graph:
                     
                     # case: passing through this node means turning
                     if current in parent.keys() and parent[current].neighbourToDir(current) !=dirToNeighbour:
-                        cost_of_move += 80
+
+                        cost_of_move += 40
                         # case: this is also a 'bad' node
                         if current.getIsBad():
+
                             cost_of_move += 80
                     
                     # case: this node is 'close' to a wall

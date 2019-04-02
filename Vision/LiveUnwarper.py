@@ -61,7 +61,7 @@ stopping_distance = 16
 global bad_node_ranges
 bad_node_ranges = [((0, 100), (99, 124)), ((100, 320), (93, 130)), ((154, 182), (0, 93)),
                    ((98, 127), (124, 230))]  # Camera boundaires
-bad_node_ranges += [((193, 184), (236, 217)), ((1, 186), (32, 221))]  # Overexposure as under light
+bad_node_ranges += [((193, 245), (184, 236)), ((1, 32), (186, 230))]  # Overexposure as under light
 bad_node_ranges = [((x1 - (stopping_distance * 1.5), x2 + (stopping_distance * 1.5)),
                     (y1 - (stopping_distance * 1.5), y2 + (stopping_distance * 1.5)))
                    for ((x1, x2), (y1, y2)) in bad_node_ranges]
@@ -263,7 +263,7 @@ def on_message(client, userdata, msg):
             if goal_pos is not None:
                 # print("DISTANCE TO GOAL IS %s" % math.sqrt(
                 #    (goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2))
-                if math.sqrt((goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2) < 20:
+                if math.sqrt((goal_pos[0] - global_robot_pos[0]) ** 2 + (goal_pos[1] - global_robot_pos[1]) ** 2) < 15:
                     insts = []
                     path = None
                     goal_pos = None
