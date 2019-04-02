@@ -34,9 +34,11 @@ new_location= [[],[],[],[],[],[],[]]
 logo_number=0
 is_centre= False
 is_rotating= False
+is_not_seeing= False
 loc=0
 got_result =0
 running=False
+rotate_time=0
 
 def init():
     global location
@@ -47,17 +49,21 @@ def init():
     global got_result
     global running
     global new_location
+    global count
     left_time=0
     right_time=0
+    count=0
 
     location= [[],[],[],[],[],[],[]]
     new_location= [[],[],[],[],[],[],[]]
     logo_number=0
+    rotate_time=0
     is_centre= False
     is_rotating= False
     loc=0
     got_result =False
     running=False
+    is_not_seeing=False
 
 
 def start_capture():
@@ -78,6 +84,8 @@ def start_capture():
     global got_result
     global running
     global new_location
+    global is_not_seeing
+    global rotate_time
     location = [[],[],[],[],[],[],[]]
 
 
@@ -226,21 +234,41 @@ def start_capture():
     if running:
         if  len(location[logo_number])!=0:
             loc = np.average(location[logo_number])
-            if(loc>140 and loc<200):
-                is_centre=True
+
+        print(len(location[logo_number]))
+        if  len(location[logo_number])!=0 and is_not_seeing :
+            is_not_seeing = False
+            client.publish("pi-start-instruction","s",qos=2)
+            time.sleep(0.1)
+            print("stop turning1")
+
+        if is_not_seeing and ((time.time()-rotate_time)>(5*count)):
+            client.publish("pi-start-instruction","s",qos=2)
+            print("it wont stop")
+
+
+
+        if(loc>140 and loc<200):
+            is_centre=True
+            print("Is_centre")
+
+        if is_rotating and is_centre:
+            is_rotating=False
+            client.publish("pi-start-instruction","s",qos=2)
+            print("is not rotating")
 
         if is_centre and (not is_rotating):
             if len(location[logo_number])!= 0 and D>0.17 :
                 client.publish("pi-start-instruction","m,0,0.03",qos=2)
                 print("forward")
 
-            elif len(location[logo_number])!= 0 and D<0.15 :
+            elif len(location[logo_number])!= 0 and D<=0.17 :
                 client.publish("pi-start-instruction","s",qos=2)
                 client.publish("sonar-creeping","1",qos=2)
                 print("stop forward")
                 running=False
                 print("everything is fine")
-                
+
         elif(loc>140 and loc<200):
             is_centre=True
             client.publish("pi-start-instruction","s",qos=2)
@@ -248,9 +276,7 @@ def start_capture():
             is_rotating=False
             print("turn stop")
 
-        if is_rotating and is_centre:
-            is_rotating=False
-            client.publish("pi-start-instruction","s",qos=2)
+
     if len(location[logo_number])!=0:
         got_result =2
     else:
@@ -310,7 +336,7 @@ def color_detection(image):
     if x_r <= 0.28 or x_r >= 0.72 or y_r >= 0.72 or y_r <= 0.28:
         return False, -1
     # upper mask (170-180)
-    lower_red = np.array([170, 50, 50])
+    lower_red = np.array([160, 50, 50])
     upper_red = np.array([180, 255, 255])
     mask1 = cv2.inRange(img_hsv, lower_red, upper_red)
 
@@ -384,8 +410,11 @@ def onMessage(client,userdata,msg):
     global running
     if msg.topic =="close-navigate":
         global running
-        logo_number=int(msg.payload.decode())
         init()
+        logo_number=int(msg.payload.decode())
+        print("logo number")
+        logo_number=logo_number-1
+        print (logo_number)
         running=True
         send_message()
 
@@ -424,33 +453,44 @@ def send_message():
     global is_centre
     global is_rotating
     global got_result
+    global is_not_seeing
+    global rotate_time
     if len(new_location[logo_number])==0:
-        count = count +1
+        if count<4:
+            count = count +1
+
+        is_not_seeing=True
 
         if count % 2 != 0 :
-            left_time = right_time+400
-            client.publish("pi-start-instruction","rt,l,"+str(left_time),qos=2)
-            print("turn left"+str(left_time))
+            #left_time = right_time+400
+            client.publish("pi-start-instruction","rc,l,0.08",qos=2)
+            print("not seeing,turn left")
             got_result=False
+            rotate_time=0
+            rotate_time=time.time()
 
 
         else:
-            right_time = left_time+400
-            client.publish("pi-start-instruction","rt,r,"+str(right_time),qos=2)
-            print("turn right"+str(right_time))
+            #right_time = left_time+400
+            client.publish("pi-start-instruction","rc,r,0.08",qos=2)
+            print("not seeing,turn right")
             got_result=False
+            rotate_time=0
+            rotate_time=time.time()
 
 
     else:
+        is_not_seeing=False
+
         loc = np.average(new_location[logo_number])
 
         if (loc<140):
-            client.publish("pi-start-instruction","rc,r",qos=2)
+            client.publish("pi-start-instruction","rc,r,0.02",qos=2)
             print("turn constantly right")
             is_rotating=True
 
         if (loc>200):
-            client.publish("pi-start-instruction","rc,l",qos=2)
+            client.publish("pi-start-instruction","rc,l,0.02",qos=2)
             print("turn constantly left")
             is_rotating=True
 
