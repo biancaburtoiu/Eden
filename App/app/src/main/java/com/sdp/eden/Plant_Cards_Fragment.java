@@ -266,13 +266,13 @@ public class Plant_Cards_Fragment extends Fragment {
                                                 image = bitmapToIntegerList(imageBitmap);
                                             }
 
-                                            Plant plant = new Plant(
+                                            Plant plant = new Plant("",
                                                     plantName.getText().toString(),
                                                     plantSpecies.getSelectedItem().toString(),
                                                     image,
                                                     petalPicker.getValue(),
                                                     coordinates.get(0),
-                                                    coordinates.get(1), ""
+                                                    coordinates.get(1)
                                             );
 
                                             DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
@@ -795,7 +795,13 @@ public class Plant_Cards_Fragment extends Fragment {
                     ImageView plantpic = scheduleViewInflated.findViewById(R.id.plantPic);
                     name.setText(curPlant.getName());
                     spec.setText(curPlant.getSpecies());
-                    last_watered.setText("Last watered: " + curPlant.getLastWatered());
+                    if (curPlant.getLastWatered() == (null)){
+                        last_watered.setText("Last watered: Never");
+                    }else{
+                        last_watered.setText("Last watered: " + curPlant.getLastWatered());
+                    }
+
+
                     plantpic.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
                     plantpic.bringToFront();
 

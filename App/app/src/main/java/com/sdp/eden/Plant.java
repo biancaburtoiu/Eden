@@ -22,22 +22,24 @@ public class Plant {
 
     }
 
-    public Plant(String name, String species, List<Integer> photo, Integer noOfPetals, String lastWatered){
+    public Plant(String lastWatered, String name, String species, List<Integer> photo, Integer noOfPetals){
+        LastWatered = lastWatered;
         Name=name;
         Species=species;
         Photo=photo;
         NoOfPetals=noOfPetals;
-        LastWatered = LastWatered;
+
     }
 
-    public Plant(String name, String species, List<Integer> photo, Integer noOfPetals, Float xcoordinate, Float ycoordinate, String lastWatered){
+    public Plant(String lastWatered, String name, String species, List<Integer> photo, Integer noOfPetals, Float xcoordinate, Float ycoordinate){
+        LastWatered = lastWatered;
         Name=name;
         Species=species;
         Photo=photo;
         NoOfPetals=noOfPetals;
         XCoordinate=xcoordinate;
         YCoordinate=ycoordinate;
-        LastWatered = lastWatered;
+
     }
 
     public String getName() {

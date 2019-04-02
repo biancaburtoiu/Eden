@@ -272,7 +272,7 @@ public class DbOps {
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
                 .document(newName);
-        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto(), oldPlant.getNoOfPetals(), oldPlant.getLastWatered()));
+        batch.set(creator, new Plant(oldPlant.getLastWatered(), newName, oldPlant.getSpecies(), oldPlant.getPhoto(), oldPlant.getNoOfPetals()));
 
         // Remove current plant document
         DocumentReference remover = db.collection("Users")
