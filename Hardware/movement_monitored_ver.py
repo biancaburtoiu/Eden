@@ -65,23 +65,39 @@ class Movement:
         rel_angle = rel_from_abs_turn(degrees,self.angle)
         self.relative_turn(rel_angle)
     '''
-    def start_slow_turn(self,dir):
+    def start_slow_turn(self,dir,slowness_measure=0.1):
         #print("starting to move %s"%dir)
-        
+        slowness_measure = max(min(1,slowness_measure),0)
         if dir=='r':
             # turn right
-            self.motors[0].run_forever(speed_sp=100)
-            self.motors[1].run_forever(speed_sp=-100)
+            self.motors[0].run_forever(speed_sp=slowness_measure * 1000)
+            self.motors[1].run_forever(speed_sp=-slowness_measure * 1000)
         else:
             # turn left
-            self.motors[0].run_forever(speed_sp=-100)
-            self.motors[1].run_forever(speed_sp=100)
+            self.motors[0].run_forever(speed_sp=-slowness_measure * 1000)
+            self.motors[1].run_forever(speed_sp=slowness_measure * 1000)
 
-    def forward_forever(self,speed_modifier=1):
+    def forward_forever(self,speed_modifier=1, reverse = False):
         speed_modifier = max(0,min(speed_modifier,1)) # clip to [0,1]
+        if reverse:
+            speed_modifier *= -1
         #print("starting to move at speed %s" %(speed_modifier*1000))
         self.motors[0].run_forever(speed_sp=1000*speed_modifier,stop_action="brake")
         self.motors[1].run_forever(speed_sp=1000*speed_modifier,stop_action="brake")
+
+    def do_timed_turn(self,dir,time_to_move):
+        print("turning %s timed for %s seconds" %(dir,time_to_move))
+        if dir == 'l':
+            self.motors[0].run_timed(speed_sp = -300, time_sp = time_to_move, stop_action = "brake")
+            self.motors[1].run_timed(speed_sp = 300, time_sp = time_to_move, stop_action="brake")
+        elif dir == 'r':
+            self.motors[0].run_timed(speed_sp = 300, time_sp = time_to_move, stop_action = "brake")
+            self.motors[1].run_timed(speed_sp = -300, time_sp = time_to_move, stop_action="brake")
+        
+        #only return when the motors have finished
+        time.sleep(time_to_move/1000) # time given  in ms
+
+        print("done turning timed")
 
     def stop(self):
        #print("stopping motors")

@@ -17,7 +17,7 @@ def onConnect(client,userdata,flags,rc):
     client.subscribe("pi-start-instruction")
     client.subscribe("arm")
     client.subscribe("ping-pong")
-    client.subscribe("close-navigate")
+    client.subscribe("sonar-creeping")
 
     ###garbage###
     ev3.Sound.speak("EDEN")
@@ -50,11 +50,19 @@ def onMessage(client,userdata,msg):
                 on_vision_death()
             else:
                 print("useless pong: %s"%pl)
-        if msg.topic=="close-navigate":
+        if msg.topic=="sonar-creeping":
             print("creeping")
             sonar_based_creeping()
             print("crept")
             ev3.Sound.speak("woooosshhhhhhhhhhhh")
+            time.sleep(3)
+            follow_one_instruction("-m",self_stop=True)
+            #movement_controller.arm_to_pos(-50)
+            client.publish("plant-watered","done",qos=2)
+            print("finished end sequence!")
+        if msg.topic=="pi-start-instruction":
+            instruction_to_follow = msg.payload.decode().strip()
+            follow_one_instruction(instruction_to_follow, local = True)
 
     except:
         # catch any errors to stop alertless crashing
@@ -83,7 +91,7 @@ def detect_pot(prev_sonar_vals, prev_min_sonar_pos):
 
             new_min_sonar_val = find_pos_of_min_val(new_sonar_vals)
 
-            ### publish ^pos of val and it's val
+            ### publish pos of val and it's val
 
             # check again in 0.1 seconds
             Timer(0.1,detect_pot,[new_sonar_vals, new_min_sonar_val]).start()
@@ -104,7 +112,7 @@ def find_pos_of_min_val(list_of_vals):
 
 # generic instruction following
 def follow_one_instruction(instruction_as_string, self_stop=False, local=False):
-    #print("about to follow instruction: %s"%instruction_as_string)
+    print("about to follow instruction: %s"%instruction_as_string)
     global currently_moving
     global currently_pinging
     global polling_sonar
@@ -154,8 +162,10 @@ def follow_one_instruction(instruction_as_string, self_stop=False, local=False):
                 #check_for_pong()
 
                 # start checking sonar regularly while we're moving
-                polling_sonar = True
-                poll_sonar()
+                # only used by overhead system
+                if not local:
+                    polling_sonar = True
+                    poll_sonar()
 
                 movement_controller.forward_forever(speed_modifier)
 
@@ -163,12 +173,16 @@ def follow_one_instruction(instruction_as_string, self_stop=False, local=False):
                 #polling_sonar = True
                 #poll_sonar_mainthread()
             elif inst_type =='-m':
-                # we must reverse!
+                # we must reverse! reverses for 1 second, with warning
                 # no sonars when we're reversing
-
+                print("about to reverse")
                 currently_moving = True
-                audible_warning_mp3()
-                movement_controller.forward_forever(-0.2)
+                # audible_warning_mp3()
+                movement_controller.forward_forever(0.2, reverse =True)
+                time.sleep(1)
+                movement_controller.stop()
+                currently_moving = False
+                print("finished reverse")
             elif inst_type =='r':
                 currently_moving=True
                 movement_controller.relative_turn(int(inst[1]))
@@ -176,7 +190,7 @@ def follow_one_instruction(instruction_as_string, self_stop=False, local=False):
             elif inst_type == 'rc':
                 # begins a slow turn either left or right. Will not stop until receives s
                 currently_moving=True
-                movement_controller.start_slow_turn(inst[1])
+                movement_controller.start_slow_turn(inst[1],float(inst[2]))
             elif inst_type == 'rt':
                 # turns for a specified number of seconds
                 # (rt,[dir],[time])
@@ -377,7 +391,7 @@ def send_ping():
 def ask_for_next_inst(local=False):
     global currently_moving
     currently_moving = False
-    print("about to send finish-instruction")
+    print("about to send finish-instruction \t local: %s"%local)
     if local:
         client.publish("pi-finish-instruction","done",qos=2)
     else:
