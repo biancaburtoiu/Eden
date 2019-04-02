@@ -10,6 +10,7 @@ import heapq
 import datetime as dt
 import time
 import threading
+import pytz
 
 q=queue.PriorityQueue()
 
@@ -27,10 +28,15 @@ def water_writer(doc_snapshot, changes,read_time):
         edited=change.to_dict()
         for key in edited:
             if edited[key]:
-                plant,plant_petals,x,y=key.split(",")[0],key.split(",")[1],key.split(",")[2],key.split(",")[3]
                 today,now=dt.datetime(1999,1,1).now().weekday(), str(dt.datetime(1999,1,1).now().hour) + ":" + str(dt.datetime(1999,1,1).now().minute)
+                try:
+                    plant,plant_petals,x,y=key.split(",")[0],key.split(",")[1],key.split(",")[2],key.split(",")[3]
+                    b=ScheduleEntry("",x,y,today,now,plant_petals,False,plant)
+                except:
+                    plant_petals,x,y=key.split(",")[0],key.split(",")[1],key.split(",")[2]
+                    b=ScheduleEntry("",x,y,today,now,plant_petals,False,"")
 
-                b=ScheduleEntry(plant,x,y,today,now,plant_petals,doc_snapshot,False,plant)
+
                 db.collection(u'Users').document(username).collection(u'Trigger').document(u'Trigger').set({key:False}, merge=True)
                 print(b)
                 print("SHOULD BE ON THE QUEUE")
@@ -43,7 +49,7 @@ def plant_processor(doc_snapshot):
     if a!=None and a["valid"]:
         a=doc_snapshot.to_dict()
         print(doc_snapshot)
-        b=ScheduleEntry(doc_snapshot.id,a['plantXCoordinate'],a['plantYCoordinate'],a['day'],a['time'],a['plantNoOfPetals'],doc_snapshot,True,a["plantName"])
+        b=ScheduleEntry(doc_snapshot.id,a['plantXCoordinate'],a['plantYCoordinate'],a['day'],a['time'],a['plantNoOfPetals'],True,a["plantName"])
 
         if b.datetime< dt.datetime(1999,1,1).now():
             b.datetime=b.datetime+dt.timedelta(7)
@@ -108,7 +114,7 @@ def on_message(client,userdata,message):
 
 
 class ScheduleEntry:
-    def __init__(self,docname, xcoord,ycoord,day,time,plant,docid,repeats,plant_name):
+    def __init__(self,docname, xcoord,ycoord,day,time,plant,repeats,plant_name):
         self.docname=docname
         self.xcoord=xcoord
         self.ycoord=ycoord
@@ -116,13 +122,14 @@ class ScheduleEntry:
         rn=dt.datetime(2019,1,1).today().weekday()
         self.datetime=dt.datetime(2018,1,1,).today()
         self.datetime+=dt.timedelta((day-rn )%7)
-        self.docid=docid
+        
         self.datetime=self.datetime.replace(
                 hour=int(time.split(":")[0]),
                 minute=int(time.split(":")[1]),
                 second=0,
                 microsecond=0
                 )
+        self.datetime.replace(tzinfo=pytz.utc)
 
 
         self.plant=plant
@@ -131,9 +138,9 @@ class ScheduleEntry:
 
 
     def send_if_ok(self):
-
-        doc=db.collection(u'Users').document(username).collection(u'Schedules').document(self.docname).get()
-        loc=doc.to_dict()
+        if self.docname:
+            doc=db.collection(u'Users').document(username).collection(u'Schedules').document(self.docname).get()
+            loc=doc.to_dict()
         if not self.repeats or ( loc!=None and loc['valid']):
             client.publish('navigate-start',(str(self.xcoord)+","+str(self.ycoord)), qos=2)
             print("going")
@@ -143,7 +150,9 @@ class ScheduleEntry:
             client.publish('close-navigate',str(self.plant), qos=2)
             with lock:
                 lock.wait()
-            db.collection(u'Users').document(username).collection(u'Plants').document(self.docname).set({u'last_watered':self.datetime},merge=True)
+            if self.plant_name:
+                print("putting day into db"+str(self.datetime.strftime("%d/%b/%Y - %H, %m")))
+                db.collection(u'Users').document(username).collection(u'Plants').document(self.plant_name).set({u'lastWatered':self.datetime.strftime("%d/%m/%Y - %H:%M")},merge=True)
             if self.repeats:
                 self.datetime+=dt.timedelta(7)
                 q.put(self)
