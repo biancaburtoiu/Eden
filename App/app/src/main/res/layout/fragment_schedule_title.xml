@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="wrap_content">
+
     <TextView
-        style="@style/TextAppearance.MaterialComponents.Overline"
         android:id="@+id/title"
+        style="@style/TextAppearance.MaterialComponents.Overline"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Saturday"
-        android:textSize="16sp"
         android:layout_margin="8dp"
-        android:textColor="@color/black"/>
+        android:text="Saturday"
+        android:textColor="@color/colorPrimary"
+        android:textSize="16sp" />
 </FrameLayout>

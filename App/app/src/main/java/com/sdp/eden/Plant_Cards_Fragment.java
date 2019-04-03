@@ -266,7 +266,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                                 image = bitmapToIntegerList(imageBitmap);
                                             }
 
-                                            Plant plant = new Plant(
+                                            Plant plant = new Plant("",
                                                     plantName.getText().toString(),
                                                     plantSpecies.getSelectedItem().toString(),
                                                     image,
@@ -791,9 +791,17 @@ public class Plant_Cards_Fragment extends Fragment {
 
                     TextView name = scheduleViewInflated.findViewById(R.id.plantName);
                     TextView spec = scheduleViewInflated.findViewById(R.id.species);
+                    TextView last_watered = scheduleViewInflated.findViewById(R.id.lastWateredText);
                     ImageView plantpic = scheduleViewInflated.findViewById(R.id.plantPic);
                     name.setText(curPlant.getName());
                     spec.setText(curPlant.getSpecies());
+                    if (curPlant.getLastWatered() == (null)){
+                        last_watered.setText("Last watered: Never");
+                    }else{
+                        last_watered.setText("Last watered: " + curPlant.getLastWatered());
+                    }
+
+
                     plantpic.setImageBitmap(byteArrayToBitmap(Bytes.toArray(plantsList.get(i).getPhoto())));
                     plantpic.bringToFront();
 

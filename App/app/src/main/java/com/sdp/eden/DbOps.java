@@ -272,7 +272,7 @@ public class DbOps {
                 .document(FirebaseAuth.getInstance().getCurrentUser().getEmail())
                 .collection("Plants")
                 .document(newName);
-        batch.set(creator, new Plant(newName, oldPlant.getSpecies(), oldPlant.getPhoto(), oldPlant.getNoOfPetals()));
+        batch.set(creator, new Plant(oldPlant.getLastWatered(), newName, oldPlant.getSpecies(), oldPlant.getPhoto(), oldPlant.getNoOfPetals()));
 
         // Remove current plant document
         DocumentReference remover = db.collection("Users")
@@ -365,7 +365,7 @@ public class DbOps {
     }
 
     void setWaterNowTrigger(Plant plant, onSetWaterNowFinishedListener listener) {
-        String triggerString = plant.getNoOfPetals()+","+
+        String triggerString = plant.getName() + "," + plant.getNoOfPetals()+","+
                 String.format(Locale.UK,"%.3f", plant.getXCoordinate())+","+
                 String.format(Locale.UK,"%.3f", plant.getYCoordinate());
 
@@ -445,6 +445,8 @@ public class DbOps {
         });
 
     }
+
+
 
     interface onAddPlantFinishedListener {
         void onUpdateFinished(boolean success);
