@@ -18,15 +18,20 @@ def process_image(image_as_np):
 
     '''update status in firestore'''
     new_status = {'status':'request_complete'}
-    db.collection(u'overhead-image').document(u'overhead-image').set(new_status)
+    if db is not None:
+        db.collection(u'overhead-image').document(u'overhead-image').set(new_status)
+    else:
+        print("Could not update status file - database was None!")
 
 def init_fb():
     '''log in to firebase and get db instance'''
     ###############################################################################
     # #### you must get a key, put in the directory of this file, and write the name below! ########
     ###############################################################################
+    
     try:
-        cred = fba.credentials.Certificate("Vision/eden-34f6a-firebase-adminsdk-yigr5-83fe6dc575.json")
+        # cred = fba.credentials.Certificate("Vision/eden-34f6a-firebase-adminsdk-yigr5-83fe6dc575.json")
+        cred = fba.credentials.Certificate("Vision/eden-34f6a-firebase-adminsdk-yigr5-13fdb03cd2.json")
         fba.initialize_app(cred,{
             'storageBucket': "eden-34f6a.appspot.com"
         })
@@ -38,6 +43,7 @@ def init_fb():
     except:
         print("Firebase_interaction: You don't have a key !!!")
         return None,None
+
 
 def on_doc_update(doc_snap,changes,read_time):
     if len(doc_snap)>0:
@@ -69,7 +75,19 @@ def get_image_from_vision():
         image = unwarper.get_overhead_image()
     print("got image")
     return image
-    
+
+
+# takes the new battery status and puts it on firebase. This is called by LiveUnwarper,
+# in it's onMessage, when it receives a new battery status over mqtt from the ev3.
+def update_battery_status_in_db(new_status):
+    # possibly convert to % here?
+    if db is not None:
+        new_status_dict = {'voltage':str(new_status)}
+        db.collection(u"battery-info-collection").document(u"battery-info-document").set(new_status_dict)
+        print("firebase_interaction: update sent")
+    else:
+        print("could not update battery status - database was None!")
+
 # This is called by LiveUnwarper - this class also gives us the image of the room
 def start_script(unwarper_instance):
     global unwarper
@@ -79,3 +97,7 @@ def start_script(unwarper_instance):
     db, doc_watch = init_fb()
     return db,doc_watch
 
+if __name__ == "__main__":
+    global db
+    db,_=init_fb()
+    update_battery_status_in_db(5000)
