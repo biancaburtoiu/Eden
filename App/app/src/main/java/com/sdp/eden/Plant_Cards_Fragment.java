@@ -255,7 +255,7 @@ public class Plant_Cards_Fragment extends Fragment {
                                             mProgress.show();
 
                                             // Generating plant icon
-                                            Bitmap defaultPlant = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.def_plant_icon);
+                                            Bitmap defaultPlant = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.default_plant_round);
                                             ByteArrayOutputStream out = new ByteArrayOutputStream();
                                             defaultPlant.compress(Bitmap.CompressFormat.PNG, 0, out);
 
