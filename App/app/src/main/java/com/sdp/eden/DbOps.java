@@ -398,6 +398,7 @@ public class DbOps {
 
     void requestRoomLayoutRefresh(onRequestRoomLayoutFinishedListener listener) {
         // Set parameter in database to request_pending
+        // Returns true if this has been set
         db.collection("overhead-image")
                 .document("overhead-image")
                 .update("status", "request_pending")
@@ -406,38 +407,11 @@ public class DbOps {
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()) {
                             Log.d(TAG, "Successfully updated status to request_pending.");
-
-                            listenToPhotoBeingUploaded(new onPhotoUploadedListener() {
-                                @Override
-                                public void onPhotoUploadedFinished(boolean success) {
-                                    if (success) {
-                                        Log.d(TAG, "Successfully found field change to request_completed. Can download room");
-
-                                        downloadNewRoomLayout(new onDownloadNewRoomLayoutFinishedListener() {
-                                            @Override
-                                            public void onDownloadNewRoomLayoutFinished(byte[] newRoomImage) {
-                                                if (newRoomImage != null) {
-                                                    Log.d(TAG, "Found new layout, will return image!");
-                                                    listener.onRequestRoomLayoutFinished(newRoomImage);
-                                                }
-                                                else {
-                                                    Log.d(TAG, "Can't return image because it could not be downloaded.");
-                                                    listener.onRequestRoomLayoutFinished(null);
-                                                }
-                                            }
-                                        });
-                                    }
-                                    else {
-                                        Log.d(TAG, "Updated status but snapshot was still request_pending.");
-                                        listener.onRequestRoomLayoutFinished(null);
-                                    }
-                                }
-                            });
-
+                            listener.onRequestRoomLayoutFinished(true);
                         }
                         else {
-                            Log.d(TAG, "Could not even update status to request_pending.");
-                            listener.onRequestRoomLayoutFinished(null);
+                            Log.d(TAG, "Could not update status to request_pending.");
+                            listener.onRequestRoomLayoutFinished(false);
                         }
                     }
                 });
@@ -537,7 +511,7 @@ public class DbOps {
     }
 
     interface onRequestRoomLayoutFinishedListener {
-        void onRequestRoomLayoutFinished(byte[] newRoomImage);
+        void onRequestRoomLayoutFinished(boolean success);
     }
 
     interface onDownloadNewRoomLayoutFinishedListener {

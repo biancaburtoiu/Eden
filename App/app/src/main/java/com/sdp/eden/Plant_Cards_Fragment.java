@@ -54,6 +54,10 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.common.primitives.Bytes;
 import com.google.common.primitives.Ints;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -216,15 +220,17 @@ public class Plant_Cards_Fragment extends Fragment {
                         View viewInflated1 = LayoutInflater.from(getActivity()).inflate(R.layout.picturetag_main, (ViewGroup) getView(), false);
                         View img = viewInflated1.findViewById(R.id.overhead_image);
 
+                        // Goes to change status to request_pending
                         DbOps.instance.requestRoomLayoutRefresh(new DbOps.onRequestRoomLayoutFinishedListener() {
                             @Override
-                            public void onRequestRoomLayoutFinished(byte[] newRoomImage) {
+                            public void onRequestRoomLayoutFinished(boolean success) {
                                 mProgress.dismiss();
 
-                                if (newRoomImage==null) {
+                                // success = status correctly changed to request_pending
+                                if (!success) {
                                     AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
-                                    builder.setTitle("No overhead layout available.");
-                                    builder.setMessage("Please connect vision system.");
+                                    builder.setTitle("Cannot send request to vision system.");
+                                    builder.setMessage("Please connect vision system and try again.");
                                     builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialog, int which) {
@@ -236,95 +242,194 @@ public class Plant_Cards_Fragment extends Fragment {
                                     dialog.show();
                                 }
                                 else {
-                                    Log.d(TAG, "roomImage size: "+newRoomImage.length);
+                                    Log.d(TAG, "Successfully sent request to vision system!");
 
-                                    Bitmap bmp = byteArrayToBitmap(newRoomImage);
-                                    bmp = Bitmap.createScaledBitmap(bmp, 321*3,231*3, true);
+                                    Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                            "Successfully sent request to vision system!", Snackbar.LENGTH_SHORT);
+                                    View snackbarView = s.getView();
+                                    snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                    s.show();
 
-                                    Drawable d = new BitmapDrawable(getResources(), bmp);
-                                    img.setBackground(d);
-                                    builder1.setView(viewInflated1);
-
-
-                                    builder1.setPositiveButton("Create the plant!", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            List<Float> coordinates = PictureTagMain.getPointCoordinatesFromRoom(getActivity());
-                                            Log.d(TAG, "Coordinate X is: "+coordinates.get(0));
-                                            Log.d(TAG, "Coordinate Y is: "+coordinates.get(1));
-
-                                            Log.d(TAG, "accessTest is: "+PictureTagView.accessTest);
-                                            if (!PictureTagView.accessTest) {
-                                                Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                        "You cannot create a plant without selecting its location. Please try again!", Snackbar.LENGTH_SHORT);
-                                                View snackbarView = s.getView();
-                                                snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                                                s.show();
-                                            }
-                                            else {
-                                                // Everything is fine. We can continue to create a plant
-                                                ProgressDialog mProgress;
-                                                mProgress = new ProgressDialog(getContext(), R.style.spinner);
-                                                mProgress.setMessage("Creating your plant ...");
-                                                mProgress.setCanceledOnTouchOutside(false);
-                                                mProgress.show();
-
-                                                // Generating plant icon
-                                                Bitmap defaultPlant = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.default_plant_round);
-                                                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                                                defaultPlant.compress(Bitmap.CompressFormat.PNG, 0, out);
-
-                                                List<Integer> image;
-                                                if (imageBitmap == null) {
-                                                    image = bitmapToIntegerList(defaultPlant);
-                                                } else {
-                                                    image = bitmapToIntegerList(imageBitmap);
-                                                }
-
-                                                Plant plant = new Plant("",
-                                                        plantName.getText().toString(),
-                                                        plantSpecies.getSelectedItem().toString(),
-                                                        image,
-                                                        petalPicker.getValue(),
-                                                        coordinates.get(0),
-                                                        coordinates.get(1)
-                                                );
-
-                                                DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
-                                                    @Override
-                                                    public void onUpdateFinished(boolean success) {
-                                                        //uploadImageToFirebase(); // completes the new plant
-                                                        if (success) {
-                                                            getLatestPlantList();
-
-                                                            Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                                    "Successfully added a new plant!", Snackbar.LENGTH_SHORT);
-                                                            View snackbarView = s.getView();
-                                                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                                                            s.show();
-
-                                                            mProgress.dismiss();
-                                                            materialDesignFAM.close(false);
-                                                            PictureTagView.accessTest = false;  // reset value to false
-                                                        }
+                                    FirebaseFirestore.getInstance()
+                                            .collection("overhead-image")
+                                            .document("overhead-image")
+                                            .addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                                                @Override
+                                                public void onEvent(@javax.annotation.Nullable DocumentSnapshot documentSnapshot, @javax.annotation.Nullable FirebaseFirestoreException e) {
+                                                    if (e!=null){
+                                                        Log.w(TAG, "Could not listen to the document", e);
+                                                        // show that you couldn't listen to the doc
+                                                        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                                                        builder.setTitle("Cannot listen to change in vision system");
+                                                        builder.setMessage("Please verify the vision system and try again.");
+                                                        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                                            @Override
+                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                // do nothing
+                                                            }
+                                                        });
+                                                        AlertDialog dialog = builder.create();
+                                                        dialog.setCanceledOnTouchOutside(false);
+                                                        dialog.show();
+                                                        return;
                                                     }
-                                                });
-                                            }
-                                        }
-                                    });
 
-                                    // Adds cancel in overhead image plant creation step
-                                    builder1.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            // nothing happens
-                                            materialDesignFAM.close(false);
-                                        }
-                                    });
+                                                    // If we found the doc we listen to, let's start reading
+                                                    if (documentSnapshot != null && documentSnapshot.exists()) {
+                                                        Log.d(TAG, "Current data: " + documentSnapshot.getData());
 
-                                    AlertDialog dialog1 = builder1.create();
-                                    dialog1.setCanceledOnTouchOutside(false);
-                                    dialog1.show();
+                                                        boolean t1= documentSnapshot.getData().get("status").equals("request_complete");
+
+                                                        if (t1) {
+                                                            // All fine. Now we can start downloading!
+                                                            DbOps.instance.downloadNewRoomLayout(new DbOps.onDownloadNewRoomLayoutFinishedListener() {
+                                                                @Override
+                                                                public void onDownloadNewRoomLayoutFinished(byte[] newRoomImage) {
+                                                                    if (newRoomImage ==null) {
+                                                                        // Say you could not download the image
+                                                                        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                                                                        builder.setTitle("Cannot download new room layout");
+                                                                        builder.setMessage("Please verify the vision system and try again.");
+                                                                        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                                                            @Override
+                                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                                // do nothing
+                                                                            }
+                                                                        });
+                                                                        AlertDialog dialog = builder.create();
+                                                                        dialog.setCanceledOnTouchOutside(false);
+                                                                        dialog.show();
+                                                                    }
+                                                                    else {
+                                                                        Log.d(TAG, "roomImage size: "+newRoomImage.length);
+
+                                                                        Bitmap bmp = byteArrayToBitmap(newRoomImage);
+                                                                        bmp = Bitmap.createScaledBitmap(bmp, 321*3,231*3, true);
+
+                                                                        Drawable d = new BitmapDrawable(getResources(), bmp);
+                                                                        img.setBackground(d);
+                                                                        builder1.setView(viewInflated1);
+
+
+                                                                        builder1.setPositiveButton("Create the plant!", new DialogInterface.OnClickListener() {
+                                                                            @Override
+                                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                                List<Float> coordinates = PictureTagMain.getPointCoordinatesFromRoom(getActivity());
+                                                                                Log.d(TAG, "Coordinate X is: "+coordinates.get(0));
+                                                                                Log.d(TAG, "Coordinate Y is: "+coordinates.get(1));
+
+                                                                                Log.d(TAG, "accessTest is: "+PictureTagView.accessTest);
+                                                                                if (!PictureTagView.accessTest) {
+                                                                                    Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                                                            "You cannot create a plant without selecting its location. Please try again!", Snackbar.LENGTH_SHORT);
+                                                                                    View snackbarView = s.getView();
+                                                                                    snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                                                                    s.show();
+                                                                                }
+                                                                                else {
+                                                                                    // Everything is fine. We can continue to create a plant
+                                                                                    ProgressDialog mProgress;
+                                                                                    mProgress = new ProgressDialog(getContext(), R.style.spinner);
+                                                                                    mProgress.setMessage("Creating your plant ...");
+                                                                                    mProgress.setCanceledOnTouchOutside(false);
+                                                                                    mProgress.show();
+
+                                                                                    // Generating plant icon
+                                                                                    Bitmap defaultPlant = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.default_plant_round);
+                                                                                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                                                                                    defaultPlant.compress(Bitmap.CompressFormat.PNG, 0, out);
+
+                                                                                    List<Integer> image;
+                                                                                    if (imageBitmap == null) {
+                                                                                        image = bitmapToIntegerList(defaultPlant);
+                                                                                    } else {
+                                                                                        image = bitmapToIntegerList(imageBitmap);
+                                                                                    }
+
+                                                                                    Plant plant = new Plant("",
+                                                                                            plantName.getText().toString(),
+                                                                                            plantSpecies.getSelectedItem().toString(),
+                                                                                            image,
+                                                                                            petalPicker.getValue(),
+                                                                                            coordinates.get(0),
+                                                                                            coordinates.get(1)
+                                                                                    );
+
+                                                                                    DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
+                                                                                        @Override
+                                                                                        public void onUpdateFinished(boolean success) {
+                                                                                            //uploadImageToFirebase(); // completes the new plant
+                                                                                            if (success) {
+                                                                                                getLatestPlantList();
+
+                                                                                                Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                                                                        "Successfully added a new plant!", Snackbar.LENGTH_SHORT);
+                                                                                                View snackbarView = s.getView();
+                                                                                                snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                                                                                s.show();
+
+                                                                                                mProgress.dismiss();
+                                                                                                materialDesignFAM.close(false);
+                                                                                                PictureTagView.accessTest = false;  // reset value to false
+                                                                                            }
+                                                                                        }
+                                                                                    });
+                                                                                }
+                                                                            }
+                                                                        });
+
+                                                                        // Adds cancel in overhead image plant creation step
+                                                                        builder1.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                                                                            @Override
+                                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                                // nothing happens
+                                                                                materialDesignFAM.close(false);
+                                                                            }
+                                                                        });
+
+                                                                        AlertDialog dialog1 = builder1.create();
+                                                                        dialog1.setCanceledOnTouchOutside(false);
+                                                                        dialog1.show();
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                        else {
+                                                            // Say you couldn't fetch the layout because it's still pending.
+                                                            AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                                                            builder.setTitle("Request still pending...");
+                                                            builder.setMessage("Please wait.");
+                                                            builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                                                @Override
+                                                                public void onClick(DialogInterface dialog, int which) {
+                                                                    // do nothing
+                                                                }
+                                                            });
+                                                            AlertDialog dialog = builder.create();
+                                                            dialog.setCanceledOnTouchOutside(false);
+                                                            dialog.show();
+                                                        }
+
+                                                    }
+                                                    // Couldn't find the doc to listen to for some reason???
+                                                    else {
+                                                        Log.d(TAG, "Wrong information in overhead-image document. Check database");
+                                                        // show that db file is wrong
+                                                        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                                                        builder.setTitle("Cannot communicate to vision system");
+                                                        builder.setMessage("Please check the behaviour of the vision system.");
+                                                        builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                                            @Override
+                                                            public void onClick(DialogInterface dialog, int which) {
+                                                                // do nothing
+                                                            }
+                                                        });
+                                                        AlertDialog dialog = builder.create();
+                                                        dialog.setCanceledOnTouchOutside(false);
+                                                        dialog.show();
+                                                    }
+                                                }
+                                            });
                                 }
                             }
                         });
