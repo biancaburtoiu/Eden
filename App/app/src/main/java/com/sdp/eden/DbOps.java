@@ -10,8 +10,11 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
 import com.google.firebase.firestore.WriteBatch;
@@ -23,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import javax.annotation.Nullable;
 
 public class DbOps {
     private static final String TAG = "DbOps";
@@ -401,19 +406,34 @@ public class DbOps {
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()) {
                             Log.d(TAG, "Successfully updated status to request_pending.");
-                            downloadNewRoomLayout(new onDownloadNewRoomLayoutFinishedListener() {
+
+                            listenToPhotoBeingUploaded(new onPhotoUploadedListener() {
                                 @Override
-                                public void onDownloadNewRoomLayoutFinished(byte[] newRoomImage) {
-                                    if (newRoomImage != null) {
-                                        Log.d(TAG, "Found new layout, will return image!");
-                                        listener.onRequestRoomLayoutFinished(newRoomImage);
+                                public void onPhotoUploadedFinished(boolean success) {
+                                    if (success) {
+                                        Log.d(TAG, "Successfully found field change to request_completed. Can download room");
+
+                                        downloadNewRoomLayout(new onDownloadNewRoomLayoutFinishedListener() {
+                                            @Override
+                                            public void onDownloadNewRoomLayoutFinished(byte[] newRoomImage) {
+                                                if (newRoomImage != null) {
+                                                    Log.d(TAG, "Found new layout, will return image!");
+                                                    listener.onRequestRoomLayoutFinished(newRoomImage);
+                                                }
+                                                else {
+                                                    Log.d(TAG, "Can't return image because it could not be downloaded.");
+                                                    listener.onRequestRoomLayoutFinished(null);
+                                                }
+                                            }
+                                        });
                                     }
                                     else {
-                                        Log.d(TAG, "Updated status but could not return image.");
+                                        Log.d(TAG, "Updated status but snapshot was still request_pending.");
                                         listener.onRequestRoomLayoutFinished(null);
                                     }
                                 }
                             });
+
                         }
                         else {
                             Log.d(TAG, "Could not even update status to request_pending.");
@@ -444,6 +464,34 @@ public class DbOps {
             }
         });
 
+    }
+
+    void listenToPhotoBeingUploaded(onPhotoUploadedListener listener) {
+        db.collection("overhead-image")
+                .document("overhead-image")
+                .addSnapshotListener(new EventListener<DocumentSnapshot>() {
+                    @Override
+                    public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
+                        if (e!=null){
+                            Log.w(TAG, "Listen failed.", e);
+                            listener.onPhotoUploadedFinished(false);
+                            return;
+                        }
+
+                        if (documentSnapshot != null && documentSnapshot.exists()) {
+                            Log.d(TAG, "Current data: " + documentSnapshot.getData());
+
+                            boolean t1= documentSnapshot.getData().get("status").equals("request_complete");
+
+                            if (t1)
+                            { listener.onPhotoUploadedFinished(true); }
+                            else { listener.onPhotoUploadedFinished(false);}
+
+                        } else {
+                            Log.d(TAG, "Current data: null");
+                            listener.onPhotoUploadedFinished(false);
+                        }
+                }});
     }
 
 
@@ -494,5 +542,9 @@ public class DbOps {
 
     interface onDownloadNewRoomLayoutFinishedListener {
         void onDownloadNewRoomLayoutFinished(byte[] newRoomImage);
+    }
+
+    interface onPhotoUploadedListener {
+        void onPhotoUploadedFinished(boolean success);
     }
 }

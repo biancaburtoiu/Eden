@@ -221,96 +221,111 @@ public class Plant_Cards_Fragment extends Fragment {
                             public void onRequestRoomLayoutFinished(byte[] newRoomImage) {
                                 mProgress.dismiss();
 
-                                Log.d(TAG, "roomImage size: "+newRoomImage.length);
-
-                                Bitmap bmp = byteArrayToBitmap(newRoomImage);
-                                bmp = Bitmap.createScaledBitmap(bmp, 321*3,231*3, true);
-
-                                Drawable d = new BitmapDrawable(getResources(), bmp);
-                                img.setBackground(d);
-                                builder1.setView(viewInflated1);
-
-
-                                builder1.setPositiveButton("Create the plant!", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        List<Float> coordinates = PictureTagMain.getPointCoordinatesFromRoom(getActivity());
-                                        Log.d(TAG, "Coordinate X is: "+coordinates.get(0));
-                                        Log.d(TAG, "Coordinate Y is: "+coordinates.get(1));
-
-                                        Log.d(TAG, "accessTest is: "+PictureTagView.accessTest);
-                                        if (!PictureTagView.accessTest) {
-                                           Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                   "You cannot create a plant without selecting its location. Please try again!", Snackbar.LENGTH_SHORT);
-                                            View snackbarView = s.getView();
-                                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                                            s.show();
+                                if (newRoomImage==null) {
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getActivity()), R.style.Dialog);
+                                    builder.setTitle("No overhead layout available.");
+                                    builder.setMessage("Please connect vision system.");
+                                    builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            // do nothing
                                         }
-                                        else {
-                                            // Everything is fine. We can continue to create a plant
-                                            ProgressDialog mProgress;
-                                            mProgress = new ProgressDialog(getContext(), R.style.spinner);
-                                            mProgress.setMessage("Creating your plant ...");
-                                            mProgress.setCanceledOnTouchOutside(false);
-                                            mProgress.show();
+                                    });
+                                    AlertDialog dialog = builder.create();
+                                    dialog.setCanceledOnTouchOutside(false);
+                                    dialog.show();
+                                }
+                                else {
+                                    Log.d(TAG, "roomImage size: "+newRoomImage.length);
 
-                                            // Generating plant icon
-                                            Bitmap defaultPlant = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.default_plant_round);
-                                            ByteArrayOutputStream out = new ByteArrayOutputStream();
-                                            defaultPlant.compress(Bitmap.CompressFormat.PNG, 0, out);
+                                    Bitmap bmp = byteArrayToBitmap(newRoomImage);
+                                    bmp = Bitmap.createScaledBitmap(bmp, 321*3,231*3, true);
 
-                                            List<Integer> image;
-                                            if (imageBitmap == null) {
-                                                image = bitmapToIntegerList(defaultPlant);
-                                            } else {
-                                                image = bitmapToIntegerList(imageBitmap);
+                                    Drawable d = new BitmapDrawable(getResources(), bmp);
+                                    img.setBackground(d);
+                                    builder1.setView(viewInflated1);
+
+
+                                    builder1.setPositiveButton("Create the plant!", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            List<Float> coordinates = PictureTagMain.getPointCoordinatesFromRoom(getActivity());
+                                            Log.d(TAG, "Coordinate X is: "+coordinates.get(0));
+                                            Log.d(TAG, "Coordinate Y is: "+coordinates.get(1));
+
+                                            Log.d(TAG, "accessTest is: "+PictureTagView.accessTest);
+                                            if (!PictureTagView.accessTest) {
+                                                Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                        "You cannot create a plant without selecting its location. Please try again!", Snackbar.LENGTH_SHORT);
+                                                View snackbarView = s.getView();
+                                                snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                                s.show();
                                             }
+                                            else {
+                                                // Everything is fine. We can continue to create a plant
+                                                ProgressDialog mProgress;
+                                                mProgress = new ProgressDialog(getContext(), R.style.spinner);
+                                                mProgress.setMessage("Creating your plant ...");
+                                                mProgress.setCanceledOnTouchOutside(false);
+                                                mProgress.show();
 
-                                            Plant plant = new Plant("",
-                                                    plantName.getText().toString(),
-                                                    plantSpecies.getSelectedItem().toString(),
-                                                    image,
-                                                    petalPicker.getValue(),
-                                                    coordinates.get(0),
-                                                    coordinates.get(1)
-                                            );
+                                                // Generating plant icon
+                                                Bitmap defaultPlant = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.default_plant_round);
+                                                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                                                defaultPlant.compress(Bitmap.CompressFormat.PNG, 0, out);
 
-                                            DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
-                                                @Override
-                                                public void onUpdateFinished(boolean success) {
-                                                    //uploadImageToFirebase(); // completes the new plant
-                                                    if (success) {
-                                                        getLatestPlantList();
-
-                                                        Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
-                                                                "Successfully added a new plant!", Snackbar.LENGTH_SHORT);
-                                                        View snackbarView = s.getView();
-                                                        snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
-                                                        s.show();
-
-                                                        mProgress.dismiss();
-                                                        materialDesignFAM.close(false);
-                                                        PictureTagView.accessTest = false;  // reset value to false
-                                                    }
+                                                List<Integer> image;
+                                                if (imageBitmap == null) {
+                                                    image = bitmapToIntegerList(defaultPlant);
+                                                } else {
+                                                    image = bitmapToIntegerList(imageBitmap);
                                                 }
-                                            });
+
+                                                Plant plant = new Plant("",
+                                                        plantName.getText().toString(),
+                                                        plantSpecies.getSelectedItem().toString(),
+                                                        image,
+                                                        petalPicker.getValue(),
+                                                        coordinates.get(0),
+                                                        coordinates.get(1)
+                                                );
+
+                                                DbOps.instance.addPlant(plant, new DbOps.onAddPlantFinishedListener() {
+                                                    @Override
+                                                    public void onUpdateFinished(boolean success) {
+                                                        //uploadImageToFirebase(); // completes the new plant
+                                                        if (success) {
+                                                            getLatestPlantList();
+
+                                                            Snackbar s = Snackbar.make(Objects.requireNonNull(getView()).findViewById(R.id.viewSnack),
+                                                                    "Successfully added a new plant!", Snackbar.LENGTH_SHORT);
+                                                            View snackbarView = s.getView();
+                                                            snackbarView.setBackgroundColor(Color.parseColor("#A9A9A9"));
+                                                            s.show();
+
+                                                            mProgress.dismiss();
+                                                            materialDesignFAM.close(false);
+                                                            PictureTagView.accessTest = false;  // reset value to false
+                                                        }
+                                                    }
+                                                });
+                                            }
                                         }
-                                    }
-                                });
+                                    });
 
-                                // Adds cancel in overhead image plant creation step
-                                builder1.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        // nothing happens
-                                        materialDesignFAM.close(false);
-                                    }
-                                });
+                                    // Adds cancel in overhead image plant creation step
+                                    builder1.setNeutralButton("Cancel", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            // nothing happens
+                                            materialDesignFAM.close(false);
+                                        }
+                                    });
 
-                                AlertDialog dialog1 = builder1.create();
-                                dialog1.setCanceledOnTouchOutside(false);
-                                dialog1.show();
-
+                                    AlertDialog dialog1 = builder1.create();
+                                    dialog1.setCanceledOnTouchOutside(false);
+                                    dialog1.show();
+                                }
                             }
                         });
                     }
