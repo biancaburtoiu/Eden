@@ -39,6 +39,7 @@ loc=0
 got_result =0
 running=False
 rotate_time=0
+logos_in_range=[]
 
 def init():
     global location
@@ -54,6 +55,7 @@ def init():
     right_time=0
     count=0
 
+    logos_in_range=[]
     location= [[],[],[],[],[],[],[]]
     new_location= [[],[],[],[],[],[],[]]
     logo_number=0
@@ -86,6 +88,8 @@ def start_capture():
     global new_location
     global is_not_seeing
     global rotate_time
+    global logos_in_range
+    global loc
     location = [[],[],[],[],[],[],[]]
 
 
@@ -232,8 +236,11 @@ def start_capture():
     print(new_location)
     print(D)
     if running:
+        loc=0
         if  len(location[logo_number])!=0:
             loc = np.average(location[logo_number])
+
+        logos_in_range = [True if l>140 and l<200 else False for l in location[logo_number]]
 
         print(len(location[logo_number]))
         if  len(location[logo_number])!=0 and is_not_seeing :
@@ -248,7 +255,7 @@ def start_capture():
 
 
 
-        if(loc>140 and loc<200):
+        if (loc>140 and loc<200) or any(logos_in_range):
             is_centre=True
             print("Is_centre")
 
@@ -400,6 +407,7 @@ def onConnect(client,userdata,flags,rc):
     print("connected with result code %i" % rc)
     client.subscribe("pi-finish-instruction")
     client.subscribe("close-navigate")
+    client.subscribe("logo-detection")
 
 
 
@@ -409,14 +417,18 @@ def onMessage(client,userdata,msg):
     global logo_number
     global running
     if msg.topic =="close-navigate":
-        global running
         init()
         logo_number=int(msg.payload.decode())
         print("logo number")
         logo_number=logo_number-1
         print (logo_number)
-        running=True
+        client.publish("pi-start-instruction","reverse",qos=2)
+
+    if msg.topic =="logo-detection":
+        global running
+        running = True
         send_message()
+        print("logo-detection")
 
     elif running:
         if msg.topic=="pi-finish-instruction":
